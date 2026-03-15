@@ -1,6 +1,6 @@
 // lib/pages/home_page.dart
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // 如需图表，需添加依赖，暂用占位
+import 'package:fl_chart/fl_chart.dart';
 import '../api_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,23 +13,38 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Map<String, dynamic> _status = {};
   List<String> _alerts = [];
-  bool _hasAiAdvice = false; // 模拟AI优化建议
+  bool _hasAiAdvice = true;
 
   @override
   void initState() {
     super.initState();
     _fetchData();
-    // 模拟有优化建议（后续从后端获取）
-    _hasAiAdvice = true;
   }
 
   Future<void> _fetchData() async {
     try {
-      final status = await ApiService.getStatus();
-      final alerts = await ApiService.getRecentAlerts(); // 暂时返回空
+      // 模拟数据，实际应从 ApiService 获取
+      await Future.delayed(const Duration(milliseconds: 500));
       setState(() {
-        _status = status;
-        _alerts = alerts;
+        _status = {
+          'mode': 'sim',
+          'heart_rate': 60,
+          'cpu': 12,
+          'memory': 35,
+          'disk': 42,
+          'total_asset': 123456.78,
+          'available': 65432.10,
+          'position_value': 58024.68,
+          'daily_profit': 1234.56,
+          'trade_count': 15,
+          'win_rate': 0.62,
+          'max_drawdown': 0.023,
+          'signal_count': 28,
+          'approved_count': 19,
+          'rejected_count': 9,
+        };
+        _alerts = ['数据源新浪财经连接超时', '内存使用率超过85%'];
+        _hasAiAdvice = true;
       });
     } catch (e) {
       print('主页数据加载失败: $e');
@@ -43,25 +58,30 @@ class _HomePageState extends State<HomePage> {
         title: const Text('紧急停机'),
         content: const Text('确定要停止所有交易吗？'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('确定')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('确定'),
+          ),
         ],
       ),
     );
     if (confirmed == true) {
-      final success = await ApiService.emergencyStop();
+      // 调用 ApiService.emergencyStop()
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(success ? '停机成功' : '停机失败')),
+        const SnackBar(content: Text('停机指令已发送（模拟）')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 提取数据（带默认值）
     final mode = _status['mode'] ?? 'sim';
     final heartRate = _status['heart_rate'] ?? 60;
-    final lastBeat = _status['last_beat'] ?? 0;
     final cpu = _status['cpu'] ?? 0;
     final memory = _status['memory'] ?? 0;
     final disk = _status['disk'] ?? 0;
@@ -172,17 +192,12 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
 
-            // 资金曲线迷你图（占位，可后续用 fl_chart）
+            // 资金曲线迷你图
             Card(
               child: Container(
                 height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Text('资金曲线图（开发中）', style: TextStyle(color: Colors.white54)),
-                ),
+                padding: const EdgeInsets.all(8),
+                child: _buildMiniChart(),
               ),
             ),
             const SizedBox(height: 16),
@@ -225,15 +240,12 @@ class _HomePageState extends State<HomePage> {
                   title: const Text('有新的AI优化建议'),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    // 跳转到优化建议页（后续实现）
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('跳转至优化建议页（待实现）')),
-                    );
+                    Navigator.pushNamed(context, '/ai_advice_center');
                   },
                 ),
               ),
 
-            // 告警滚动条（如果有告警）
+            // 告警滚动条
             if (_alerts.isNotEmpty)
               Container(
                 height: 40,
@@ -272,7 +284,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // 模式切换（后续实现）
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('模式切换功能待实现')),
                       );
@@ -310,6 +321,34 @@ class _HomePageState extends State<HomePage> {
         Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.white54)),
       ],
+    );
+  }
+
+  Widget _buildMiniChart() {
+    // 简单的资金曲线模拟（使用 fl_chart 的 LineChart）
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(show: false),
+        titlesData: FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: [
+              FlSpot(0, 1),
+              FlSpot(1, 1.2),
+              FlSpot(2, 1.1),
+              FlSpot(3, 1.3),
+              FlSpot(4, 1.25),
+              FlSpot(5, 1.4),
+              FlSpot(6, 1.35),
+            ],
+            isCurved: true,
+            color: const Color(0xFFD4AF37),
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+          ),
+        ],
+      ),
     );
   }
 
