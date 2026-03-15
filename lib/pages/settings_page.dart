@@ -15,6 +15,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String _phone = '';
   double _currentFund = 0.0;
   String _mode = 'sim';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -23,25 +24,78 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadSettings() async {
+    setState(() => _isLoading = true);
     try {
       final status = await ApiService.getStatus();
-      setState(() {
-        _mode = status['mode'] ?? 'sim';
-        _currentFund = status['current_fund'] ?? 0.0;
-      });
+      if (status != null) {
+        setState(() {
+          _mode = status['mode'] ?? 'sim';
+          _currentFund = (status['fund'] ?? 0.0).toDouble();
+        });
+      }
     } catch (e) {
-      print('加载设置失败: $e');
+      _showSnackBar('加载设置失败: $e', isError: true);
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _logout() async {
+    // 调用后端登出接口
+    await ApiService.authLogout();
+    // 清除本地存储
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('password');
     await prefs.remove('remember_me');
-    // 跳转到登录页
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/');
     }
+  }
+
+  Future<void> _modifyFund(double newAmount) async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await ApiService.modifyFund(newAmount, reason: '用户手动修改');
+      if (result != null && result['success'] == true) {
+        _showSnackBar('资金修改成功');
+        // 重新加载状态以更新显示
+        await _loadSettings();
+      } else {
+        _showSnackBar('资金修改失败: ${result?['error'] ?? '未知错误'}', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('资金修改异常: $e', isError: true);
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleMode(bool wantReal) async {
+    final newMode = wantReal ? 'real' : 'sim';
+    setState(() => _isLoading = true);
+    try {
+      final result = await ApiService.setMode(newMode);
+      if (result != null && result['success'] == true) {
+        setState(() => _mode = newMode);
+        _showSnackBar('已切换为 ${newMode.toUpperCase()} 模式');
+      } else {
+        _showSnackBar('模式切换失败: ${result?['error'] ?? '未知错误'}', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('模式切换异常: $e', isError: true);
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   @override
@@ -56,249 +110,276 @@ class _SettingsPageState extends State<SettingsPage> {
           fontWeight: FontWeight.w600,
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 账户安全
-          _buildSectionTitle('账户安全'),
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  _buildSettingTile(
-                    icon: Icons.lock,
-                    title: '修改密码',
-                    onTap: () {},
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // 账户安全
+                _buildSectionTitle('账户安全'),
+                const SizedBox(height: 8),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildSettingTile(
+                          icon: Icons.lock,
+                          title: '修改密码',
+                          onTap: () {
+                            // 跳转修改密码页面（待实现）
+                            _showSnackBar('修改密码功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSwitchTile(
+                          icon: Icons.fingerprint,
+                          title: '手势密码/指纹',
+                          value: false,
+                          onChanged: (v) {
+                            _showSnackBar('手势密码功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.phone,
+                          title: '绑定手机号',
+                          subtitle: _phone.isEmpty ? '未绑定' : _phone,
+                          onTap: () {
+                            _showSnackBar('绑定手机号功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.admin_panel_settings,
+                          title: '白名单管理',
+                          onTap: () {
+                            _showSnackBar('白名单管理功能待实现');
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  _buildDivider(),
-                  _buildSwitchTile(
-                    icon: Icons.fingerprint,
-                    title: '手势密码/指纹',
-                    value: false,
-                    onChanged: (v) {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.phone,
-                    title: '绑定手机号',
-                    subtitle: _phone.isEmpty ? '未绑定' : _phone,
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.admin_panel_settings,
-                    title: '白名单管理',
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 资金管理
-          _buildSectionTitle('资金管理'),
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  _buildInfoTile(
-                    icon: Icons.account_balance_wallet,
-                    title: '当前资金',
-                    value: '¥ ${_currentFund.toStringAsFixed(2)}',
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.edit,
-                    title: '修改实盘金额',
-                    onTap: () => _showEditFundDialog(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.history,
-                    title: '调整历史',
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 实盘参数配置
-          _buildSectionTitle('实盘参数'),
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  _buildInfoTile(
-                    icon: Icons.trending_up,
-                    title: '单票最大仓位',
-                    value: '20%',
-                  ),
-                  _buildDivider(),
-                  _buildInfoTile(
-                    icon: Icons.warning,
-                    title: '每日亏损熔断',
-                    value: '5%',
-                  ),
-                  _buildDivider(),
-                  _buildInfoTile(
-                    icon: Icons.swap_horiz,
-                    title: '单日最大交易次数',
-                    value: '10次',
-                  ),
-                  _buildDivider(),
-                  _buildInfoTile(
-                    icon: Icons.stop,
-                    title: '默认止损',
-                    value: '3%',
-                  ),
-                  _buildDivider(),
-                  _buildInfoTile(
-                    icon: Icons.flag,
-                    title: '默认止盈',
-                    value: '8%',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 报告配置
-          _buildSectionTitle('报告配置'),
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  _buildSettingTile(
-                    icon: Icons.receipt,
-                    title: '报告内容选择',
-                    subtitle: '实盘数据 + 进化周报',
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.schedule,
-                    title: '接收时间',
-                    subtitle: '每日 09:00',
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.star,
-                    title: '重点关注标的',
-                    subtitle: '贵州茅台, 宁德时代',
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 预警配置
-          _buildSectionTitle('预警配置'),
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  _buildSettingTile(
-                    icon: Icons.notifications,
-                    title: '预警规则',
-                    subtitle: '胜率低于40%等',
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.notifications_active,
-                    title: '通知方式',
-                    subtitle: 'APP推送',
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 系统设置
-          _buildSectionTitle('系统设置'),
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  _buildInfoTile(
-                    icon: Icons.speed,
-                    title: '当前模式',
-                    value: _mode.toUpperCase(),
-                  ),
-                  _buildDivider(),
-                  _buildSwitchTile(
-                    icon: Icons.money_off,
-                    title: '实盘/模拟切换',
-                    value: _mode == 'real',
-                    onChanged: (v) {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.attach_money,
-                    title: '成本预算上限',
-                    subtitle: '200元/月',
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
-                    icon: Icons.info,
-                    title: '关于',
-                    subtitle: '版本 1.0.0',
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 退出登录按钮
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ElevatedButton(
-              onPressed: _logout,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade800,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              child: const Text('退出登录'),
+                const SizedBox(height: 20),
+
+                // 资金管理
+                _buildSectionTitle('资金管理'),
+                const SizedBox(height: 8),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildInfoTile(
+                          icon: Icons.account_balance_wallet,
+                          title: '当前资金',
+                          value: '¥ ${_currentFund.toStringAsFixed(2)}',
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.edit,
+                          title: '修改实盘金额',
+                          onTap: () => _showEditFundDialog(),
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.history,
+                          title: '调整历史',
+                          onTap: () {
+                            _showSnackBar('调整历史功能待实现');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 实盘参数配置
+                _buildSectionTitle('实盘参数'),
+                const SizedBox(height: 8),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildInfoTile(
+                          icon: Icons.trending_up,
+                          title: '单票最大仓位',
+                          value: '20%',
+                        ),
+                        _buildDivider(),
+                        _buildInfoTile(
+                          icon: Icons.warning,
+                          title: '每日亏损熔断',
+                          value: '5%',
+                        ),
+                        _buildDivider(),
+                        _buildInfoTile(
+                          icon: Icons.swap_horiz,
+                          title: '单日最大交易次数',
+                          value: '10次',
+                        ),
+                        _buildDivider(),
+                        _buildInfoTile(
+                          icon: Icons.stop,
+                          title: '默认止损',
+                          value: '3%',
+                        ),
+                        _buildDivider(),
+                        _buildInfoTile(
+                          icon: Icons.flag,
+                          title: '默认止盈',
+                          value: '8%',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 报告配置
+                _buildSectionTitle('报告配置'),
+                const SizedBox(height: 8),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildSettingTile(
+                          icon: Icons.receipt,
+                          title: '报告内容选择',
+                          subtitle: '实盘数据 + 进化周报',
+                          onTap: () {
+                            _showSnackBar('报告配置功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.schedule,
+                          title: '接收时间',
+                          subtitle: '每日 09:00',
+                          onTap: () {
+                            _showSnackBar('接收时间功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.star,
+                          title: '重点关注标的',
+                          subtitle: '贵州茅台, 宁德时代',
+                          onTap: () {
+                            _showSnackBar('重点关注标的功能待实现');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 预警配置
+                _buildSectionTitle('预警配置'),
+                const SizedBox(height: 8),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildSettingTile(
+                          icon: Icons.notifications,
+                          title: '预警规则',
+                          subtitle: '胜率低于40%等',
+                          onTap: () {
+                            _showSnackBar('预警规则功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.notifications_active,
+                          title: '通知方式',
+                          subtitle: 'APP推送',
+                          onTap: () {
+                            _showSnackBar('通知方式功能待实现');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 系统设置
+                _buildSectionTitle('系统设置'),
+                const SizedBox(height: 8),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildInfoTile(
+                          icon: Icons.speed,
+                          title: '当前模式',
+                          value: _mode.toUpperCase(),
+                        ),
+                        _buildDivider(),
+                        _buildSwitchTile(
+                          icon: Icons.money_off,
+                          title: '实盘/模拟切换',
+                          value: _mode == 'real',
+                          onChanged: _toggleMode,
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.attach_money,
+                          title: '成本预算上限',
+                          subtitle: '200元/月',
+                          onTap: () {
+                            _showSnackBar('成本预算功能待实现');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildSettingTile(
+                          icon: Icons.info,
+                          title: '关于',
+                          subtitle: '版本 1.0.0',
+                          onTap: () {
+                            _showSnackBar('关于页面待实现');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 退出登录按钮
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: _logout,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade800,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    child: const Text('退出登录'),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
     );
   }
 
@@ -403,12 +484,16 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('取消', style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
-            onPressed: () {
-              // 实际修改资金逻辑需调用后端接口
+            onPressed: () async {
+              final amount = double.tryParse(controller.text);
+              if (amount == null || amount <= 0) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('请输入有效的正数金额'), backgroundColor: Colors.orange),
+                );
+                return;
+              }
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('资金修改功能待实现')),
-              );
+              await _modifyFund(amount);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFB8860B),

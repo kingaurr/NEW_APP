@@ -1,10 +1,12 @@
 // lib/pages/main_navigation_page.dart
 import 'package:flutter/material.dart';
+import '../api_service.dart'; // 导入 API 服务
 import 'home_page.dart';
-import 'strategies_page.dart';
-import 'wargame_page.dart';
+import 'trade_monitor_page.dart';
+import 'ai_page.dart';
+import 'report_page.dart';
 import 'knowledge_page.dart';
-import 'logs_page.dart';
+import 'settings_page.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({Key? key}) : super(key: key);
@@ -16,12 +18,17 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _pages = <Widget>[
-    HomePage(),
-    StrategiesPage(),
-    WarGamePage(),
-    KnowledgePage(),
-    LogsPage(),
+  // 紧急令牌（应与后端 EMERGENCY_SECRET 一致，生产环境建议从配置读取）
+  static const String _emergencyToken = 'change_me_in_prod';
+
+  // 页面列表
+  static final List<Widget> _pages = <Widget>[
+    const HomePage(),
+    const TradeMonitorPage(),
+    const AiPage(),
+    const ReportPage(),
+    const KnowledgePage(),
+    const SettingsPage(),
   ];
 
   void _showEmergencyMenu() {
@@ -66,11 +73,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             ListTile(
               leading: const Icon(Icons.volume_off, color: Colors.blue),
               title: const Text('静默模式'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('静默模式已开启（模拟）')),
-                );
+                await _toggleSilentMode();
               },
             ),
             const SizedBox(height: 8),
@@ -92,12 +97,23 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             child: const Text('取消'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
               // 调用后端紧急停止API
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('紧急停止指令已发送')),
+              final response = await ApiService.httpPost(
+                '/emergency_stop',
+                body: {'reason': '用户手动触发'},
+                headers: {'X-Emergency-Token': _emergencyToken},
               );
+              if (response != null && response['success'] == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('紧急停止指令已发送'), backgroundColor: Colors.red),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('发送失败: ${response?['error'] ?? '未知错误'}'), backgroundColor: Colors.orange),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('确定'),
@@ -121,9 +137,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // 调用平仓API
+              // 一键平仓接口暂未实现，显示提示
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('一键平仓指令已发送')),
+                const SnackBar(content: Text('一键平仓功能暂未实现')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -132,6 +148,29 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleSilentMode() async {
+    // 先获取当前模式
+    final currentMode = await ApiService.getMode();
+    if (currentMode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('获取当前模式失败'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    // 静默模式可对应 maintenance 或 sim，这里切换为 maintenance
+    final newMode = currentMode['mode'] == 'maintenance' ? 'sim' : 'maintenance';
+    final result = await ApiService.setMode(newMode);
+    if (result != null && result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已切换为 $newMode 模式')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('切换失败: ${result?['error'] ?? '未知错误'}'), backgroundColor: Colors.orange),
+      );
+    }
   }
 
   @override
@@ -150,11 +189,12 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: '策略库'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_esports), label: '战报'),
-          BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: '外脑'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: '日志'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '主页'),
+          BottomNavigationBarItem(icon: Icon(Icons.trending_up), label: '交易'),
+          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI'),
+          BottomNavigationBarItem(icon: Icon(Icons.insert_chart), label: '报告'),
+          BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: '知识库'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '我的'),
         ],
       ),
       floatingActionButton: FloatingActionButton(

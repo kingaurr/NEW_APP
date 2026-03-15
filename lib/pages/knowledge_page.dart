@@ -1,5 +1,6 @@
 // lib/pages/knowledge_page.dart
 import 'package:flutter/material.dart';
+import '../api_service.dart';
 
 class KnowledgePage extends StatefulWidget {
   const KnowledgePage({Key? key}) : super(key: key);
@@ -10,11 +11,19 @@ class KnowledgePage extends StatefulWidget {
 
 class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  Future<Map<String, dynamic>?>? _knowledgeStatsFuture;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  void _loadData() {
+    setState(() {
+      _knowledgeStatsFuture = ApiService.getKnowledgeStats();
+    });
   }
 
   @override
@@ -38,14 +47,19 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildRulesTab(),
-          _buildCasesTab(),
-          _buildFailuresTab(),
-          _buildConfigTab(),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _loadData();
+        },
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildRulesTab(),
+            _buildCasesTab(),
+            _buildFailuresTab(),
+            _buildConfigTab(),
+          ],
+        ),
       ),
     );
   }
@@ -168,19 +182,42 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
                 const SizedBox(height: 16),
                 const Text('知识统计', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('总条目: 156'),
-                    Text('向量库大小: 45 MB'),
-                  ],
-                ),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('最近新增: 7条'),
-                    Text(''),
-                  ],
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: _knowledgeStatsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError || snapshot.data == null) {
+                      return const Text('加载失败');
+                    }
+                    final data = snapshot.data!;
+                    return Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('总条目:'),
+                            Text('${data['total_entries'] ?? 0}'),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('向量库大小:'),
+                            Text('${data['vector_size'] ?? 0} MB'),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('最近新增:'),
+                            Text('${data['new_today'] ?? 0}条'),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

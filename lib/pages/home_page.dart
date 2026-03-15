@@ -23,27 +23,17 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchData() async {
     try {
-      // 模拟数据，实际应从 ApiService 获取
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 从后端获取真实系统状态
+      final status = await ApiService.getStatus();
+      if (status != null) {
+        setState(() {
+          _status = status;
+        });
+      }
+
+      // TODO: 从后端获取告警列表和AI建议状态（后续添加相应接口）
       setState(() {
-        _status = {
-          'mode': 'sim',
-          'heart_rate': 60,
-          'cpu': 12,
-          'memory': 35,
-          'disk': 42,
-          'total_asset': 123456.78,
-          'available': 65432.10,
-          'position_value': 58024.68,
-          'daily_profit': 1234.56,
-          'trade_count': 15,
-          'win_rate': 0.62,
-          'max_drawdown': 0.023,
-          'signal_count': 28,
-          'approved_count': 19,
-          'rejected_count': 9,
-        };
-        _alerts = ['数据源新浪财经连接超时', '内存使用率超过85%'];
+        _alerts = ['数据源新浪财经连接超时', '内存使用率超过85%']; // 暂为模拟
         _hasAiAdvice = true;
       });
     } catch (e) {
@@ -71,27 +61,39 @@ class _HomePageState extends State<HomePage> {
       ),
     );
     if (confirmed == true) {
-      // 调用 ApiService.emergencyStop()
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('停机指令已发送（模拟）')),
+      // 调用紧急停止API（需要紧急令牌，这里用默认值，应与后端一致）
+      const emergencyToken = 'change_me_in_prod';
+      final response = await ApiService.httpPost(
+        '/emergency_stop',
+        body: {'reason': '用户手动触发'},
+        headers: {'X-Emergency-Token': emergencyToken},
       );
+      if (response != null && response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('紧急停止指令已发送'), backgroundColor: Colors.red),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('发送失败: ${response?['error'] ?? '未知错误'}'), backgroundColor: Colors.orange),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final mode = _status['mode'] ?? 'sim';
-    final heartRate = _status['heart_rate'] ?? 60;
-    final cpu = _status['cpu'] ?? 0;
-    final memory = _status['memory'] ?? 0;
-    final disk = _status['disk'] ?? 0;
+    final heartRate = _status['heart_rate'] ?? 60; // 后端可能没有心率字段，可改用其他指标或移除
+    final cpu = _status['cpu_percent'] ?? 0;
+    final memory = _status['memory_percent'] ?? 0;
+    final disk = _status['disk_usage'] ?? 0; // 可能需要调整字段名
     final currentTime = DateTime.now();
     final isTradingTime = _isTradingTime(currentTime);
 
-    final totalAsset = _status['total_asset'] ?? 0.0;
-    final available = _status['available'] ?? 0.0;
+    final totalAsset = _status['fund'] ?? 0.0;
+    final available = _status['available_fund'] ?? 0.0; // 从 fund_manager 获取可能需扩展
     final positionValue = _status['position_value'] ?? 0.0;
-    final dailyProfit = _status['daily_profit'] ?? 0.0;
+    final dailyProfit = _status['today_pnl'] ?? 0.0;
     final dailyProfitPercent = totalAsset > 0 ? (dailyProfit / totalAsset) * 100 : 0.0;
 
     final tradeCount = _status['trade_count'] ?? 0;
@@ -284,6 +286,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
+                      // 模式切换待实现
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('模式切换功能待实现')),
                       );
@@ -325,7 +328,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMiniChart() {
-    // 简单的资金曲线模拟（使用 fl_chart 的 LineChart）
+    // 简单资金曲线模拟（如需真实数据，可调用资金历史接口）
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: false),
