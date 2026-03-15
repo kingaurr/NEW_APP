@@ -5,12 +5,16 @@ import 'package:flutter/foundation.dart';
 
 /// API 服务类，封装所有后端接口调用
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.100:8080/api'; // 请替换为实际服务器 IP 和端口
+  static String _baseUrl = 'http://192.168.1.100:8080/api'; // 默认值
+
+  static void setBaseUrl(String url) {
+    _baseUrl = url;
+  }
 
   // 通用 GET 请求
   static Future<dynamic> httpGet(String endpoint) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl$endpoint'));
+      final response = await http.get(Uri.parse('$_baseUrl$endpoint'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -23,12 +27,16 @@ class ApiService {
     }
   }
 
-  // 通用 POST 请求
-  static Future<dynamic> httpPost(String endpoint, {Map<String, dynamic>? body}) async {
+  // 通用 POST 请求，支持自定义 headers
+  static Future<dynamic> httpPost(String endpoint, {Map<String, dynamic>? body, Map<String, String>? headers}) async {
     try {
+      final requestHeaders = {
+        'Content-Type': 'application/json',
+        ...?headers,
+      };
       final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$_baseUrl$endpoint'),
+        headers: requestHeaders,
         body: body != null ? jsonEncode(body) : null,
       );
       if (response.statusCode == 200) {
@@ -172,5 +180,15 @@ class ApiService {
 
   static Future<Map<String, dynamic>?> getKnowledgeStats() async {
     return await httpGet('/knowledge/stats');
+  }
+
+  // 修改资金（需认证）
+  static Future<Map<String, dynamic>?> modifyFund(double amount, {String reason = ''}) async {
+    return await httpPost('/fund', body: {'amount': amount, 'reason': reason});
+  }
+
+  // 登录（兼容 auth_page.dart 调用）
+  static Future<Map<String, dynamic>?> login(String password) async {
+    return await authPassword(password);
   }
 }
