@@ -30,6 +30,41 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
     });
   }
 
+  Future<void> _liquidateAll() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('一键平仓'),
+        content: const Text('确定要清仓所有股票吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final result = await ApiService.liquidateAll();
+    if (result == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('一键平仓指令已发送'), backgroundColor: Colors.green),
+      );
+      // 刷新持仓数据
+      _loadData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('平仓失败'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -139,24 +174,42 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
           return const Center(child: Text('加载失败'));
         }
         final positions = snapshot.data!;
-        // positions 可能是一个 Map，键为股票代码，值为持仓详情
         if (positions.isEmpty) {
           return const Center(child: Text('暂无持仓'));
         }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: positions.length,
-          itemBuilder: (ctx, idx) {
-            final code = positions.keys.elementAt(idx);
-            final detail = positions[code];
-            return Card(
-              child: ListTile(
-                title: Text(code),
-                subtitle: Text('数量: ${detail['shares'] ?? 0}  成本: ${detail['cost'] ?? 0}'),
-                trailing: Text('浮动盈亏: ${detail['pnl']?.toStringAsFixed(2) ?? '0.00'}'),
+        return Column(
+          children: [
+            // 一键平仓按钮
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton.icon(
+                onPressed: _liquidateAll,
+                icon: const Icon(Icons.clean_hands),
+                label: const Text('一键平仓'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  minimumSize: const Size(double.infinity, 48),
+                ),
               ),
-            );
-          },
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: positions.length,
+                itemBuilder: (ctx, idx) {
+                  final code = positions.keys.elementAt(idx);
+                  final detail = positions[code];
+                  return Card(
+                    child: ListTile(
+                      title: Text(code),
+                      subtitle: Text('数量: ${detail['shares'] ?? 0}  成本: ${detail['cost'] ?? 0}'),
+                      trailing: Text('浮动盈亏: ${detail['pnl']?.toStringAsFixed(2) ?? '0.00'}'),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );

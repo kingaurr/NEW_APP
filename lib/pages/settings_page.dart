@@ -17,12 +17,23 @@ class _SettingsPageState extends State<SettingsPage> {
   String _mode = 'sim';
   bool _isLoading = false;
 
+  // 本地存储的配置项
+  String _reportContent = '实盘数据 + 进化周报'; // 报告内容选择
+  String _reportTime = '每日 09:00';           // 接收时间
+  String _focusStocks = '贵州茅台, 宁德时代';    // 重点关注标的
+  String _alertRules = '胜率低于40%';           // 预警规则
+  String _notificationMethod = 'APP推送';       // 通知方式
+  String _costBudget = '200元/月';              // 成本预算上限
+  String _appVersion = '1.0.0';                 // 版本号
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadLocalConfig();
   }
 
+  // 从后端加载系统设置（资金、模式等）
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
     try {
@@ -40,10 +51,27 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  // 从本地存储加载用户配置
+  Future<void> _loadLocalConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _reportContent = prefs.getString('reportContent') ?? '实盘数据 + 进化周报';
+      _reportTime = prefs.getString('reportTime') ?? '每日 09:00';
+      _focusStocks = prefs.getString('focusStocks') ?? '贵州茅台, 宁德时代';
+      _alertRules = prefs.getString('alertRules') ?? '胜率低于40%';
+      _notificationMethod = prefs.getString('notificationMethod') ?? 'APP推送';
+      _costBudget = prefs.getString('costBudget') ?? '200元/月';
+    });
+  }
+
+  // 保存字符串到本地存储
+  Future<void> _saveLocalConfig(String key, String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
   Future<void> _logout() async {
-    // 调用后端登出接口
     await ApiService.authLogout();
-    // 清除本地存储
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('password');
     await prefs.remove('remember_me');
@@ -58,7 +86,6 @@ class _SettingsPageState extends State<SettingsPage> {
       final result = await ApiService.modifyFund(newAmount, reason: '用户手动修改');
       if (result != null && result['success'] == true) {
         _showSnackBar('资金修改成功');
-        // 重新加载状态以更新显示
         await _loadSettings();
       } else {
         _showSnackBar('资金修改失败: ${result?['error'] ?? '未知错误'}', isError: true);
@@ -98,6 +125,77 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  // 通用编辑对话框
+  Future<void> _editConfigDialog({
+    required String title,
+    required String currentValue,
+    required String prefKey,
+    List<String>? options, // 如果有选项，则显示下拉选择
+  }) async {
+    TextEditingController controller = TextEditingController(text: currentValue);
+    String? selectedOption = currentValue;
+
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2C2C2C),
+        title: Text(title, style: const TextStyle(color: Color(0xFFD4AF37))),
+        content: options == null
+            ? TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: '请输入',
+                  hintStyle: TextStyle(color: Colors.white54),
+                ),
+                style: const TextStyle(color: Colors.white),
+              )
+            : DropdownButtonFormField<String>(
+                value: selectedOption,
+                items: options.map((opt) => DropdownMenuItem(
+                  value: opt,
+                  child: Text(opt, style: const TextStyle(color: Colors.white)),
+                )).toList(),
+                onChanged: (val) => selectedOption = val,
+                dropdownColor: const Color(0xFF1E1E1E),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newValue = options == null ? controller.text : selectedOption;
+              if (newValue == null || newValue.isEmpty) return;
+              await _saveLocalConfig(prefKey, newValue);
+              setState(() {
+                switch (prefKey) {
+                  case 'reportContent': _reportContent = newValue; break;
+                  case 'reportTime': _reportTime = newValue; break;
+                  case 'focusStocks': _focusStocks = newValue; break;
+                  case 'alertRules': _alertRules = newValue; break;
+                  case 'notificationMethod': _notificationMethod = newValue; break;
+                  case 'costBudget': _costBudget = newValue; break;
+                }
+              });
+              Navigator.pop(ctx);
+              _showSnackBar('设置已保存');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFB8860B),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,7 +213,7 @@ class _SettingsPageState extends State<SettingsPage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // 账户安全
+                // 账户安全（保持原有，不实现）
                 _buildSectionTitle('账户安全'),
                 const SizedBox(height: 8),
                 Card(
@@ -127,36 +225,27 @@ class _SettingsPageState extends State<SettingsPage> {
                         _buildSettingTile(
                           icon: Icons.lock,
                           title: '修改密码',
-                          onTap: () {
-                            // 跳转修改密码页面（待实现）
-                            _showSnackBar('修改密码功能待实现');
-                          },
+                          onTap: () => _showSnackBar('修改密码功能待实现'),
                         ),
                         _buildDivider(),
                         _buildSwitchTile(
                           icon: Icons.fingerprint,
                           title: '手势密码/指纹',
                           value: false,
-                          onChanged: (v) {
-                            _showSnackBar('手势密码功能待实现');
-                          },
+                          onChanged: (v) => _showSnackBar('手势密码功能待实现'),
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.phone,
                           title: '绑定手机号',
                           subtitle: _phone.isEmpty ? '未绑定' : _phone,
-                          onTap: () {
-                            _showSnackBar('绑定手机号功能待实现');
-                          },
+                          onTap: () => _showSnackBar('绑定手机号功能待实现'),
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.admin_panel_settings,
                           title: '白名单管理',
-                          onTap: () {
-                            _showSnackBar('白名单管理功能待实现');
-                          },
+                          onTap: () => _showSnackBar('白名单管理功能待实现'),
                         ),
                       ],
                     ),
@@ -182,15 +271,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         _buildSettingTile(
                           icon: Icons.edit,
                           title: '修改实盘金额',
-                          onTap: () => _showEditFundDialog(),
+                          onTap: _showEditFundDialog,
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.history,
                           title: '调整历史',
-                          onTap: () {
-                            _showSnackBar('调整历史功能待实现');
-                          },
+                          onTap: () => _showSnackBar('调整历史功能待实现'),
                         ),
                       ],
                     ),
@@ -198,7 +285,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 实盘参数配置
+                // 实盘参数配置（静态，暂不实现编辑）
                 _buildSectionTitle('实盘参数'),
                 const SizedBox(height: 8),
                 Card(
@@ -242,7 +329,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 报告配置
+                // 报告配置（已实现）
                 _buildSectionTitle('报告配置'),
                 const SizedBox(height: 8),
                 Card(
@@ -254,28 +341,36 @@ class _SettingsPageState extends State<SettingsPage> {
                         _buildSettingTile(
                           icon: Icons.receipt,
                           title: '报告内容选择',
-                          subtitle: '实盘数据 + 进化周报',
-                          onTap: () {
-                            _showSnackBar('报告配置功能待实现');
-                          },
+                          subtitle: _reportContent,
+                          onTap: () => _editConfigDialog(
+                            title: '报告内容选择',
+                            currentValue: _reportContent,
+                            prefKey: 'reportContent',
+                            options: ['实盘数据 + 进化周报', '仅实盘数据', '仅进化周报'],
+                          ),
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.schedule,
                           title: '接收时间',
-                          subtitle: '每日 09:00',
-                          onTap: () {
-                            _showSnackBar('接收时间功能待实现');
-                          },
+                          subtitle: _reportTime,
+                          onTap: () => _editConfigDialog(
+                            title: '接收时间',
+                            currentValue: _reportTime,
+                            prefKey: 'reportTime',
+                            options: ['每日 09:00', '每日 18:00', '每日 21:00'],
+                          ),
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.star,
                           title: '重点关注标的',
-                          subtitle: '贵州茅台, 宁德时代',
-                          onTap: () {
-                            _showSnackBar('重点关注标的功能待实现');
-                          },
+                          subtitle: _focusStocks,
+                          onTap: () => _editConfigDialog(
+                            title: '重点关注标的',
+                            currentValue: _focusStocks,
+                            prefKey: 'focusStocks',
+                          ),
                         ),
                       ],
                     ),
@@ -283,7 +378,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 预警配置
+                // 预警配置（已实现）
                 _buildSectionTitle('预警配置'),
                 const SizedBox(height: 8),
                 Card(
@@ -295,19 +390,24 @@ class _SettingsPageState extends State<SettingsPage> {
                         _buildSettingTile(
                           icon: Icons.notifications,
                           title: '预警规则',
-                          subtitle: '胜率低于40%等',
-                          onTap: () {
-                            _showSnackBar('预警规则功能待实现');
-                          },
+                          subtitle: _alertRules,
+                          onTap: () => _editConfigDialog(
+                            title: '预警规则',
+                            currentValue: _alertRules,
+                            prefKey: 'alertRules',
+                          ),
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.notifications_active,
                           title: '通知方式',
-                          subtitle: 'APP推送',
-                          onTap: () {
-                            _showSnackBar('通知方式功能待实现');
-                          },
+                          subtitle: _notificationMethod,
+                          onTap: () => _editConfigDialog(
+                            title: '通知方式',
+                            currentValue: _notificationMethod,
+                            prefKey: 'notificationMethod',
+                            options: ['APP推送', '短信', '邮件'],
+                          ),
                         ),
                       ],
                     ),
@@ -340,18 +440,33 @@ class _SettingsPageState extends State<SettingsPage> {
                         _buildSettingTile(
                           icon: Icons.attach_money,
                           title: '成本预算上限',
-                          subtitle: '200元/月',
-                          onTap: () {
-                            _showSnackBar('成本预算功能待实现');
-                          },
+                          subtitle: _costBudget,
+                          onTap: () => _editConfigDialog(
+                            title: '成本预算上限',
+                            currentValue: _costBudget,
+                            prefKey: 'costBudget',
+                          ),
                         ),
                         _buildDivider(),
                         _buildSettingTile(
                           icon: Icons.info,
                           title: '关于',
-                          subtitle: '版本 1.0.0',
+                          subtitle: '版本 $_appVersion',
                           onTap: () {
-                            _showSnackBar('关于页面待实现');
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: const Color(0xFF2C2C2C),
+                                title: const Text('关于', style: TextStyle(color: Color(0xFFD4AF37))),
+                                content: Text('AI量化交易系统\n版本 $_appVersion\n\n版权所有 © 2026'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('确定', style: TextStyle(color: Colors.white70)),
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -383,6 +498,15 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  // 以下辅助方法保持不变
+  Widget _buildSectionTitle(String title) { /* ... */ }
+  Widget _buildSettingTile({required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) { /* ... */ }
+  Widget _buildInfoTile({required IconData icon, required String title, required String value}) { /* ... */ }
+  Widget _buildSwitchTile({required IconData icon, required String title, required bool value, required ValueChanged<bool> onChanged}) { /* ... */ }
+  Widget _buildDivider() { /* ... */ }
+  void _showEditFundDialog() { /* 保持不变 */ }
+
+  // 省略重复代码，实际替换时请保留原有实现
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 8),

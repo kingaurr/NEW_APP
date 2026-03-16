@@ -1,5 +1,6 @@
 // lib/pages/strategies_page.dart
 import 'package:flutter/material.dart';
+import '../api_service.dart';
 import 'strategy_detail_page.dart';
 
 class StrategiesPage extends StatefulWidget {
@@ -10,57 +11,22 @@ class StrategiesPage extends StatefulWidget {
 }
 
 class _StrategiesPageState extends State<StrategiesPage> {
-  late Future<Map<String, dynamic>> _aiStatus;
-  late Future<List<dynamic>> _strategies;
+  late Future<Map<String, dynamic>?> _aiStatus;
+  late Future<Map<String, dynamic>?> _learningProgress;
+  late Future<List<dynamic>?> _strategies;
 
   @override
   void initState() {
     super.initState();
-    _aiStatus = _fetchAIStatus();
-    _strategies = _fetchStrategies();
+    _loadData();
   }
 
-  Future<Map<String, dynamic>> _fetchAIStatus() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {
-      'version': '1.2.0',
-      'last_update': '2025-03-14',
-      'right_brain': 'deepseek-v3',
-      'left_brain': 'qwen-plus',
-      'today_calls': 125,
-      'total_cost': 2.35,
-      'health_score': 85,
-    };
-  }
-
-  Future<List<dynamic>> _fetchStrategies() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    return [
-      {
-        'name': '均线突破',
-        'type': '趋势',
-        'market': '震荡',
-        'win_rate': 0.68,
-        'profit_ratio': 1.8,
-        'real_trades': 23,
-      },
-      {
-        'name': 'RSI超卖',
-        'type': '反转',
-        'market': '下跌',
-        'win_rate': 0.55,
-        'profit_ratio': 1.2,
-        'real_trades': 17,
-      },
-      {
-        'name': '放量突破',
-        'type': '趋势',
-        'market': '牛市',
-        'win_rate': 0.72,
-        'profit_ratio': 2.1,
-        'real_trades': 31,
-      },
-    ];
+  void _loadData() {
+    setState(() {
+      _aiStatus = ApiService.getAIStatus();
+      _learningProgress = ApiService.getLearningProgress();
+      _strategies = ApiService.getStrategies();
+    });
   }
 
   @override
@@ -71,16 +37,13 @@ class _StrategiesPageState extends State<StrategiesPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          setState(() {
-            _aiStatus = _fetchAIStatus();
-            _strategies = _fetchStrategies();
-          });
+          _loadData();
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             // AI 状态卡片
-            FutureBuilder<Map<String, dynamic>>(
+            FutureBuilder<Map<String, dynamic>?>(
               future: _aiStatus,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -91,13 +54,11 @@ class _StrategiesPageState extends State<StrategiesPage> {
                     ),
                   );
                 }
-                if (snapshot.hasError) {
+                if (snapshot.hasError || snapshot.data == null) {
                   return Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: Text('加载失败: ${snapshot.error}'),
-                      ),
+                      child: Center(child: Text('加载失败: ${snapshot.error ?? '未知错误'}')),
                     ),
                   );
                 }
@@ -119,29 +80,8 @@ class _StrategiesPageState extends State<StrategiesPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('最近更新'),
-                            Text(data['last_update'] ?? ''),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Expanded(child: Text('右脑模型')),
-                            Text(data['right_brain'] ?? ''),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Expanded(child: Text('左脑模型')),
-                            Text(data['left_brain'] ?? ''),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('今日调用'),
-                            Text('${data['today_calls'] ?? 0} 次'),
+                            const Text('调用次数'),
+                            Text('${data['total_calls'] ?? 0} 次'),
                           ],
                         ),
                         Row(
@@ -154,17 +94,17 @@ class _StrategiesPageState extends State<StrategiesPage> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Text('模型健康度'),
+                            const Text('健康度'),
                             const SizedBox(width: 8),
                             Expanded(
                               child: LinearProgressIndicator(
-                                value: (data['health_score'] ?? 0) / 100,
+                                value: data['health'] == 'good' ? 1.0 : 0.5,
                                 backgroundColor: Colors.grey[800],
                                 valueColor: const AlwaysStoppedAnimation(Colors.green),
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text('${data['health_score'] ?? 0}%'),
+                            Text(data['health'] ?? 'unknown'),
                           ],
                         ),
                       ],
@@ -176,64 +116,93 @@ class _StrategiesPageState extends State<StrategiesPage> {
             const SizedBox(height: 16),
 
             // 学习进度卡片
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('学习进度', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    ListTile(
-                      leading: Icon(Icons.sync, color: Color(0xFFD4AF37)),
-                      title: Text('离线训练'),
-                      subtitle: Text('上次训练: 2025-03-13, 样本数: 15234'),
-                      trailing: Text('就绪', style: TextStyle(color: Colors.green)),
+            FutureBuilder<Map<String, dynamic>?>(
+              future: _learningProgress,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
-                    ListTile(
-                      leading: Icon(Icons.storage, color: Color(0xFFD4AF37)),
-                      title: Text('在线学习缓存'),
-                      subtitle: Text('样本数: 87, 下次触发: 13样本后'),
+                  );
+                }
+                if (snapshot.hasError || snapshot.data == null) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(child: Text('加载失败: ${snapshot.error ?? '未知错误'}')),
                     ),
-                    ListTile(
-                      leading: Icon(Icons.sports_esports, color: Color(0xFFD4AF37)),
-                      title: Text('红蓝军演习'),
-                      subtitle: Text('上次: 2025-03-14, 生成规则: 3条'),
+                  );
+                }
+                final data = snapshot.data!;
+                final offline = data['offline'] ?? {};
+                final online = data['online'] ?? {};
+                final wargame = data['wargame'] ?? {};
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('学习进度', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        ListTile(
+                          leading: const Icon(Icons.sync, color: Color(0xFFD4AF37)),
+                          title: const Text('离线训练'),
+                          subtitle: Text('上次训练: ${offline['last_train_time'] ?? '无'}, 样本数: ${offline['samples'] ?? 0}'),
+                          trailing: Text(offline['last_train_time'] != null ? '就绪' : '未运行', 
+                                         style: TextStyle(color: offline['last_train_time'] != null ? Colors.green : Colors.grey)),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.storage, color: Color(0xFFD4AF37)),
+                          title: const Text('在线学习缓存'),
+                          subtitle: Text('样本数: ${online['cache_size'] ?? 0}'),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.sports_esports, color: Color(0xFFD4AF37)),
+                          title: const Text('红蓝军演习'),
+                          subtitle: Text('上次: ${wargame['last_time'] ?? '无'}, 生成规则: ${wargame['rules_generated'] ?? 0}条'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
 
             // 策略列表
             const Text('策略库', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            FutureBuilder<List<dynamic>>(
+            FutureBuilder<List<dynamic>?>(
               future: _strategies,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasError) {
-                  return Center(child: Text('加载失败: ${snapshot.error}'));
+                if (snapshot.hasError || snapshot.data == null) {
+                  return Center(child: Text('加载失败: ${snapshot.error ?? '未知错误'}'));
                 }
                 final strategies = snapshot.data!;
+                if (strategies.isEmpty) {
+                  return const Center(child: Text('暂无策略'));
+                }
                 return Column(
                   children: strategies.map((s) => Card(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     child: ListTile(
-                      title: Text(s['name']),
-                      subtitle: Text('${s['type']} · ${s['market']} · 实盘验证 ${s['real_trades']}次'),
+                      title: Text(s['name'] ?? '未知'),
+                      subtitle: Text('${s['type'] ?? '未知'} · ${s['market'] ?? 'all'} · 实盘验证 ${s['real_trades'] ?? 0}次'),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '胜率 ${(s['win_rate']*100).toStringAsFixed(0)}%',
+                            '胜率 ${s['win_rate'] != null ? (s['win_rate']*100).toStringAsFixed(0) : '0'}%',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Text('盈亏比 ${s['profit_ratio']}'),
+                          Text('盈亏比 ${s['profit_ratio']?.toStringAsFixed(2) ?? '0.00'}'),
                         ],
                       ),
                       onTap: () {

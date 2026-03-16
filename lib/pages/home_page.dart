@@ -13,7 +13,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Map<String, dynamic> _status = {};
   List<String> _alerts = [];
-  bool _hasAiAdvice = true;
+  bool _hasAiAdvice = false;
 
   @override
   void initState() {
@@ -23,18 +23,21 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchData() async {
     try {
-      // 从后端获取真实系统状态
       final status = await ApiService.getStatus();
       if (status != null) {
         setState(() {
           _status = status;
         });
       }
-
-      // TODO: 从后端获取告警列表和AI建议状态（后续添加相应接口）
+      // 获取告警列表
+      final alerts = await ApiService.getAlerts();
       setState(() {
-        _alerts = ['数据源新浪财经连接超时', '内存使用率超过85%']; // 暂为模拟
-        _hasAiAdvice = true;
+        _alerts = alerts;
+      });
+      // 获取AI建议状态
+      final hasAdvice = await ApiService.hasNewAiAdvice();
+      setState(() {
+        _hasAiAdvice = hasAdvice;
       });
     } catch (e) {
       print('主页数据加载失败: $e');
@@ -61,7 +64,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
     if (confirmed == true) {
-      // 调用紧急停止API（需要紧急令牌，这里用默认值，应与后端一致）
       const emergencyToken = 'change_me_in_prod';
       final response = await ApiService.httpPost(
         '/emergency_stop',
@@ -83,15 +85,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final mode = _status['mode'] ?? 'sim';
-    final heartRate = _status['heart_rate'] ?? 60; // 后端可能没有心率字段，可改用其他指标或移除
+    final heartRate = _status['heart_rate'] ?? 60;
     final cpu = _status['cpu_percent'] ?? 0;
     final memory = _status['memory_percent'] ?? 0;
-    final disk = _status['disk_usage'] ?? 0; // 可能需要调整字段名
+    final disk = _status['disk_usage'] ?? 0;
     final currentTime = DateTime.now();
     final isTradingTime = _isTradingTime(currentTime);
 
     final totalAsset = _status['fund'] ?? 0.0;
-    final available = _status['available_fund'] ?? 0.0; // 从 fund_manager 获取可能需扩展
+    final available = _status['available_fund'] ?? 0.0;
     final positionValue = _status['position_value'] ?? 0.0;
     final dailyProfit = _status['today_pnl'] ?? 0.0;
     final dailyProfitPercent = totalAsset > 0 ? (dailyProfit / totalAsset) * 100 : 0.0;
@@ -286,7 +288,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // 模式切换待实现
+                      // 模式切换待实现（可后续通过接口实现）
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('模式切换功能待实现')),
                       );
@@ -328,7 +330,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMiniChart() {
-    // 简单资金曲线模拟（如需真实数据，可调用资金历史接口）
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: false),

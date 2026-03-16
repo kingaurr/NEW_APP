@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 /// API 服务类，封装所有后端接口调用
 class ApiService {
-  static String _baseUrl = 'http://192.168.1.100:8080/api'; // 默认值
+  static String _baseUrl = 'http://47.108.206.221:8080/api'; // 已修改为您的服务器IP
 
   static void setBaseUrl(String url) {
     _baseUrl = url;
@@ -161,7 +161,7 @@ class ApiService {
     return await httpGet('/candidates');
   }
 
-  // ---------- 新增接口 ----------
+  // ---------- 新增接口（AI状态等）----------
   static Future<Map<String, dynamic>?> getAIStatus() async {
     return await httpGet('/ai/status');
   }
@@ -190,5 +190,118 @@ class ApiService {
   // 登录（兼容 auth_page.dart 调用）
   static Future<Map<String, dynamic>?> login(String password) async {
     return await authPassword(password);
+  }
+
+  // ---------- 新增：主页告警和AI建议 ----------
+  static Future<List<String>> getAlerts() async {
+    // 模拟告警数据，可从后端获取
+    await Future.delayed(const Duration(milliseconds: 300));
+    return ['数据源新浪财经连接超时', '内存使用率超过85%'];
+  }
+
+  static Future<bool> hasNewAiAdvice() async {
+    // 模拟是否有新建议
+    await Future.delayed(const Duration(milliseconds: 200));
+    return true;
+  }
+
+  // ---------- 新增：AI优化建议中心 ----------
+  static Future<List<dynamic>> getPendingAdvices() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return [
+      {
+        'id': 'adv_001',
+        'type': '规则',
+        'summary': '提高均线突破策略的置信度阈值',
+        'expected_profit': '+2.3%',
+        'confidence': 0.85,
+        'created_at': '10:23',
+      },
+      {
+        'id': 'adv_002',
+        'type': '参数',
+        'summary': '降低RSI超卖策略的买入仓位',
+        'expected_profit': '+1.1%',
+        'confidence': 0.72,
+        'created_at': '09:15',
+      },
+      {
+        'id': 'adv_003',
+        'type': '策略',
+        'summary': '新增“放量突破后回调”策略',
+        'expected_profit': '+3.5%',
+        'confidence': 0.91,
+        'created_at': '昨天',
+      },
+    ];
+  }
+
+  static Future<List<dynamic>> getHistoryAdvices() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return [
+      {
+        'id': 'adv_000',
+        'type': '规则',
+        'summary': '优化止损比例',
+        'result': '执行后胜率+1.5%',
+        'executed_at': '2025-03-14',
+      },
+    ];
+  }
+
+  static Future<bool> resolveAdvice(String adviceId, String decision) async {
+    // 模拟处理建议（同意/拒绝）
+    await Future.delayed(const Duration(milliseconds: 500));
+    debugPrint('处理建议 $adviceId，决策：$decision');
+    return true; // 模拟成功
+  }
+
+  // ---------- 新增：知识库各标签页 ----------
+  static Future<List<dynamic>> getRules() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return [
+      {'id': 'R001', 'desc': 'if ma5 > ma20 then buy', 'winRate': '胜率 68%', 'status': '生效'},
+      {'id': 'R002', 'desc': 'if rsi < 30 then buy', 'winRate': '胜率 55%', 'status': '生效'},
+      {'id': 'R003', 'desc': 'if volume > volume_ma5*1.5 then buy', 'winRate': '胜率 42%', 'status': '冲突'},
+      {'id': 'R004', 'desc': 'if close < boll_lower then buy', 'winRate': '胜率 71%', 'status': '生效'},
+    ];
+  }
+
+  static Future<List<dynamic>> getCases() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return [
+      {'title': '贵州茅台 (600519)', 'date': '2025-01-15', 'desc': '放量突破前高，后续涨幅30%', 'type': 'good'},
+      {'title': '宁德时代 (300750)', 'date': '2025-02-03', 'desc': 'MACD底背离，反弹20%', 'type': 'good'},
+      {'title': '东方财富 (300059)', 'date': '2025-02-28', 'desc': '高位放量滞涨，后续跌15%', 'type': 'bad'},
+      {'title': '中国平安 (601318)', 'date': '2025-03-01', 'desc': '跌破年线后加速下跌', 'type': 'bad'},
+    ];
+  }
+
+  static Future<List<dynamic>> getFailures() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return [
+      {'code': '000001', 'date': '2025-03-10', 'reason': '追高被套', 'loss': 1234, 'similar': '当前持仓中 000858 形态与失败案例 000001 相似，建议谨慎'},
+      {'code': '600036', 'date': '2025-03-09', 'reason': '卖飞牛股', 'loss': -2345}, // loss 为负表示少赚
+      {'code': '601318', 'date': '2025-03-08', 'reason': '震荡市追涨', 'loss': 567},
+    ];
+  }
+
+  static Future<Map<String, dynamic>> getConfig() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    return {
+      'experts': [
+        {'name': '张三', 'detail': '趋势交易', 'status': '已启用'},
+        {'name': '李四', 'detail': '量化模型', 'status': '已启用'},
+        {'name': '王五', 'detail': '宏观分析', 'status': '未启用'},
+      ],
+      'books': [
+        {'name': '海龟交易法则', 'detail': '规则数: 12', 'status': '已导入'},
+        {'name': '股票大作手', 'detail': '规则数: 8', 'status': '已导入'},
+      ],
+      'keywords': [
+        {'name': '震荡市', 'detail': '低吸 +5%, 追高 -3%', 'weight': 0.8},
+        {'name': '牛市', 'detail': '追涨 +8%', 'weight': 1.2},
+      ],
+    };
   }
 }
