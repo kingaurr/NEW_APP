@@ -1,4 +1,4 @@
-// api_service.dart
+// lib/api_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
@@ -161,7 +161,7 @@ class ApiService {
     return await httpGet('/candidates');
   }
 
-  // ---------- 新增接口（AI状态等）----------
+  // ---------- 新增接口 ----------
   static Future<Map<String, dynamic>?> getAIStatus() async {
     return await httpGet('/ai/status');
   }
@@ -192,20 +192,18 @@ class ApiService {
     return await authPassword(password);
   }
 
-  // ---------- 新增：主页告警和AI建议 ----------
+  // 主页告警和AI建议
   static Future<List<String>> getAlerts() async {
-    // 模拟告警数据，可从后端获取
     await Future.delayed(const Duration(milliseconds: 300));
     return ['数据源新浪财经连接超时', '内存使用率超过85%'];
   }
 
   static Future<bool> hasNewAiAdvice() async {
-    // 模拟是否有新建议
     await Future.delayed(const Duration(milliseconds: 200));
     return true;
   }
 
-  // ---------- 新增：AI优化建议中心 ----------
+  // AI优化建议中心
   static Future<List<dynamic>> getPendingAdvices() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return [
@@ -250,13 +248,12 @@ class ApiService {
   }
 
   static Future<bool> resolveAdvice(String adviceId, String decision) async {
-    // 模拟处理建议（同意/拒绝）
     await Future.delayed(const Duration(milliseconds: 500));
     debugPrint('处理建议 $adviceId，决策：$decision');
-    return true; // 模拟成功
+    return true;
   }
 
-  // ---------- 新增：知识库各标签页 ----------
+  // 知识库各标签页
   static Future<List<dynamic>> getRules() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return [
@@ -281,7 +278,7 @@ class ApiService {
     await Future.delayed(const Duration(milliseconds: 400));
     return [
       {'code': '000001', 'date': '2025-03-10', 'reason': '追高被套', 'loss': 1234, 'similar': '当前持仓中 000858 形态与失败案例 000001 相似，建议谨慎'},
-      {'code': '600036', 'date': '2025-03-09', 'reason': '卖飞牛股', 'loss': -2345}, // loss 为负表示少赚
+      {'code': '600036', 'date': '2025-03-09', 'reason': '卖飞牛股', 'loss': -2345},
       {'code': '601318', 'date': '2025-03-08', 'reason': '震荡市追涨', 'loss': 567},
     ];
   }
@@ -303,5 +300,13 @@ class ApiService {
         {'name': '牛市', 'detail': '追涨 +8%', 'weight': 1.2},
       ],
     };
+  }
+
+  // ---------- 新增：一键平仓 ----------
+  static Future<bool> liquidateAll() async {
+    // 模拟一键平仓
+    await Future.delayed(const Duration(milliseconds: 500));
+    debugPrint('一键平仓指令已发送（模拟）');
+    return true;
   }
 }

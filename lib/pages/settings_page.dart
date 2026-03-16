@@ -18,13 +18,13 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoading = false;
 
   // 本地存储的配置项
-  String _reportContent = '实盘数据 + 进化周报'; // 报告内容选择
-  String _reportTime = '每日 09:00';           // 接收时间
-  String _focusStocks = '贵州茅台, 宁德时代';    // 重点关注标的
-  String _alertRules = '胜率低于40%';           // 预警规则
-  String _notificationMethod = 'APP推送';       // 通知方式
-  String _costBudget = '200元/月';              // 成本预算上限
-  String _appVersion = '1.0.0';                 // 版本号
+  String _reportContent = '实盘数据 + 进化周报';
+  String _reportTime = '每日 09:00';
+  String _focusStocks = '贵州茅台, 宁德时代';
+  String _alertRules = '胜率低于40%';
+  String _notificationMethod = 'APP推送';
+  String _costBudget = '200元/月';
+  String _appVersion = '1.0.0';
 
   @override
   void initState() {
@@ -130,7 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required String currentValue,
     required String prefKey,
-    List<String>? options, // 如果有选项，则显示下拉选择
+    List<String>? options,
   }) async {
     TextEditingController controller = TextEditingController(text: currentValue);
     String? selectedOption = currentValue;
@@ -213,7 +213,7 @@ class _SettingsPageState extends State<SettingsPage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // 账户安全（保持原有，不实现）
+                // 账户安全
                 _buildSectionTitle('账户安全'),
                 const SizedBox(height: 8),
                 Card(
@@ -285,7 +285,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 实盘参数配置（静态，暂不实现编辑）
+                // 实盘参数配置（静态）
                 _buildSectionTitle('实盘参数'),
                 const SizedBox(height: 8),
                 Card(
@@ -498,15 +498,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 以下辅助方法保持不变
-  Widget _buildSectionTitle(String title) { /* ... */ }
-  Widget _buildSettingTile({required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) { /* ... */ }
-  Widget _buildInfoTile({required IconData icon, required String title, required String value}) { /* ... */ }
-  Widget _buildSwitchTile({required IconData icon, required String title, required bool value, required ValueChanged<bool> onChanged}) { /* ... */ }
-  Widget _buildDivider() { /* ... */ }
-  void _showEditFundDialog() { /* 保持不变 */ }
-
-  // 省略重复代码，实际替换时请保留原有实现
+  // ---------- 辅助构建函数（只定义一次）----------
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
