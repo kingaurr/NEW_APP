@@ -31,19 +31,24 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
   }
 
   Future<void> _liquidateAll() async {
+    final theme = Theme.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('一键平仓'),
+        backgroundColor: theme.dialogBackgroundColor,
+        title: Text('一键平仓', style: theme.textTheme.titleMedium),
         content: const Text('确定要清仓所有股票吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text('取消', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             child: const Text('确定'),
           ),
         ],
@@ -54,13 +59,18 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
     final result = await ApiService.liquidateAll();
     if (result == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('一键平仓指令已发送'), backgroundColor: Colors.green),
+        SnackBar(
+          content: const Text('一键平仓指令已发送'),
+          backgroundColor: theme.colorScheme.primary,
+        ),
       );
-      // 刷新持仓数据
       _loadData();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('平仓失败'), backgroundColor: Colors.red),
+        SnackBar(
+          content: const Text('平仓失败'),
+          backgroundColor: theme.colorScheme.error,
+        ),
       );
     }
   }
@@ -73,6 +83,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('交易监控'),
@@ -92,9 +103,9 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
         child: TabBarView(
           controller: _tabController,
           children: [
-            _buildCandidatesTab(),
-            _buildPositionsTab(),
-            _buildOrdersTab(),
+            _buildCandidatesTab(theme),
+            _buildPositionsTab(theme),
+            _buildOrdersTab(theme),
           ],
         ),
       ),
@@ -102,7 +113,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
   }
 
   // ---------- 选股池标签页 ----------
-  Widget _buildCandidatesTab() {
+  Widget _buildCandidatesTab(ThemeData theme) {
     return FutureBuilder<Map<String, dynamic>?>(
       future: _candidatesFuture,
       builder: (context, snapshot) {
@@ -110,7 +121,12 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('加载失败'));
+          return Center(
+            child: Text(
+              '加载失败',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+            ),
+          );
         }
         final data = snapshot.data!;
         final tradePool = data['trade_pool'] as List<dynamic>? ?? [];
@@ -121,14 +137,22 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
           children: [
             // 交易池
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('交易池', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      '交易池',
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
-                    ...tradePool.map((item) => _buildCandidateItem(item)).toList(),
+                    if (tradePool.isEmpty)
+                      Text('暂无', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                    else
+                      ...tradePool.map((item) => _buildCandidateItem(theme, item)).toList(),
                   ],
                 ),
               ),
@@ -136,14 +160,22 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
             const SizedBox(height: 16),
             // 影子池
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('影子池', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      '影子池',
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
-                    ...shadowPool.map((code) => Text(code)).toList(),
+                    if (shadowPool.isEmpty)
+                      Text('暂无', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                    else
+                      ...shadowPool.map((code) => _buildShadowItem(theme, code)).toList(),
                   ],
                 ),
               ),
@@ -154,16 +186,50 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
     );
   }
 
-  Widget _buildCandidateItem(Map<String, dynamic> item) {
-    return ListTile(
-      title: Text(item['code'] ?? ''),
-      subtitle: Text('得分: ${item['score'] ?? 0}'),
-      trailing: Text(item['reason'] ?? ''),
+  Widget _buildCandidateItem(ThemeData theme, Map<String, dynamic> item) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              item['code'] ?? '',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '得分: ${item['score'] ?? 0}',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            item['reason'] ?? '',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShadowItem(ThemeData theme, dynamic code) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        code.toString(),
+        style: theme.textTheme.bodyMedium,
+      ),
     );
   }
 
   // ---------- 持仓标签页 ----------
-  Widget _buildPositionsTab() {
+  Widget _buildPositionsTab(ThemeData theme) {
     return FutureBuilder<Map<String, dynamic>?>(
       future: _positionsFuture,
       builder: (context, snapshot) {
@@ -171,11 +237,21 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('加载失败'));
+          return Center(
+            child: Text(
+              '加载失败',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+            ),
+          );
         }
         final positions = snapshot.data!;
         if (positions.isEmpty) {
-          return const Center(child: Text('暂无持仓'));
+          return Center(
+            child: Text(
+              '暂无持仓',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          );
         }
         return Column(
           children: [
@@ -187,7 +263,8 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
                 icon: const Icon(Icons.clean_hands),
                 label: const Text('一键平仓'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: theme.colorScheme.error,
+                  foregroundColor: theme.colorScheme.onError,
                   minimumSize: const Size(double.infinity, 48),
                 ),
               ),
@@ -198,12 +275,49 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
                 itemCount: positions.length,
                 itemBuilder: (ctx, idx) {
                   final code = positions.keys.elementAt(idx);
-                  final detail = positions[code];
+                  final detail = positions[code] as Map<String, dynamic>? ?? {};
+                  final shares = detail['shares'] ?? 0;
+                  final cost = detail['cost'] ?? 0.0;
+                  final pnl = detail['pnl'] ?? 0.0;
                   return Card(
-                    child: ListTile(
-                      title: Text(code),
-                      subtitle: Text('数量: ${detail['shares'] ?? 0}  成本: ${detail['cost'] ?? 0}'),
-                      trailing: Text('浮动盈亏: ${detail['pnl']?.toStringAsFixed(2) ?? '0.00'}'),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  code,
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: (pnl >= 0 ? theme.colorScheme.primary : theme.colorScheme.error).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${pnl >= 0 ? '+' : ''}${pnl.toStringAsFixed(2)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: pnl >= 0 ? theme.colorScheme.primary : theme.colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '数量: $shares  成本: ¥${cost.toStringAsFixed(2)}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -216,7 +330,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
   }
 
   // ---------- 委托标签页 ----------
-  Widget _buildOrdersTab() {
+  Widget _buildOrdersTab(ThemeData theme) {
     return FutureBuilder<List<dynamic>?>(
       future: _ordersFuture,
       builder: (context, snapshot) {
@@ -224,27 +338,89 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('加载失败'));
+          return Center(
+            child: Text(
+              '加载失败',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+            ),
+          );
         }
         final orders = snapshot.data!;
         if (orders.isEmpty) {
-          return const Center(child: Text('暂无委托记录'));
+          return Center(
+            child: Text(
+              '暂无委托记录',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          );
         }
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: orders.length,
           itemBuilder: (ctx, index) {
-            final order = orders[index];
+            final order = orders[index] as Map<String, dynamic>? ?? {};
+            final code = order['code'] ?? '';
+            final action = order['action'] ?? '';
+            final shares = order['shares'] ?? 0;
+            final price = order['price'] ?? 0.0;
+            final status = order['status'] ?? '';
             return Card(
-              child: ListTile(
-                title: Text('${order['code'] ?? ''}  ${order['action'] ?? ''}'),
-                subtitle: Text('数量: ${order['shares'] ?? 0}  价格: ${order['price'] ?? 0}'),
-                trailing: Text(order['status'] ?? ''),
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '$code  $action',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _statusColor(theme, status).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            status,
+                            style: theme.textTheme.bodySmall?.copyWith(color: _statusColor(theme, status)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '数量: $shares  价格: ¥${price.toStringAsFixed(2)}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             );
           },
         );
       },
     );
+  }
+
+  Color _statusColor(ThemeData theme, String status) {
+    switch (status) {
+      case 'filled':
+        return theme.colorScheme.primary;
+      case 'pending':
+        return Colors.orange;
+      case 'canceled':
+        return theme.colorScheme.onSurfaceVariant;
+      case 'rejected':
+        return theme.colorScheme.error;
+      default:
+        return theme.colorScheme.onSurfaceVariant;
+    }
   }
 }

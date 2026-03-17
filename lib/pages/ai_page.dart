@@ -32,6 +32,7 @@ class _AiPageState extends State<AiPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return RefreshIndicator(
       onRefresh: () async {
         _loadData();
@@ -41,12 +42,17 @@ class _AiPageState extends State<AiPage> {
         children: [
           // AI状态卡片
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('AI 状态', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    'AI 状态',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   FutureBuilder<Map<String, dynamic>?>(
                     future: _aiStatusFuture,
@@ -55,15 +61,18 @@ class _AiPageState extends State<AiPage> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError || snapshot.data == null) {
-                        return const Text('加载失败');
+                        return Text(
+                          '加载失败',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                        );
                       }
                       final data = snapshot.data!;
                       return Column(
                         children: [
-                          _buildInfoRow('版本', data['version'] ?? '未知'),
-                          _buildInfoRow('调用次数', '${data['total_calls'] ?? 0}'),
-                          _buildInfoRow('累计成本', '¥${data['total_cost']?.toStringAsFixed(2) ?? '0.00'}'),
-                          _buildInfoRow('健康度', data['health'] ?? '未知'),
+                          _buildInfoRow(theme, '版本', data['version'] ?? '未知'),
+                          _buildInfoRow(theme, '调用次数', '${data['total_calls'] ?? 0}'),
+                          _buildInfoRow(theme, '累计成本', '¥${data['total_cost']?.toStringAsFixed(2) ?? '0.00'}'),
+                          _buildInfoRow(theme, '健康度', data['health'] ?? '未知'),
                         ],
                       );
                     },
@@ -76,12 +85,17 @@ class _AiPageState extends State<AiPage> {
 
           // 学习进度卡片
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('学习进度', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    '学习进度',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   FutureBuilder<Map<String, dynamic>?>(
                     future: _learningProgressFuture,
@@ -90,7 +104,10 @@ class _AiPageState extends State<AiPage> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError || snapshot.data == null) {
-                        return const Text('加载失败');
+                        return Text(
+                          '加载失败',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                        );
                       }
                       final data = snapshot.data!;
                       final offline = data['offline'] ?? {};
@@ -98,11 +115,11 @@ class _AiPageState extends State<AiPage> {
                       final wargame = data['wargame'] ?? {};
                       return Column(
                         children: [
-                          _buildInfoRow('离线训练时间', offline['last_train_time'] ?? '无'),
-                          _buildInfoRow('离线样本数', '${offline['samples'] ?? 0}'),
-                          _buildInfoRow('在线缓存数', '${online['cache_size'] ?? 0}'),
-                          _buildInfoRow('演习时间', wargame['last_time'] ?? '无'),
-                          _buildInfoRow('演习生成规则', '${wargame['rules_generated'] ?? 0}'),
+                          _buildInfoRow(theme, '离线训练时间', offline['last_train_time'] ?? '无'),
+                          _buildInfoRow(theme, '离线样本数', '${offline['samples'] ?? 0}'),
+                          _buildInfoRow(theme, '在线缓存数', '${online['cache_size'] ?? 0}'),
+                          _buildInfoRow(theme, '演习时间', wargame['last_time'] ?? '无'),
+                          _buildInfoRow(theme, '演习生成规则', '${wargame['rules_generated'] ?? 0}'),
                         ],
                       );
                     },
@@ -115,12 +132,17 @@ class _AiPageState extends State<AiPage> {
 
           // 红蓝军演习摘要卡片
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('最近演习摘要', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    '最近演习摘要',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   FutureBuilder<Map<String, dynamic>?>(
                     future: _warGameFuture,
@@ -129,14 +151,17 @@ class _AiPageState extends State<AiPage> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError || snapshot.data == null) {
-                        return const Text('加载失败');
+                        return Text(
+                          '加载失败',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                        );
                       }
                       final data = snapshot.data!;
                       return Column(
                         children: [
-                          _buildInfoRow('时间', data['time'] ?? '无'),
-                          _buildInfoRow('生成规则数', '${data['rules_generated'] ?? 0}'),
-                          _buildInfoRow('战损', '¥${data['loss']?.toStringAsFixed(2) ?? '0.00'}'),
+                          _buildInfoRow(theme, '时间', data['time'] ?? '无'),
+                          _buildInfoRow(theme, '生成规则数', '${data['rules_generated'] ?? 0}'),
+                          _buildInfoRow(theme, '战损', '¥${data['loss']?.toStringAsFixed(2) ?? '0.00'}'),
                         ],
                       );
                     },
@@ -149,12 +174,17 @@ class _AiPageState extends State<AiPage> {
 
           // 策略列表
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('策略列表', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    '策略列表',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   FutureBuilder<List<dynamic>?>(
                     future: _strategiesFuture,
@@ -163,14 +193,22 @@ class _AiPageState extends State<AiPage> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError || snapshot.data == null) {
-                        return const Text('加载失败');
+                        return Text(
+                          '加载失败',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                        );
                       }
                       final strategies = snapshot.data!;
                       if (strategies.isEmpty) {
-                        return const Text('暂无策略');
+                        return Center(
+                          child: Text(
+                            '暂无策略',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        );
                       }
                       return Column(
-                        children: strategies.map((s) => _buildStrategyItem(s)).toList(),
+                        children: strategies.map((s) => _buildStrategyItem(theme, s)).toList(),
                       );
                     },
                   ),
@@ -183,25 +221,31 @@ class _AiPageState extends State<AiPage> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(ThemeData theme, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStrategyItem(Map<String, dynamic> s) {
+  Widget _buildStrategyItem(ThemeData theme, Map<String, dynamic> s) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: theme.dividerColor),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -210,16 +254,29 @@ class _AiPageState extends State<AiPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s['name'] ?? '未知', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('类型: ${s['type'] ?? '未知'}  |  市场: ${s['market'] ?? 'all'}'),
+                Text(
+                  s['name'] ?? '未知',
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '类型: ${s['type'] ?? '未知'}  |  市场: ${s['market'] ?? 'all'}',
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('胜率: ${_formatPercent(s['win_rate'])}'),
-              Text('盈亏比: ${s['profit_ratio']?.toStringAsFixed(2) ?? '0.00'}'),
+              Text(
+                '胜率: ${_formatPercent(s['win_rate'])}',
+                style: theme.textTheme.bodyMedium,
+              ),
+              Text(
+                '盈亏比: ${s['profit_ratio']?.toStringAsFixed(2) ?? '0.00'}',
+                style: theme.textTheme.bodyMedium,
+              ),
             ],
           ),
         ],

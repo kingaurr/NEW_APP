@@ -7,6 +7,7 @@ class RuleDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(rule['id'] ?? '规则详情'),
@@ -15,22 +16,27 @@ class RuleDetailPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('规则内容', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    '规则内容',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey[900],
+                      color: theme.colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       rule['content'] ?? rule['desc'] ?? '无',
-                      style: const TextStyle(fontFamily: 'monospace'),
+                      style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
                     ),
                   ),
                 ],
@@ -39,16 +45,21 @@ class RuleDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('绩效统计', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    '绩效统计',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
-                  _buildInfoRow('胜率', rule['win_rate'] ?? '0%'),
-                  _buildInfoRow('使用次数', rule['usage']?.toString() ?? '0'),
-                  _buildInfoRow('状态', rule['status'] ?? '生效'),
+                  _buildInfoRow(theme, '胜率', rule['win_rate'] ?? '0%'),
+                  _buildInfoRow(theme, '使用次数', rule['usage']?.toString() ?? '0'),
+                  _buildInfoRow(theme, '状态', rule['status'] ?? '生效'),
                 ],
               ),
             ),
@@ -56,15 +67,26 @@ class RuleDetailPage extends StatelessWidget {
           if (rule['conflict'] != null) ...[
             const SizedBox(height: 16),
             Card(
-              color: Colors.red.shade900.withOpacity(0.2),
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: theme.colorScheme.errorContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('冲突检测', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
-                    const Divider(color: Colors.red),
-                    Text(rule['conflict']),
+                    Text(
+                      '冲突检测',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                    Divider(color: theme.colorScheme.error),
+                    Text(
+                      rule['conflict']!,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onErrorContainer),
+                    ),
                   ],
                 ),
               ),
@@ -75,14 +97,20 @@ class RuleDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(ThemeData theme, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

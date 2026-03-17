@@ -1,6 +1,6 @@
 // lib/pages/main_navigation_page.dart
 import 'package:flutter/material.dart';
-import '../api_service.dart'; // 导入 API 服务
+import '../api_service.dart';
 import 'home_page.dart';
 import 'trade_monitor_page.dart';
 import 'ai_page.dart';
@@ -32,9 +32,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   ];
 
   void _showEmergencyMenu() {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF2C2C2C),
+      backgroundColor: theme.dialogBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -47,23 +48,26 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: theme.dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('紧急控制', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              '紧急控制',
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.warning, color: Colors.red),
-              title: const Text('紧急停止', style: TextStyle(color: Colors.red)),
+              leading: Icon(Icons.warning, color: theme.colorScheme.error),
+              title: Text('紧急停止', style: TextStyle(color: theme.colorScheme.error)),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmEmergencyStop();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.monetization_on, color: Colors.orange),
+              leading: Icon(Icons.monetization_on, color: theme.colorScheme.secondary),
               title: const Text('一键平仓'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -71,7 +75,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.volume_off, color: Colors.blue),
+              leading: Icon(Icons.volume_off, color: theme.colorScheme.primary),
               title: const Text('静默模式'),
               onTap: () async {
                 Navigator.pop(ctx);
@@ -86,20 +90,21 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 
   void _confirmEmergencyStop() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('紧急停止'),
+        backgroundColor: theme.dialogBackgroundColor,
+        title: Text('紧急停止', style: theme.textTheme.titleMedium),
         content: const Text('确定要停止所有交易吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text('取消', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              // 调用后端紧急停止API
               final response = await ApiService.httpPost(
                 '/emergency_stop',
                 body: {'reason': '用户手动触发'},
@@ -107,15 +112,24 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               );
               if (response != null && response['success'] == true) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('紧急停止指令已发送'), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: const Text('紧急停止指令已发送'),
+                    backgroundColor: theme.colorScheme.error,
+                  ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('发送失败: ${response?['error'] ?? '未知错误'}'), backgroundColor: Colors.orange),
+                  SnackBar(
+                    content: Text('发送失败: ${response?['error'] ?? '未知错误'}'),
+                    backgroundColor: theme.colorScheme.secondary,
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             child: const Text('确定'),
           ),
         ],
@@ -124,25 +138,29 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 
   void _confirmSellAll() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('一键平仓'),
+        backgroundColor: theme.dialogBackgroundColor,
+        title: Text('一键平仓', style: theme.textTheme.titleMedium),
         content: const Text('确定要清仓所有股票吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text('取消', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // 一键平仓接口暂未实现，显示提示
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('一键平仓功能暂未实现')),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             child: const Text('确定'),
           ),
         ],
@@ -151,15 +169,17 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 
   Future<void> _toggleSilentMode() async {
-    // 先获取当前模式
+    final theme = Theme.of(context);
     final currentMode = await ApiService.getMode();
     if (currentMode == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('获取当前模式失败'), backgroundColor: Colors.orange),
+        SnackBar(
+          content: const Text('获取当前模式失败'),
+          backgroundColor: theme.colorScheme.secondary,
+        ),
       );
       return;
     }
-    // 静默模式可对应 maintenance 或 sim，这里切换为 maintenance
     final newMode = currentMode['mode'] == 'maintenance' ? 'sim' : 'maintenance';
     final result = await ApiService.setMode(newMode);
     if (result != null && result['success'] == true) {
@@ -168,20 +188,24 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('切换失败: ${result?['error'] ?? '未知错误'}'), backgroundColor: Colors.orange),
+        SnackBar(
+          content: Text('切换失败: ${result?['error'] ?? '未知错误'}'),
+          backgroundColor: theme.colorScheme.secondary,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF1E1E1E),
-        selectedItemColor: const Color(0xFFD4AF37),
-        unselectedItemColor: Colors.white54,
+        backgroundColor: theme.colorScheme.surface,
+        selectedItemColor: theme.colorScheme.primary,
+        unselectedItemColor: theme.colorScheme.onSurfaceVariant,
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
@@ -199,8 +223,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showEmergencyMenu,
-        backgroundColor: Colors.red,
-        child: const Icon(Icons.warning, color: Colors.white),
+        backgroundColor: theme.colorScheme.error,
+        foregroundColor: theme.colorScheme.onError,
+        child: const Icon(Icons.warning),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

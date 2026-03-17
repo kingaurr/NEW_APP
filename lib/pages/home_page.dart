@@ -29,18 +29,16 @@ class _HomePageState extends State<HomePage> {
           _status = status;
         });
       }
-      // 获取告警列表
       final alerts = await ApiService.getAlerts();
       setState(() {
         _alerts = alerts;
       });
-      // 获取AI建议状态
       final hasAdvice = await ApiService.hasNewAiAdvice();
       setState(() {
         _hasAiAdvice = hasAdvice;
       });
     } catch (e) {
-      print('主页数据加载失败: $e');
+      debugPrint('主页数据加载失败: $e');
     }
   }
 
@@ -48,16 +46,20 @@ class _HomePageState extends State<HomePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('紧急停机'),
+        backgroundColor: Theme.of(ctx).dialogBackgroundColor,
+        title: Text('紧急停机', style: Theme.of(ctx).textTheme.titleMedium),
         content: const Text('确定要停止所有交易吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text('取消', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
             child: const Text('确定'),
           ),
         ],
@@ -72,11 +74,17 @@ class _HomePageState extends State<HomePage> {
       );
       if (response != null && response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('紧急停止指令已发送'), backgroundColor: Colors.red),
+          SnackBar(
+            content: const Text('紧急停止指令已发送'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('发送失败: ${response?['error'] ?? '未知错误'}'), backgroundColor: Colors.orange),
+          SnackBar(
+            content: Text('发送失败: ${response?['error'] ?? '未知错误'}'),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+          ),
         );
       }
     }
@@ -84,6 +92,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final mode = _status['mode'] ?? 'sim';
     final heartRate = _status['heart_rate'] ?? 60;
     final cpu = _status['cpu_percent'] ?? 0;
@@ -110,7 +119,7 @@ class _HomePageState extends State<HomePage> {
         title: const Text('首页'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.warning, color: Colors.red),
+            icon: Icon(Icons.warning, color: theme.colorScheme.error),
             onPressed: _emergencyStop,
           ),
         ],
@@ -122,6 +131,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             // 顶部状态栏
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -130,20 +141,22 @@ class _HomePageState extends State<HomePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildStatusChip('模式', mode, _getModeColor(mode)),
-                        _buildStatusChip('心率', heartRate.toString(), heartRate > 80 ? Colors.red : Colors.green),
-                        _buildStatusChip('CPU', '$cpu%', cpu > 80 ? Colors.red : Colors.green),
+                        _buildStatusChip(theme, '模式', mode, _getModeColor(theme, mode)),
+                        _buildStatusChip(theme, '心率', heartRate.toString(), heartRate > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
+                        _buildStatusChip(theme, 'CPU', '$cpu%', cpu > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildStatusChip('内存', '$memory%', memory > 80 ? Colors.red : Colors.green),
-                        _buildStatusChip('磁盘', '$disk%', disk > 80 ? Colors.red : Colors.green),
+                        _buildStatusChip(theme, '内存', '$memory%', memory > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
+                        _buildStatusChip(theme, '磁盘', '$disk%', disk > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
                         Text(
                           '${currentTime.hour}:${currentTime.minute.toString().padLeft(2, '0')}',
-                          style: TextStyle(color: isTradingTime ? Colors.green : Colors.white70),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: isTradingTime ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -155,22 +168,28 @@ class _HomePageState extends State<HomePage> {
 
             // 资产卡片
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('总资产', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    Text('总资产', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 4),
                     Text(
                       '¥ ${totalAsset.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('可用: ¥ ${available.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white70)),
-                        Text('持仓: ¥ ${positionValue.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white70)),
+                        Text('可用: ¥ ${available.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
+                        Text('持仓: ¥ ${positionValue.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -178,15 +197,17 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Text(
                           '今日盈亏: ${dailyProfit >= 0 ? '+' : ''}¥ ${dailyProfit.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: dailyProfit >= 0 ? Colors.green : Colors.red,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: dailyProfit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '(${dailyProfitPercent.toStringAsFixed(2)}%)',
-                          style: TextStyle(color: dailyProfit >= 0 ? Colors.green : Colors.red),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: dailyProfit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error,
+                          ),
                         ),
                       ],
                     ),
@@ -198,16 +219,20 @@ class _HomePageState extends State<HomePage> {
 
             // 资金曲线迷你图
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Container(
                 height: 100,
                 padding: const EdgeInsets.all(8),
-                child: _buildMiniChart(),
+                child: _buildMiniChart(theme),
               ),
             ),
             const SizedBox(height: 16),
 
             // 今日交易摘要
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -215,18 +240,18 @@ class _HomePageState extends State<HomePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatItem('成交', tradeCount.toString()),
-                        _buildStatItem('胜率', '$winRate%'),
-                        _buildStatItem('回撤', '$maxDrawdown%'),
+                        _buildStatItem(theme, '成交', tradeCount.toString()),
+                        _buildStatItem(theme, '胜率', '$winRate%'),
+                        _buildStatItem(theme, '回撤', '$maxDrawdown%'),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatItem('信号', signalCount.toString()),
-                        _buildStatItem('通过', approvedCount.toString()),
-                        _buildStatItem('否决', rejectedCount.toString()),
+                        _buildStatItem(theme, '信号', signalCount.toString()),
+                        _buildStatItem(theme, '通过', approvedCount.toString()),
+                        _buildStatItem(theme, '否决', rejectedCount.toString()),
                       ],
                     ),
                   ],
@@ -238,11 +263,13 @@ class _HomePageState extends State<HomePage> {
             // AI优化建议提醒
             if (_hasAiAdvice)
               Card(
-                color: Colors.orange.shade900,
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                color: theme.colorScheme.secondaryContainer,
                 child: ListTile(
-                  leading: const Icon(Icons.lightbulb, color: Colors.white),
-                  title: const Text('有新的AI优化建议'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
+                  leading: Icon(Icons.lightbulb, color: theme.colorScheme.onSecondaryContainer),
+                  title: Text('有新的AI优化建议', style: theme.textTheme.bodyLarge),
+                  trailing: Icon(Icons.arrow_forward_ios, color: theme.colorScheme.onSecondaryContainer),
                   onTap: () {
                     Navigator.pushNamed(context, '/ai_advice_center');
                   },
@@ -261,10 +288,13 @@ class _HomePageState extends State<HomePage> {
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade900,
+                      color: theme.colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(_alerts[idx], style: const TextStyle(color: Colors.white)),
+                    child: Text(
+                      _alerts[idx],
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                    ),
                   ),
                 ),
               ),
@@ -279,22 +309,35 @@ class _HomePageState extends State<HomePage> {
                     onPressed: _fetchData,
                     icon: const Icon(Icons.refresh),
                     label: const Text('刷新'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                    ),
                   ),
                   ElevatedButton.icon(
                     onPressed: _emergencyStop,
                     icon: const Icon(Icons.warning),
                     label: const Text('紧急停止'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.error,
+                      foregroundColor: theme.colorScheme.onError,
+                    ),
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // 模式切换待实现（可后续通过接口实现）
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('模式切换功能待实现')),
+                        SnackBar(
+                          content: const Text('模式切换功能待实现'),
+                          backgroundColor: theme.colorScheme.secondary,
+                        ),
                       );
                     },
                     icon: const Icon(Icons.swap_horiz),
                     label: const Text('模式切换'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.secondary,
+                      foregroundColor: theme.colorScheme.onSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -305,7 +348,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildStatusChip(String label, String value, Color color) {
+  Widget _buildStatusChip(ThemeData theme, String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -315,21 +358,24 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Text(
         '$label: $value',
-        style: TextStyle(color: color, fontSize: 12),
+        style: theme.textTheme.bodySmall?.copyWith(color: color),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(ThemeData theme, String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+        Text(
+          value,
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+        ),
+        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ],
     );
   }
 
-  Widget _buildMiniChart() {
+  Widget _buildMiniChart(ThemeData theme) {
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: false),
@@ -347,7 +393,7 @@ class _HomePageState extends State<HomePage> {
               FlSpot(6, 1.35),
             ],
             isCurved: true,
-            color: const Color(0xFFD4AF37),
+            color: theme.colorScheme.primary,
             barWidth: 2,
             dotData: FlDotData(show: false),
           ),
@@ -356,18 +402,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Color _getModeColor(String mode) {
+  Color _getModeColor(ThemeData theme, String mode) {
     switch (mode) {
       case 'real':
-        return Colors.red;
+        return theme.colorScheme.error;
       case 'sim':
-        return Colors.green;
+        return theme.colorScheme.primary;
       case 'train':
-        return Colors.blue;
+        return theme.colorScheme.secondary;
       case 'maintenance':
-        return Colors.orange;
+        return theme.colorScheme.tertiary ?? Colors.orange;
       default:
-        return Colors.grey;
+        return theme.colorScheme.onSurfaceVariant;
     }
   }
 

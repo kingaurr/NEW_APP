@@ -1,4 +1,5 @@
 // lib/pages/login_page.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api_service.dart';
@@ -74,14 +75,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     try {
       final result = await ApiService.authPassword(_passwordController.text);
       if (result != null && result['success'] == true) {
-        // 保存密码（如果记住密码勾选）
         final prefs = await SharedPreferences.getInstance();
         if (_rememberMe) {
           await prefs.setString('password', _passwordController.text);
         } else {
           await prefs.remove('password');
         }
-        // 跳转到主页
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/main');
         }
@@ -125,7 +124,6 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     try {
       final result = await ApiService.smsVerify(_smsCodeController.text);
       if (result != null && result['success'] == true) {
-        // 跳转到主页
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/main');
         }
@@ -142,7 +140,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
     );
   }
 
@@ -155,8 +156,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -166,22 +168,20 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo / 标题
-                const Text(
+                Text(
                   'AI 量化交易',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 32,
+                  style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFD4AF37),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '智能交易系统',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -189,7 +189,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 // 登录方式切换
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade900,
+                    color: theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Row(
@@ -200,14 +200,14 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: _isPasswordLogin ? const Color(0xFFD4AF37) : Colors.transparent,
+                              color: _isPasswordLogin ? theme.colorScheme.primary : Colors.transparent,
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
                               '密码登录',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: _isPasswordLogin ? Colors.black : Colors.white70,
+                                color: _isPasswordLogin ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -220,14 +220,14 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: !_isPasswordLogin ? const Color(0xFFD4AF37) : Colors.transparent,
+                              color: !_isPasswordLogin ? theme.colorScheme.primary : Colors.transparent,
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
                               '短信登录',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: !_isPasswordLogin ? Colors.black : Colors.white70,
+                                color: !_isPasswordLogin ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -242,9 +242,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 // 登录表单
                 Form(
                   key: _formKey,
-                  child: _isPasswordLogin
-                      ? _buildPasswordForm()
-                      : _buildSmsForm(),
+                  child: _isPasswordLogin ? _buildPasswordForm(theme) : _buildSmsForm(theme),
                 ),
                 const SizedBox(height: 24),
 
@@ -255,16 +253,16 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   ElevatedButton(
                     onPressed: _isPasswordLogin ? _loginWithPassword : _loginWithSms,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: Colors.black,
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                     child: Text(
-                      _isPasswordLogin ? '登录' : '登录',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      '登录',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                 const SizedBox(height: 16),
@@ -279,19 +277,21 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           Checkbox(
                             value: _rememberMe,
                             onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                            activeColor: const Color(0xFFD4AF37),
+                            activeColor: theme.colorScheme.primary,
                           ),
-                          const Text('记住密码', style: TextStyle(color: Colors.white70)),
+                          Text(
+                            '记住密码',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
                         ],
                       ),
                       TextButton(
                         onPressed: () {
-                          // 忘记密码功能（可跳转或提示）
                           _showSnackBar('请联系管理员重置密码');
                         },
-                        child: const Text(
+                        child: Text(
                           '忘记密码?',
-                          style: TextStyle(color: Color(0xFFD4AF37)),
+                          style: TextStyle(color: theme.colorScheme.primary),
                         ),
                       ),
                     ],
@@ -304,19 +304,19 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildPasswordForm() {
+  Widget _buildPasswordForm(ThemeData theme) {
     return Column(
       children: [
         TextFormField(
           controller: _passwordController,
           obscureText: true,
-          style: const TextStyle(color: Colors.white),
+          style: theme.textTheme.bodyLarge,
           decoration: InputDecoration(
             hintText: '输入密码',
-            hintStyle: const TextStyle(color: Colors.white54),
-            prefixIcon: const Icon(Icons.lock, color: Color(0xFFD4AF37)),
+            hintStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            prefixIcon: Icon(Icons.lock, color: theme.colorScheme.primary),
             filled: true,
-            fillColor: Colors.grey.shade900,
+            fillColor: theme.colorScheme.surfaceVariant,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -333,19 +333,19 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildSmsForm() {
+  Widget _buildSmsForm(ThemeData theme) {
     return Column(
       children: [
         TextFormField(
           controller: _smsPhoneController,
           keyboardType: TextInputType.phone,
-          style: const TextStyle(color: Colors.white),
+          style: theme.textTheme.bodyLarge,
           decoration: InputDecoration(
             hintText: '手机号',
-            hintStyle: const TextStyle(color: Colors.white54),
-            prefixIcon: const Icon(Icons.phone, color: Color(0xFFD4AF37)),
+            hintStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            prefixIcon: Icon(Icons.phone, color: theme.colorScheme.primary),
             filled: true,
-            fillColor: Colors.grey.shade900,
+            fillColor: theme.colorScheme.surfaceVariant,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -359,13 +359,13 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               flex: 3,
               child: TextFormField(
                 controller: _smsCodeController,
-                style: const TextStyle(color: Colors.white),
+                style: theme.textTheme.bodyLarge,
                 decoration: InputDecoration(
                   hintText: '验证码',
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.message, color: Color(0xFFD4AF37)),
+                  hintStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  prefixIcon: Icon(Icons.message, color: theme.colorScheme.primary),
                   filled: true,
-                  fillColor: Colors.grey.shade900,
+                  fillColor: theme.colorScheme.surfaceVariant,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -379,8 +379,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               child: ElevatedButton(
                 onPressed: _smsSent ? null : _sendSmsCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _smsSent ? Colors.grey : const Color(0xFFD4AF37),
-                  foregroundColor: Colors.black,
+                  backgroundColor: _smsSent ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.primary,
+                  foregroundColor: _smsSent ? theme.colorScheme.surface : theme.colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -388,7 +388,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 ),
                 child: Text(
                   _smsSent ? '$_countdown 秒' : '获取验证码',
-                  style: const TextStyle(fontSize: 14),
+                  style: theme.textTheme.bodyMedium,
                 ),
               ),
             ),

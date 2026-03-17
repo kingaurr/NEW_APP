@@ -7,6 +7,7 @@ class CandidatesDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('${stock['code'] ?? ''} ${stock['name'] ?? ''}'),
@@ -15,27 +16,35 @@ class CandidatesDetailPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('六大凭证评分', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    '六大凭证评分',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
-                  _buildFactorRow('逻辑自洽', stock['score_logic'] ?? 0.8),
-                  _buildFactorRow('资金共振', stock['score_money'] ?? 0.6),
-                  _buildFactorRow('盈亏比', stock['score_rr'] ?? 0.7),
-                  _buildFactorRow('情绪周期', stock['score_cycle'] ?? 0.5),
-                  _buildFactorRow('历史轨迹', stock['score_history'] ?? 0.4),
-                  _buildFactorRow('关联事件', stock['score_event'] ?? 0.5),
+                  _buildFactorRow(theme, '逻辑自洽', stock['score_logic'] ?? 0.8),
+                  _buildFactorRow(theme, '资金共振', stock['score_money'] ?? 0.6),
+                  _buildFactorRow(theme, '盈亏比', stock['score_rr'] ?? 0.7),
+                  _buildFactorRow(theme, '情绪周期', stock['score_cycle'] ?? 0.5),
+                  _buildFactorRow(theme, '历史轨迹', stock['score_history'] ?? 0.4),
+                  _buildFactorRow(theme, '关联事件', stock['score_event'] ?? 0.5),
                   const Divider(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('综合得分', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '综合得分',
+                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
                       Text(
                         '${(stock['total_score'] ?? 0.6).toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 18, color: Color(0xFFD4AF37)),
+                        style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.primary),
                       ),
                     ],
                   ),
@@ -45,31 +54,44 @@ class CandidatesDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('入选理由', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    '入选理由',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
-                  Text(stock['reason'] ?? '暂无理由'),
+                  Text(
+                    stock['reason'] ?? '暂无理由',
+                    style: theme.textTheme.bodyMedium,
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('技术指标', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    '技术指标',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
-                  _buildInfoRow('现价', '¥${(stock['price'] ?? 0.0).toStringAsFixed(2)}'),
-                  _buildInfoRow('涨跌幅', stock['change'] ?? '0.00%'),
-                  _buildInfoRow('成交量', stock['volume']?.toString() ?? '0'),
-                  _buildInfoRow('市盈率', stock['pe'] ?? '--'),
+                  _buildInfoRow(theme, '现价', '¥${(stock['price'] ?? 0.0).toStringAsFixed(2)}'),
+                  _buildInfoRow(theme, '涨跌幅', stock['change'] ?? '0.00%'),
+                  _buildInfoRow(theme, '成交量', stock['volume']?.toString() ?? '0'),
+                  _buildInfoRow(theme, '市盈率', stock['pe'] ?? '--'),
                 ],
               ),
             ),
@@ -79,35 +101,45 @@ class CandidatesDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFactorRow(String label, double value) {
+  Widget _buildFactorRow(ThemeData theme, String label, double value) {
+    final clampedValue = value.clamp(0.0, 1.0);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text(label)),
+          Expanded(flex: 2, child: Text(label, style: theme.textTheme.bodyMedium)),
           Expanded(
             flex: 3,
             child: LinearProgressIndicator(
-              value: value.clamp(0.0, 1.0),
-              backgroundColor: Colors.grey[800],
-              valueColor: const AlwaysStoppedAnimation(Color(0xFFD4AF37)),
+              value: clampedValue,
+              backgroundColor: theme.colorScheme.surfaceVariant,
+              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
             ),
           ),
           const SizedBox(width: 8),
-          Text('${(value * 100).toInt()}%'),
+          Text(
+            '${(clampedValue * 100).toInt()}%',
+            style: theme.textTheme.bodyMedium,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(ThemeData theme, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

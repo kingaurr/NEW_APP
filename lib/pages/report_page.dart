@@ -96,6 +96,7 @@ class _ReportPageState extends State<ReportPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('报告中心'),
@@ -111,14 +112,19 @@ class _ReportPageState extends State<ReportPage> with SingleTickerProviderStateM
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _selectedReportContent != null
-              ? _buildReportDetail()
-              : _buildReportList(),
+              ? _buildReportDetail(theme)
+              : _buildReportList(theme),
     );
   }
 
-  Widget _buildReportList() {
+  Widget _buildReportList(ThemeData theme) {
     if (_currentReports.isEmpty) {
-      return const Center(child: Text('暂无报告'));
+      return Center(
+        child: Text(
+          '暂无报告',
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      );
     }
     return RefreshIndicator(
       onRefresh: () => _loadReports(_currentType),
@@ -134,12 +140,17 @@ class _ReportPageState extends State<ReportPage> with SingleTickerProviderStateM
               ? DateTime.fromMillisecondsSinceEpoch((report['mtime'] * 1000).toInt())
               : null;
           return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
-              title: Text(name),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              title: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               subtitle: Text(
                 '${mtime != null ? _formatDate(mtime) : date}  |  ${_formatSize(size)}',
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios),
+              trailing: Icon(Icons.arrow_forward_ios, size: 16, color: theme.colorScheme.primary),
               onTap: () => _loadReportContent(name),
             ),
           );
@@ -148,23 +159,23 @@ class _ReportPageState extends State<ReportPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildReportDetail() {
+  Widget _buildReportDetail(ThemeData theme) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          color: Colors.grey.shade900,
+          color: theme.colorScheme.surfaceVariant,
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
                 onPressed: _backToList,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '报告详情',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -173,7 +184,10 @@ class _ReportPageState extends State<ReportPage> with SingleTickerProviderStateM
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: Text(_selectedReportContent ?? ''),
+            child: SelectableText(
+              _selectedReportContent ?? '',
+              style: theme.textTheme.bodyMedium,
+            ),
           ),
         ),
       ],

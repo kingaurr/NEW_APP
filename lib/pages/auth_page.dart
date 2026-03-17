@@ -191,13 +191,17 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF121212), Color(0xFF1E1E1E)],
+            colors: [
+              theme.colorScheme.background,
+              theme.colorScheme.surface,
+            ],
           ),
         ),
         child: SafeArea(
@@ -209,23 +213,22 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 标题
-                  const Text(
+                  Text(
                     'AI 量化交易系统',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFD4AF37),
                       fontFamily: 'Georgia',
                       letterSpacing: 1.5,
                     ),
                   ),
                   const SizedBox(height: 6),
                   // 版本号
-                  const Text(
+                  Text(
                     '版本 1.0.0',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 32),
 
@@ -235,7 +238,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2C),
+                        color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Row(
@@ -244,14 +247,14 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                         children: [
                           Icon(
                             _showServerConfig ? Icons.expand_less : Icons.expand_more,
-                            color: const Color(0xFFD4AF37),
+                            color: theme.colorScheme.primary,
                             size: 20,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             '服务器配置',
                             style: TextStyle(
-                              color: const Color(0xFFD4AF37),
+                              color: theme.colorScheme.primary,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -266,32 +269,32 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2C),
+                        color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
                         children: [
                           TextField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: '服务器地址',
                               hintText: '例如 http://47.108.206.221:8080',
-                              labelStyle: TextStyle(color: Colors.white70, fontSize: 14),
-                              hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                              labelStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              hintStyle: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                               enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white24),
+                                borderSide: BorderSide(color: theme.dividerColor),
                               ),
                               focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Color(0xFFD4AF37)),
+                                borderSide: BorderSide(color: theme.colorScheme.primary),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white, fontSize: 15),
+                            style: theme.textTheme.bodyLarge,
                             onChanged: (value) => _serverUrl = value,
                             controller: TextEditingController(text: _serverUrl),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             '可切换云端/本地地址',
-                            style: TextStyle(color: Colors.white54, fontSize: 12),
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -303,19 +306,19 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                   Container(
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2C2C2C),
+                      color: theme.colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFFB8860B),
+                        color: theme.colorScheme.secondary,
                       ),
-                      labelColor: Colors.black,
-                      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                      unselectedLabelColor: Colors.white70,
-                      unselectedLabelStyle: const TextStyle(fontSize: 14),
+                      labelColor: theme.colorScheme.onSecondary,
+                      labelStyle: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                      unselectedLabelStyle: theme.textTheme.bodyMedium,
                       tabs: const [
                         Tab(text: '密码登录'),
                         Tab(text: '短信登录'),
@@ -334,17 +337,17 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                           obscureText: true,
                           decoration: InputDecoration(
                             labelText: '密码',
-                            labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                            prefixIcon: const Icon(Icons.lock, color: Color(0xFFD4AF37), size: 20),
+                            labelStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            prefixIcon: Icon(Icons.lock, color: theme.colorScheme.primary, size: 20),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF2C2C2C),
+                            fillColor: theme.colorScheme.surfaceVariant,
                             contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                           ),
-                          style: const TextStyle(color: Colors.white, fontSize: 15),
+                          style: theme.textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -352,13 +355,16 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                             Checkbox(
                               value: _rememberMe,
                               onChanged: (value) => setState(() => _rememberMe = value ?? false),
-                              activeColor: const Color(0xFFB8860B),
+                              activeColor: theme.colorScheme.secondary,
                               visualDensity: VisualDensity.compact,
                             ),
-                            const Text('记住密码', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                            Text(
+                              '记住密码',
+                              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.fingerprint, color: Color(0xFFD4AF37), size: 22),
+                              icon: Icon(Icons.fingerprint, color: theme.colorScheme.primary, size: 22),
                               onPressed: () {
                                 // 指纹预留
                               },
@@ -373,8 +379,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _loginWithPassword,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB8860B),
-                              foregroundColor: Colors.black,
+                              backgroundColor: theme.colorScheme.secondary,
+                              foregroundColor: theme.colorScheme.onSecondary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),
@@ -400,17 +406,17 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             labelText: '手机号',
-                            labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                            prefixIcon: const Icon(Icons.phone, color: Color(0xFFD4AF37), size: 20),
+                            labelStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            prefixIcon: Icon(Icons.phone, color: theme.colorScheme.primary, size: 20),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF2C2C2C),
+                            fillColor: theme.colorScheme.surfaceVariant,
                             contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                           ),
-                          style: const TextStyle(color: Colors.white, fontSize: 15),
+                          style: theme.textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -420,17 +426,17 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                                 controller: _smsCodeController,
                                 decoration: InputDecoration(
                                   labelText: '验证码',
-                                  labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                                  prefixIcon: const Icon(Icons.message, color: Color(0xFFD4AF37), size: 20),
+                                  labelStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                  prefixIcon: Icon(Icons.message, color: theme.colorScheme.primary, size: 20),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide.none,
                                   ),
                                   filled: true,
-                                  fillColor: const Color(0xFF2C2C2C),
+                                  fillColor: theme.colorScheme.surfaceVariant,
                                   contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                                 ),
-                                style: const TextStyle(color: Colors.white, fontSize: 15),
+                                style: theme.textTheme.bodyLarge,
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -440,12 +446,12 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2C2C2C),
+                                      color: theme.colorScheme.surfaceVariant,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       '${_countdown}s',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                                     ),
                                   )
                                 : SizedBox(
@@ -453,8 +459,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                                     child: ElevatedButton(
                                       onPressed: _isLoading ? null : _sendSmsCode,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFB8860B),
-                                        foregroundColor: Colors.black,
+                                        backgroundColor: theme.colorScheme.secondary,
+                                        foregroundColor: theme.colorScheme.onSecondary,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
@@ -472,8 +478,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _loginWithSms,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB8860B),
-                              foregroundColor: Colors.black,
+                              backgroundColor: theme.colorScheme.secondary,
+                              foregroundColor: theme.colorScheme.onSecondary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),
@@ -497,7 +503,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     Text(
                       _errorMessage,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
                     ),
                   ],
                 ],

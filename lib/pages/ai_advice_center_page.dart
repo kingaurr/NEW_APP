@@ -27,18 +27,30 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
   }
 
   Future<void> _resolveAdvice(String adviceId, String decision, String summary) async {
+    final theme = Theme.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('$decision 建议'),
+        backgroundColor: theme.dialogBackgroundColor,
+        title: Text(
+          '$decision 建议',
+          style: theme.textTheme.titleMedium,
+        ),
         content: Text('确定要$decision建议 “$summary” 吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(
+              '取消',
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: decision == '同意' ? theme.colorScheme.primary : theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
             child: Text(decision),
           ),
         ],
@@ -49,25 +61,32 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
     final result = await ApiService.resolveAdvice(adviceId, decision);
     if (result == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已$decision (模拟操作)')),
+        SnackBar(
+          content: Text('已$decision (模拟操作)'),
+          backgroundColor: theme.colorScheme.primary,
+        ),
       );
       _loadData(); // 刷新列表
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('操作失败'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('操作失败'),
+          backgroundColor: theme.colorScheme.error,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('AI优化建议'),
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            tabs: const [
               Tab(text: '待处理'),
               Tab(text: '历史'),
             ],
@@ -75,15 +94,15 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
         ),
         body: TabBarView(
           children: [
-            _buildPendingList(),
-            _buildHistoryList(),
+            _buildPendingList(theme),
+            _buildHistoryList(theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPendingList() {
+  Widget _buildPendingList(ThemeData theme) {
     return FutureBuilder<List<dynamic>>(
       future: _pendingAdvicesFuture,
       builder: (context, snapshot) {
@@ -91,43 +110,67 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return Center(child: Text('加载失败: ${snapshot.error ?? '未知错误'}'));
+          return Center(
+            child: Text(
+              '加载失败: ${snapshot.error ?? '未知错误'}',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+            ),
+          );
         }
         final advices = snapshot.data!;
         if (advices.isEmpty) {
-          return const Center(child: Text('暂无待处理建议'));
+          return Center(
+            child: Text(
+              '暂无待处理建议',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          );
         }
         return ListView.builder(
           padding: const EdgeInsets.all(8),
           itemCount: advices.length,
           itemBuilder: (ctx, index) {
             final item = advices[index];
+            final confidence = item['confidence'] != null ? (item['confidence'] * 100).toInt() : 0;
             return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              child: ListTile(
-                title: Text(item['summary'] ?? ''),
-                subtitle: Column(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      item['summary'] ?? '',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 4),
-                    Text('类型: ${item['type'] ?? '未知'} · 预期: ${item['expected_profit'] ?? '0%'}'),
-                    Text('置信度: ${item['confidence'] != null ? (item['confidence']*100).toInt() : 0}% · ${item['created_at'] ?? ''}'),
+                    Text(
+                      '类型: ${item['type'] ?? '未知'} · 预期: ${item['expected_profit'] ?? '0%'}',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '置信度: $confidence% · ${item['created_at'] ?? ''}',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.check, color: theme.colorScheme.primary),
+                          onPressed: () => _resolveAdvice(item['id'], '同意', item['summary']),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: theme.colorScheme.error),
+                          onPressed: () => _resolveAdvice(item['id'], '拒绝', item['summary']),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.check, color: Colors.green),
-                      onPressed: () => _resolveAdvice(item['id'], '同意', item['summary']),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      onPressed: () => _resolveAdvice(item['id'], '拒绝', item['summary']),
-                    ),
-                  ],
-                ),
-                isThreeLine: true,
               ),
             );
           },
@@ -136,7 +179,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
     );
   }
 
-  Widget _buildHistoryList() {
+  Widget _buildHistoryList(ThemeData theme) {
     return FutureBuilder<List<dynamic>>(
       future: _historyAdvicesFuture,
       builder: (context, snapshot) {
@@ -144,11 +187,21 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return Center(child: Text('加载失败: ${snapshot.error ?? '未知错误'}'));
+          return Center(
+            child: Text(
+              '加载失败: ${snapshot.error ?? '未知错误'}',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+            ),
+          );
         }
         final advices = snapshot.data!;
         if (advices.isEmpty) {
-          return const Center(child: Text('暂无历史建议'));
+          return Center(
+            child: Text(
+              '暂无历史建议',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          );
         }
         return ListView.builder(
           padding: const EdgeInsets.all(8),
@@ -156,11 +209,20 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
           itemBuilder: (ctx, index) {
             final item = advices[index];
             return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               child: ListTile(
-                title: Text(item['summary'] ?? ''),
-                subtitle: Text('${item['result'] ?? ''} · ${item['executed_at'] ?? ''}'),
-                trailing: const Icon(Icons.history, color: Colors.grey),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                title: Text(
+                  item['summary'] ?? '',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  '${item['result'] ?? ''} · ${item['executed_at'] ?? ''}',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                trailing: Icon(Icons.history, color: theme.colorScheme.primary),
               ),
             );
           },

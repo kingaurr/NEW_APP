@@ -161,7 +161,7 @@ class ApiService {
     return await httpGet('/candidates');
   }
 
-  // ---------- 新增接口 ----------
+  // ---------- 新增接口（第二阶段补强） ----------
   static Future<Map<String, dynamic>?> getAIStatus() async {
     return await httpGet('/ai/status');
   }
@@ -182,17 +182,20 @@ class ApiService {
     return await httpGet('/knowledge/stats');
   }
 
-  // 修改资金（需认证）
+  static Future<Map<String, dynamic>?> getHeartSummary() async {
+    return await httpGet('/heart/summary');
+  }
+
   static Future<Map<String, dynamic>?> modifyFund(double amount, {String reason = ''}) async {
     return await httpPost('/fund', body: {'amount': amount, 'reason': reason});
   }
 
-  // 登录（兼容 auth_page.dart 调用）
+  // 登录兼容
   static Future<Map<String, dynamic>?> login(String password) async {
     return await authPassword(password);
   }
 
-  // 主页告警和AI建议
+  // 主页告警和AI建议（模拟）
   static Future<List<String>> getAlerts() async {
     await Future.delayed(const Duration(milliseconds: 300));
     return ['数据源新浪财经连接超时', '内存使用率超过85%'];
@@ -204,7 +207,12 @@ class ApiService {
   }
 
   // AI优化建议中心
+  static Future<Map<String, dynamic>?> getAdviceDetail(String adviceId) async {
+    return await httpGet('/advice/detail/$adviceId');
+  }
+
   static Future<List<dynamic>> getPendingAdvices() async {
+    // 模拟数据，实际应调用后端
     await Future.delayed(const Duration(milliseconds: 400));
     return [
       {
@@ -253,7 +261,73 @@ class ApiService {
     return true;
   }
 
-  // 知识库各标签页
+  // 版本管理
+  static Future<List<dynamic>?> getVersions() async {
+    return await httpGet('/versions');
+  }
+
+  static Future<Map<String, dynamic>?> getVersionDetail(String versionId) async {
+    return await httpGet('/version/$versionId');
+  }
+
+  static Future<bool> rollbackVersion(String versionId) async {
+    final result = await httpPost('/version/rollback', body: {'version_id': versionId});
+    return result?['success'] ?? false;
+  }
+
+  // 备份管理（预留接口）
+  static Future<List<dynamic>?> getBackups() async {
+    return await httpGet('/backups');
+  }
+
+  static Future<Map<String, dynamic>?> createBackup() async {
+    return await httpPost('/backup/create');
+  }
+
+  static Future<bool> restoreBackup(String filename) async {
+    final result = await httpPost('/backup/restore', body: {'filename': filename});
+    return result?['success'] ?? false;
+  }
+
+  // ========== 新增左右脑接口 ==========
+  static Future<Map<String, dynamic>?> getRightBrainStatus() async {
+    return await httpGet('/right_brain/status');
+  }
+
+  static Future<List<dynamic>?> getRightBrainSignals() async {
+    return await httpGet('/right_brain/signals');
+  }
+
+  static Future<Map<String, dynamic>?> getLeftBrainStatus() async {
+    return await httpGet('/left_brain/status');
+  }
+
+  static Future<List<dynamic>?> getLeftBrainDecisions() async {
+    return await httpGet('/left_brain/decisions');
+  }
+
+  // ========== 新增熔断、数据源健康、成本状态等接口（可选，但聚合接口已包含）==========
+  static Future<Map<String, dynamic>?> getFuseStatus() async {
+    return await httpGet('/fuse/status');
+  }
+
+  static Future<Map<String, dynamic>?> getDataSourceHealth() async {
+    return await httpGet('/data_source/health');
+  }
+
+  static Future<Map<String, dynamic>?> getCostStatus() async {
+    return await httpGet('/cost/status');
+  }
+
+  static Future<Map<String, dynamic>?> getLatestReportSummary() async {
+    return await httpGet('/reports/latest_summary');
+  }
+
+  static Future<Map<String, dynamic>?> getPendingAdviceCount() async {
+    return await httpGet('/advice/pending_count');
+  }
+
+  // 知识库各标签页（模拟）
   static Future<List<dynamic>> getRules() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return [
@@ -302,9 +376,8 @@ class ApiService {
     };
   }
 
-  // ---------- 新增：一键平仓 ----------
+  // 一键平仓（模拟）
   static Future<bool> liquidateAll() async {
-    // 模拟一键平仓
     await Future.delayed(const Duration(milliseconds: 500));
     debugPrint('一键平仓指令已发送（模拟）');
     return true;

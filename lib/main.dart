@@ -23,10 +23,10 @@ class MyApp extends StatelessWidget {
       title: 'AI量化交易系统',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xFFB8860B),
+        primaryColor: const Color(0xFFD4AF37), // 统一主色调
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFB8860B),
-          secondary: Color(0xFFD4AF37),
+          primary: Color(0xFFD4AF37),          // 主色
+          secondary: Color(0xFFB8860B),        // 次色
           surface: Color(0xFF1E1E1E),
           background: Color(0xFF121212),
           error: Color(0xFFCF6679),
@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFB8860B),
+            backgroundColor: const Color(0xFFD4AF37), // 按钮主色
             foregroundColor: Colors.black,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -68,7 +68,6 @@ class MyApp extends StatelessWidget {
         '/': (context) => const AuthPage(),
         '/home': (context) => const MainNavigationPage(),
         '/ai_advice_center': (context) => const AiAdviceCenterPage(),
-        // 带参数的页面使用 onGenerateRoute 处理
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/strategy_detail') {
@@ -92,11 +91,11 @@ class MyApp extends StatelessWidget {
             builder: (context) => PositionDetailPage(position: position),
           );
         } else if (settings.name == '/report_detail') {
-          final reportType = settings.arguments as Map<String, dynamic>;
+          final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => ReportDetailPage(
-              reportType: reportType['type'],
-              reportDate: reportType['date'],
+              filename: args['filename'],          // 修正为 filename
+              reportType: args['type'],
             ),
           );
         } else if (settings.name == '/alert_detail') {
@@ -105,7 +104,6 @@ class MyApp extends StatelessWidget {
             builder: (context) => AlertDetailPage(alert: alert),
           );
         }
-        // 如果没有匹配的路由，返回 null 会触发错误页面
         return null;
       },
     );
