@@ -101,11 +101,18 @@ class _HomePageState extends State<HomePage> {
     final currentTime = DateTime.now();
     final isTradingTime = _isTradingTime(currentTime);
 
-    final totalAsset = _status['fund'] ?? 0.0;
-    final available = _status['available_fund'] ?? 0.0;
-    final positionValue = _status['position_value'] ?? 0.0;
+    // 实盘资金
+    final realFund = _status['fund'] ?? 0.0;
+    final realAvailable = _status['available_fund'] ?? 0.0;
+    final realPosition = _status['position_value'] ?? 0.0;
+
+    // 模拟资金
+    final simFund = _status['sim_fund'] ?? 0.0;
+    final simAvailable = _status['sim_available'] ?? 0.0;
+    final simPosition = _status['sim_position'] ?? 0.0;
+
     final dailyProfit = _status['today_pnl'] ?? 0.0;
-    final dailyProfitPercent = totalAsset > 0 ? (dailyProfit / totalAsset) * 100 : 0.0;
+    final dailyProfitPercent = realFund > 0 ? (dailyProfit / realFund) * 100 : 0.0;
 
     final tradeCount = _status['trade_count'] ?? 0;
     final winRate = ((_status['win_rate'] ?? 0) * 100).toStringAsFixed(1);
@@ -166,7 +173,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
 
-            // 资产卡片
+            // 实盘资产卡片
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -175,10 +182,10 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('总资产', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text('实盘资产', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 4),
                     Text(
-                      '¥ ${totalAsset.toStringAsFixed(2)}',
+                      '¥ ${realFund.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -188,29 +195,50 @@ class _HomePageState extends State<HomePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('可用: ¥ ${available.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
-                        Text('持仓: ¥ ${positionValue.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
+                        Text('可用: ¥ ${realAvailable.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
+                        Text('持仓: ¥ ${realPosition.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 模拟资产卡片
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('模拟资产', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '¥ ${simFund.toStringAsFixed(2)}',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.secondary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '今日盈亏: ${dailyProfit >= 0 ? '+' : ''}¥ ${dailyProfit.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: dailyProfit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${dailyProfitPercent.toStringAsFixed(2)}%)',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: dailyProfit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error,
-                          ),
-                        ),
+                        Text('可用: ¥ ${simAvailable.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
+                        Text('持仓: ¥ ${simPosition.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
                       ],
                     ),
+                    if (simFund == 0.0)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          '注：模拟资金尚未加载，请检查后端配置',
+                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -276,7 +304,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-            // 告警滚动条
+            // 告警滚动条（仅当有告警时显示）
             if (_alerts.isNotEmpty)
               Container(
                 height: 40,

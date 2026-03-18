@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'right_brain_page.dart';
 import 'left_brain_page.dart';
+import 'strategy_detail_page.dart'; // 导入策略详情页
 
 class AiPage extends StatefulWidget {
   const AiPage({Key? key}) : super(key: key);
@@ -226,7 +227,7 @@ class _AiPageState extends State<AiPage> {
           ),
           const SizedBox(height: 16),
 
-          // 策略列表
+          // 策略列表（可点击跳转）
           Card(
             elevation: 2,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -295,45 +296,55 @@ class _AiPageState extends State<AiPage> {
   }
 
   Widget _buildStrategyItem(ThemeData theme, Map<String, dynamic> s) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.dividerColor),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StrategyDetailPage(strategy: s),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.dividerColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s['name'] ?? '未知',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '类型: ${s['type'] ?? '未知'}  |  市场: ${s['market'] ?? 'all'}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  s['name'] ?? '未知',
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  '胜率: ${_formatPercent(s['win_rate'])}',
+                  style: theme.textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 4),
                 Text(
-                  '类型: ${s['type'] ?? '未知'}  |  市场: ${s['market'] ?? 'all'}',
-                  style: theme.textTheme.bodySmall,
+                  '盈亏比: ${s['profit_ratio']?.toStringAsFixed(2) ?? '0.00'}',
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '胜率: ${_formatPercent(s['win_rate'])}',
-                style: theme.textTheme.bodyMedium,
-              ),
-              Text(
-                '盈亏比: ${s['profit_ratio']?.toStringAsFixed(2) ?? '0.00'}',
-                style: theme.textTheme.bodyMedium,
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

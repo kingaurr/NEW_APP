@@ -1,6 +1,7 @@
 // lib/pages/knowledge_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import 'rule_detail_page.dart'; // 导入规则详情页
 
 class KnowledgePage extends StatefulWidget {
   const KnowledgePage({Key? key}) : super(key: key);
@@ -80,15 +81,15 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
           return Center(
             child: Text(
-              '加载失败: ${snapshot.error ?? '未知错误'}',
+              '加载失败: ${snapshot.error}',
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
             ),
           );
         }
-        final rules = snapshot.data!;
+        final rules = snapshot.data ?? [];
         if (rules.isEmpty) {
           return Center(
             child: Text(
@@ -162,15 +163,15 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
           return Center(
             child: Text(
-              '加载失败: ${snapshot.error ?? '未知错误'}',
+              '加载失败: ${snapshot.error}',
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
             ),
           );
         }
-        final cases = snapshot.data!;
+        final cases = snapshot.data ?? [];
         if (cases.isEmpty) {
           return Center(
             child: Text(
@@ -237,15 +238,15 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
           return Center(
             child: Text(
-              '加载失败: ${snapshot.error ?? '未知错误'}',
+              '加载失败: ${snapshot.error}',
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
             ),
           );
         }
-        final failures = snapshot.data!;
+        final failures = snapshot.data ?? [];
         if (failures.isEmpty) {
           return Center(
             child: Text(
@@ -318,15 +319,15 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
           return Center(
             child: Text(
-              '加载失败: ${snapshot.error ?? '未知错误'}',
+              '加载失败: ${snapshot.error}',
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
             ),
           );
         }
-        final config = snapshot.data!;
+        final config = snapshot.data ?? {};
         final experts = config['experts'] as List<dynamic>? ?? [];
         final books = config['books'] as List<dynamic>? ?? [];
         final keywords = config['keywords'] as List<dynamic>? ?? [];
@@ -347,36 +348,45 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    ...experts.map((e) => _buildConfigItem(
-                      theme,
-                      e['name'] ?? '',
-                      e['detail'] ?? '',
-                      e['status'] ?? '',
-                    )).toList(),
+                    if (experts.isEmpty)
+                      Text('暂无', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                    else
+                      ...experts.map((e) => _buildConfigItem(
+                        theme,
+                        e['name'] ?? '',
+                        e['detail'] ?? '',
+                        e['status'] ?? '',
+                      )).toList(),
                     const Divider(),
                     Text(
                       '书籍规则库',
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    ...books.map((b) => _buildConfigItem(
-                      theme,
-                      b['name'] ?? '',
-                      b['detail'] ?? '',
-                      b['status'] ?? '',
-                    )).toList(),
+                    if (books.isEmpty)
+                      Text('暂无', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                    else
+                      ...books.map((b) => _buildConfigItem(
+                        theme,
+                        b['name'] ?? '',
+                        b['detail'] ?? '',
+                        b['status'] ?? '',
+                      )).toList(),
                     const Divider(),
                     Text(
                       '动态关键词库',
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    ...keywords.map((k) => _buildConfigItem(
-                      theme,
-                      k['name'] ?? '',
-                      k['detail'] ?? '',
-                      k['weight'] != null ? '权重 ${k['weight']}' : '',
-                    )).toList(),
+                    if (keywords.isEmpty)
+                      Text('暂无', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                    else
+                      ...keywords.map((k) => _buildConfigItem(
+                        theme,
+                        k['name'] ?? '',
+                        k['detail'] ?? '',
+                        k['weight'] != null ? '权重 ${k['weight']}' : '',
+                      )).toList(),
                     const SizedBox(height: 16),
                     Text(
                       '知识统计',
@@ -416,31 +426,46 @@ class _KnowledgePageState extends State<KnowledgePage> with SingleTickerProvider
   }
 
   Widget _buildRuleItem(ThemeData theme, String id, String desc, String winRate, String status, Color statusColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$id: $desc', style: theme.textTheme.bodyMedium),
-                Text(winRate, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              ],
-            ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RuleDetailPage(rule: {
+              'id': id,
+              'desc': desc,
+              'win_rate': winRate,
+              'status': status,
+            }),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$id: $desc', style: theme.textTheme.bodyMedium),
+                  Text(winRate, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ],
+              ),
             ),
-            child: Text(
-              status,
-              style: theme.textTheme.bodySmall?.copyWith(color: statusColor),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                status,
+                style: theme.textTheme.bodySmall?.copyWith(color: statusColor),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

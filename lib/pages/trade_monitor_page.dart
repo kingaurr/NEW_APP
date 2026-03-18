@@ -1,6 +1,7 @@
 // pages/trade_monitor_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import 'candidates_detail_page.dart'; // 导入候选详情页
 
 class TradeMonitorPage extends StatefulWidget {
   const TradeMonitorPage({Key? key}) : super(key: key);
@@ -193,43 +194,70 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
   }
 
   Widget _buildCandidateItem(ThemeData theme, Map<String, dynamic> item) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              item['code'] ?? '',
-              style: theme.textTheme.bodyMedium,
-            ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CandidatesDetailPage(stock: item),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                item['code'] ?? '',
+                style: theme.textTheme.bodyMedium,
+              ),
             ),
-            child: Text(
-              '得分: ${item['score'] ?? 0}',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '得分: ${item['score'] ?? 0}',
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            item['reason'] ?? '',
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              item['reason'] ?? '',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildShadowItem(ThemeData theme, dynamic code) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        code.toString(),
-        style: theme.textTheme.bodyMedium,
+    String codeStr = code is String ? code : code.toString();
+    // 构造一个简单的股票对象用于详情页
+    Map<String, dynamic> stockItem = {
+      'code': codeStr,
+      'score': 0.5,
+      'reason': '影子池股票',
+    };
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CandidatesDetailPage(stock: stockItem),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          codeStr,
+          style: theme.textTheme.bodyMedium,
+        ),
       ),
     );
   }

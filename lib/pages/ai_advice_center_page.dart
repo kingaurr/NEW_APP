@@ -1,12 +1,13 @@
-// lib/pages/ai_advice_center_page.dart
+// pages/ai_advice_center_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import 'advice_detail_page.dart';
 
 class AiAdviceCenterPage extends StatefulWidget {
   const AiAdviceCenterPage({Key? key}) : super(key: key);
 
   @override
-  State<AiAdviceCenterPage> createState() => _AiAdviceCenterPageState();
+  _AiAdviceCenterPageState createState() => _AiAdviceCenterPageState();
 }
 
 class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {

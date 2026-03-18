@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'package:flutter/services.dart';
-import '../utils/biometrics_helper.dart'; // 导入真实指纹工具
+import '../utils/biometrics_helper.dart'; // 导入指纹工具类
 
 class VersionPage extends StatefulWidget {
   const VersionPage({Key? key}) : super(key: key);
@@ -51,7 +51,7 @@ class _VersionPageState extends State<VersionPage> {
   }
 
   Future<void> _rollback(String versionId) async {
-    // 使用真实指纹验证（高风险操作，强制验证）
+    // 指纹验证（高风险操作，强制验证）
     bool authenticated = await BiometricsHelper.authenticate(
       reason: '请验证指纹以回滚版本',
     );

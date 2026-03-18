@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../api_service.dart';
 import 'system_monitor_page.dart';
-import '../utils/biometrics_helper.dart'; // 导入指纹工具类
+import '../utils/biometrics_helper.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -19,7 +19,7 @@ class _SettingsPageState extends State<SettingsPage> {
   double _currentFund = 0.0;
   String _mode = 'sim';
   bool _isLoading = false;
-  bool _fingerprintEnabled = false; // 新增：指纹开关状态
+  bool _fingerprintEnabled = false;
 
   // 本地存储的配置项
   String _reportContent = '实盘数据 + 进化周报';
@@ -28,7 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String _alertRules = '胜率低于40%';
   String _notificationMethod = 'APP推送';
   String _costBudget = '200元/月';
-  String _appVersion = '1.0.0'; // 临时默认值，会被动态获取覆盖
+  String _appVersion = '1.0.0';
 
   @override
   void initState() {
@@ -38,7 +38,6 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadVersion();
   }
 
-  // 动态获取版本号
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
     setState(() {
@@ -46,7 +45,6 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  // 从后端加载系统设置（资金、模式等）
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
     try {
@@ -64,7 +62,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // 从本地存储加载用户配置
   Future<void> _loadLocalConfig() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -74,17 +71,15 @@ class _SettingsPageState extends State<SettingsPage> {
       _alertRules = prefs.getString('alertRules') ?? '胜率低于40%';
       _notificationMethod = prefs.getString('notificationMethod') ?? 'APP推送';
       _costBudget = prefs.getString('costBudget') ?? '200元/月';
-      _fingerprintEnabled = prefs.getBool('fingerprint_enabled') ?? false; // 加载指纹开关
+      _fingerprintEnabled = prefs.getBool('fingerprint_enabled') ?? false;
     });
   }
 
-  // 保存字符串到本地存储
   Future<void> _saveLocalConfig(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
   }
 
-  // 保存布尔值到本地存储
   Future<void> _saveBoolConfig(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
@@ -156,7 +151,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 通用编辑对话框
   Future<void> _editConfigDialog({
     required String title,
     required String currentValue,
@@ -258,7 +252,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           onTap: () => _showSnackBar('修改密码功能待实现'),
                         ),
                         _buildDivider(theme),
-                        // 指纹开关（使用真实值）
                         _buildSwitchTile(
                           theme: theme,
                           icon: Icons.fingerprint,
@@ -470,7 +463,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 系统设置（新增系统监控入口）
+                // 系统设置
                 _buildSectionTitle(theme, '系统设置'),
                 const SizedBox(height: 8),
                 Card(
@@ -507,7 +500,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                         ),
                         _buildDivider(theme),
-                        // 系统监控入口
                         _buildSettingTile(
                           theme: theme,
                           icon: Icons.monitor,
@@ -572,7 +564,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ---------- 辅助构建函数 ----------
   Widget _buildSectionTitle(ThemeData theme, String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 8),

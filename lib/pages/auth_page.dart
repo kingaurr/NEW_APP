@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart'; // 新增导入
 import '../api_service.dart';
 
 class AuthPage extends StatefulWidget {
@@ -33,6 +34,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   String _errorMessage = '';
   bool _showServerConfig = false;
   String _serverUrl = 'http://47.108.206.221:8080';
+  String _appVersion = '1.0.0'; // 默认版本号，会被动态获取覆盖
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       });
     });
     _loadSavedCredentials();
+    _loadVersion(); // 新增：动态获取版本号
   }
 
   @override
@@ -52,6 +55,14 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     _tabController.dispose();
     _timer?.cancel();
     super.dispose();
+  }
+
+  // 动态获取版本号
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = info.version;
+    });
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -224,9 +235,9 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     ),
                   ),
                   const SizedBox(height: 6),
-                  // 版本号
+                  // 版本号（动态获取）
                   Text(
-                    '版本 1.0.0',
+                    '版本 $_appVersion',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
