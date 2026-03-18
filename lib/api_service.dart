@@ -221,6 +221,11 @@ class ApiService {
     return true;
   }
 
+  // 获取建议详情
+  static Future<Map<String, dynamic>?> getAdviceDetail(String adviceId) async {
+    return await httpGet('/advice/$adviceId');
+  }
+
   // 版本管理
   static Future<List<dynamic>?> getVersions() async {
     return await httpGet('/versions');
