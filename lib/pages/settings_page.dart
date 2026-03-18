@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../api_service.dart';
+import 'system_monitor_page.dart';
+import '../utils/biometrics_helper.dart'; // 导入指纹工具类
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -17,6 +19,7 @@ class _SettingsPageState extends State<SettingsPage> {
   double _currentFund = 0.0;
   String _mode = 'sim';
   bool _isLoading = false;
+  bool _fingerprintEnabled = false; // 新增：指纹开关状态
 
   // 本地存储的配置项
   String _reportContent = '实盘数据 + 进化周报';
@@ -32,7 +35,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _loadSettings();
     _loadLocalConfig();
-    _loadVersion(); // 新增：动态获取版本号
+    _loadVersion();
   }
 
   // 动态获取版本号
@@ -71,6 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _alertRules = prefs.getString('alertRules') ?? '胜率低于40%';
       _notificationMethod = prefs.getString('notificationMethod') ?? 'APP推送';
       _costBudget = prefs.getString('costBudget') ?? '200元/月';
+      _fingerprintEnabled = prefs.getBool('fingerprint_enabled') ?? false; // 加载指纹开关
     });
   }
 
@@ -78,6 +82,12 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveLocalConfig(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
+  }
+
+  // 保存布尔值到本地存储
+  Future<void> _saveBoolConfig(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
   }
 
   Future<void> _logout() async {
@@ -91,6 +101,17 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _modifyFund(double newAmount) async {
+    // 如果启用了指纹锁，先验证
+    if (_fingerprintEnabled) {
+      bool authenticated = await BiometricsHelper.authenticate(
+        reason: '请验证指纹以修改资金',
+      );
+      if (!authenticated) {
+        _showSnackBar('指纹验证失败，操作取消', isError: true);
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
     try {
       final result = await ApiService.modifyFund(newAmount, reason: '用户手动修改');
@@ -237,12 +258,17 @@ class _SettingsPageState extends State<SettingsPage> {
                           onTap: () => _showSnackBar('修改密码功能待实现'),
                         ),
                         _buildDivider(theme),
+                        // 指纹开关（使用真实值）
                         _buildSwitchTile(
                           theme: theme,
                           icon: Icons.fingerprint,
                           title: '手势密码/指纹',
-                          value: false,
-                          onChanged: (v) => _showSnackBar('手势密码功能待实现'),
+                          value: _fingerprintEnabled,
+                          onChanged: (value) async {
+                            setState(() => _fingerprintEnabled = value);
+                            await _saveBoolConfig('fingerprint_enabled', value);
+                            _showSnackBar(value ? '指纹验证已开启' : '指纹验证已关闭');
+                          },
                         ),
                         _buildDivider(theme),
                         _buildSettingTile(
@@ -444,7 +470,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // 系统设置
+                // 系统设置（新增系统监控入口）
                 _buildSectionTitle(theme, '系统设置'),
                 const SizedBox(height: 8),
                 Card(
@@ -479,6 +505,20 @@ class _SettingsPageState extends State<SettingsPage> {
                             currentValue: _costBudget,
                             prefKey: 'costBudget',
                           ),
+                        ),
+                        _buildDivider(theme),
+                        // 系统监控入口
+                        _buildSettingTile(
+                          theme: theme,
+                          icon: Icons.monitor,
+                          title: '系统实时监控',
+                          subtitle: 'CPU、内存、事件流',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SystemMonitorPage()),
+                            );
+                          },
                         ),
                         _buildDivider(theme),
                         _buildSettingTile(

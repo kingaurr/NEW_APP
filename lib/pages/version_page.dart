@@ -2,28 +2,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'package:flutter/services.dart';
-
-// 模拟指纹验证（需替换为真实 local_auth 实现）
-Future<bool> _authenticateWithBiometrics() async {
-  // TODO: 集成 local_auth 插件
-  return await showDialog<bool>(
-    context: navigatorKey.currentContext!,
-    builder: (ctx) => AlertDialog(
-      title: const Text('指纹验证'),
-      content: const Text('请按指纹以继续操作'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('取消'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('模拟验证通过'),
-        ),
-      ],
-    ),
-  ) ?? false;
-}
+import '../utils/biometrics_helper.dart'; // 导入真实指纹工具
 
 class VersionPage extends StatefulWidget {
   const VersionPage({Key? key}) : super(key: key);
@@ -72,8 +51,10 @@ class _VersionPageState extends State<VersionPage> {
   }
 
   Future<void> _rollback(String versionId) async {
-    // 指纹验证
-    bool authenticated = await _authenticateWithBiometrics();
+    // 使用真实指纹验证（高风险操作，强制验证）
+    bool authenticated = await BiometricsHelper.authenticate(
+      reason: '请验证指纹以回滚版本',
+    );
     if (!authenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('指纹验证失败，操作取消')),

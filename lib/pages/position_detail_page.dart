@@ -1,5 +1,6 @@
 // lib/pages/position_detail_page.dart
 import 'package:flutter/material.dart';
+import '../utils/biometrics_helper.dart'; // 导入指纹工具类
 
 class PositionDetailPage extends StatefulWidget {
   final Map<String, dynamic> position;
@@ -201,7 +202,22 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
     );
   }
 
-  void _saveStopLoss() {
+  // 保存止损止盈设置（需要指纹验证）
+  Future<void> _saveStopLoss() async {
+    // 指纹验证
+    bool fingerprintEnabled = true; // TODO: 从 shared_preferences 读取
+    if (fingerprintEnabled) {
+      bool authenticated = await BiometricsHelper.authenticate(
+        reason: '请验证指纹以修改止损止盈',
+      );
+      if (!authenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('指纹验证失败，操作取消')),
+        );
+        return;
+      }
+    }
+
     // 这里应调用后端API保存修改
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -211,7 +227,23 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
     );
   }
 
-  void _confirmSellAll() {
+  // 一键平仓（需要指纹验证 + 二次确认）
+  Future<void> _confirmSellAll() async {
+    // 指纹验证
+    bool fingerprintEnabled = true; // TODO: 从 shared_preferences 读取
+    if (fingerprintEnabled) {
+      bool authenticated = await BiometricsHelper.authenticate(
+        reason: '请验证指纹以执行平仓',
+      );
+      if (!authenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('指纹验证失败，操作取消')),
+        );
+        return;
+      }
+    }
+
+    // 二次确认对话框
     final theme = Theme.of(context);
     showDialog(
       context: context,

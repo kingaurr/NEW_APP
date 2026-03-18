@@ -61,7 +61,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('一键平仓指令已发送'),
-          backgroundColor: theme.colorScheme.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       _loadData();
@@ -69,7 +69,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('平仓失败'),
-          backgroundColor: theme.colorScheme.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -95,11 +95,15 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
             Tab(text: '委托'),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+          ),
+        ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          _loadData();
-        },
+        onRefresh: () async => _loadData(),
         child: TabBarView(
           controller: _tabController,
           children: [
@@ -120,11 +124,15 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
+          debugPrint('选股池加载错误: ${snapshot.error}');
+          return _buildErrorWidget(theme, '选股池加载失败', _loadData);
+        }
+        if (snapshot.data == null) {
           return Center(
             child: Text(
-              '加载失败',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+              '暂无数据',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           );
         }
@@ -135,7 +143,6 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // 交易池
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -158,7 +165,6 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
               ),
             ),
             const SizedBox(height: 16),
-            // 影子池
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -236,11 +242,15 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
+          debugPrint('持仓加载错误: ${snapshot.error}');
+          return _buildErrorWidget(theme, '持仓加载失败', _loadData);
+        }
+        if (snapshot.data == null) {
           return Center(
             child: Text(
-              '加载失败',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+              '暂无持仓',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           );
         }
@@ -255,7 +265,6 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
         }
         return Column(
           children: [
-            // 一键平仓按钮
             Padding(
               padding: const EdgeInsets.all(16),
               child: ElevatedButton.icon(
@@ -313,7 +322,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '数量: $shares  成本: ¥${cost.toStringAsFixed(2)}',
+                            '数量: $shares 成本: ¥${cost.toStringAsFixed(2)}',
                             style: theme.textTheme.bodySmall,
                           ),
                         ],
@@ -337,11 +346,15 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
+          debugPrint('委托加载错误: ${snapshot.error}');
+          return _buildErrorWidget(theme, '委托加载失败', _loadData);
+        }
+        if (snapshot.data == null) {
           return Center(
             child: Text(
-              '加载失败',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+              '暂无委托记录',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           );
         }
@@ -377,7 +390,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
                       children: [
                         Expanded(
                           child: Text(
-                            '$code  $action',
+                            '$code $action',
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -396,7 +409,7 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '数量: $shares  价格: ¥${price.toStringAsFixed(2)}',
+                      '数量: $shares 价格: ¥${price.toStringAsFixed(2)}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -406,6 +419,31 @@ class _TradeMonitorPageState extends State<TradeMonitorPage> with SingleTickerPr
           },
         );
       },
+    );
+  }
+
+  // ---------- 错误提示组件 ----------
+  Widget _buildErrorWidget(ThemeData theme, String message, VoidCallback onRetry) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('重试'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

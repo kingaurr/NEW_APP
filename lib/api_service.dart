@@ -382,4 +382,9 @@ class ApiService {
     debugPrint('一键平仓指令已发送（模拟）');
     return true;
   }
+
+  // 新增：系统实时监控
+  static Future<Map<String, dynamic>?> getSystemMonitor() async {
+    return await httpGet('/system/monitor');
+  }
 }

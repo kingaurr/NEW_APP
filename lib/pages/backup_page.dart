@@ -2,28 +2,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'package:intl/intl.dart';
-
-// 模拟指纹验证（需替换为真实 local_auth 实现）
-Future<bool> _authenticateWithBiometrics() async {
-  // TODO: 集成 local_auth 插件
-  return await showDialog<bool>(
-    context: navigatorKey.currentContext!,
-    builder: (ctx) => AlertDialog(
-      title: const Text('指纹验证'),
-      content: const Text('请按指纹以继续操作'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('取消'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('模拟验证通过'),
-        ),
-      ],
-    ),
-  ) ?? false;
-}
+import '../utils/biometrics_helper.dart'; // 导入真实指纹工具
 
 class BackupPage extends StatefulWidget {
   const BackupPage({Key? key}) : super(key: key);
@@ -71,8 +50,10 @@ class _BackupPageState extends State<BackupPage> {
   }
 
   Future<void> _createBackup() async {
-    // 指纹验证
-    bool authenticated = await _authenticateWithBiometrics();
+    // 指纹验证（高风险操作）
+    bool authenticated = await BiometricsHelper.authenticate(
+      reason: '请验证指纹以创建备份',
+    );
     if (!authenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('指纹验证失败，操作取消')),
@@ -94,8 +75,10 @@ class _BackupPageState extends State<BackupPage> {
   }
 
   Future<void> _restoreBackup(String filename) async {
-    // 指纹验证
-    bool authenticated = await _authenticateWithBiometrics();
+    // 指纹验证（高风险操作）
+    bool authenticated = await BiometricsHelper.authenticate(
+      reason: '请验证指纹以恢复备份',
+    );
     if (!authenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('指纹验证失败，操作取消')),

@@ -2,29 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../api_service.dart';
-
-// 模拟指纹验证（需替换为真实 local_auth 实现）
-Future<bool> _authenticateWithBiometrics() async {
-  // TODO: 集成 local_auth 插件
-  return await showDialog<bool>(
-    context: navigatorKey.currentContext!,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: Theme.of(ctx).dialogBackgroundColor,
-      title: const Text('指纹验证'),
-      content: const Text('请按指纹以继续操作'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('取消'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('模拟验证通过'),
-        ),
-      ],
-    ),
-  ) ?? false;
-}
+import '../utils/biometrics_helper.dart'; // 导入指纹工具类
 
 class AdviceDetailPage extends StatefulWidget {
   final String adviceId;
@@ -75,9 +53,11 @@ class _AdviceDetailPageState extends State<AdviceDetailPage> {
 
   Future<void> _handleAction(String decision) async {
     // 如果启用了指纹锁，先验证
-    bool fingerprintEnabled = true; // TODO: 从存储读取
+    bool fingerprintEnabled = true; // TODO: 从 shared_preferences 读取
     if (fingerprintEnabled) {
-      bool authenticated = await _authenticateWithBiometrics();
+      bool authenticated = await BiometricsHelper.authenticate(
+        reason: '请验证指纹以审批建议',
+      );
       if (!authenticated) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('指纹验证失败，操作取消')),
