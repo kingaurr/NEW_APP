@@ -1,6 +1,7 @@
 // lib/pages/settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../api_service.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -24,13 +25,22 @@ class _SettingsPageState extends State<SettingsPage> {
   String _alertRules = '胜率低于40%';
   String _notificationMethod = 'APP推送';
   String _costBudget = '200元/月';
-  String _appVersion = '1.0.0';
+  String _appVersion = '1.0.0'; // 临时默认值，会被动态获取覆盖
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadLocalConfig();
+    _loadVersion(); // 新增：动态获取版本号
+  }
+
+  // 动态获取版本号
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = info.version;
+    });
   }
 
   // 从后端加载系统设置（资金、模式等）

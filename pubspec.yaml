@@ -11,7 +11,8 @@ dependencies:
     sdk: flutter
   http: ^1.1.0
   shared_preferences: ^2.2.0
-  fl_chart: ^0.65.0  # 用于图表显示
+  fl_chart: ^0.65.0
+  package_info_plus: ^4.0.0   # 必须添加，用于动态获取版本号
 
 dev_dependencies:
   flutter_test:
@@ -20,5 +21,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
+
   

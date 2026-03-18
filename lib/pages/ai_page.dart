@@ -1,6 +1,8 @@
 // pages/ai_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import 'right_brain_page.dart';
+import 'left_brain_page.dart';
 
 class AiPage extends StatefulWidget {
   const AiPage({Key? key}) : super(key: key);
@@ -34,50 +36,102 @@ class _AiPageState extends State<AiPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return RefreshIndicator(
-      onRefresh: () async {
-        _loadData();
-      },
+      onRefresh: () async => _loadData(),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // AI状态卡片
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'AI 状态',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  FutureBuilder<Map<String, dynamic>?>(
-                    future: _aiStatusFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError || snapshot.data == null) {
-                        return Text(
-                          '加载失败',
-                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+          // 右脑状态卡片（可点击跳转）
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RightBrainPage()),
+            ),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '右脑状态',
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<Map<String, dynamic>?>(
+                      future: _aiStatusFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError || snapshot.data == null) {
+                          return Text(
+                            '加载失败',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                          );
+                        }
+                        final data = snapshot.data!;
+                        return Column(
+                          children: [
+                            _buildInfoRow(theme, '模式', data['mode'] ?? '未知'),
+                            _buildInfoRow(theme, '模型', data['model'] ?? '未知'),
+                            _buildInfoRow(theme, '调用次数', '${data['total_calls'] ?? 0}'),
+                            _buildInfoRow(theme, '累计成本', '¥${data['total_cost']?.toStringAsFixed(2) ?? '0.00'}'),
+                          ],
                         );
-                      }
-                      final data = snapshot.data!;
-                      return Column(
-                        children: [
-                          _buildInfoRow(theme, '版本', data['version'] ?? '未知'),
-                          _buildInfoRow(theme, '调用次数', '${data['total_calls'] ?? 0}'),
-                          _buildInfoRow(theme, '累计成本', '¥${data['total_cost']?.toStringAsFixed(2) ?? '0.00'}'),
-                          _buildInfoRow(theme, '健康度', data['health'] ?? '未知'),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 左脑状态卡片（可点击跳转）
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LeftBrainPage()),
+            ),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '左脑状态',
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<Map<String, dynamic>?>(
+                      future: _aiStatusFuture, // 实际应替换为左脑专用接口，暂用同一数据
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError || snapshot.data == null) {
+                          return Text(
+                            '加载失败',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                          );
+                        }
+                        final data = snapshot.data!;
+                        return Column(
+                          children: [
+                            _buildInfoRow(theme, '模式', data['mode'] ?? '未知'),
+                            _buildInfoRow(theme, '模型', data['model'] ?? '未知'),
+                            _buildInfoRow(theme, '熔断', data['fuse_triggered'] == true ? '已触发' : '正常'),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
