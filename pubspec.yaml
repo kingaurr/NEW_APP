@@ -1,7 +1,7 @@
 name: trading_app
-description: A new Flutter project.
+description: AI量化交易助手APP
 publish_to: 'none'
-version: 1.1.0+1
+version: 2.0.0+1
 
 environment:
   sdk: '^3.11.0'
@@ -9,11 +9,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # 网络与存储
   http: ^1.1.0
   shared_preferences: ^2.2.0
+  
+  # UI 组件
   fl_chart: ^0.65.0
   package_info_plus: ^4.0.0
-  local_auth: ^2.1.7  # 新增：用于指纹/面容识别
+  local_auth: ^2.1.7
+  flutter_markdown: ^0.6.18
+  file_picker: ^5.5.0
+  intl: ^0.18.1
+  
+  # 语音相关
+  speech_to_text: ^6.6.0
+  record: ^5.0.0
+  audioplayers: ^5.2.1
+  
+  # 状态管理
+  provider: ^6.1.1
 
 dev_dependencies:
   flutter_test:
