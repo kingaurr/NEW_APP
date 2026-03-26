@@ -271,7 +271,7 @@ class ApiService {
     return await httpGet('/left_brain/decisions');
   }
 
-  // ========== 新增熔断、数据源健康、成本状态等接口（可选，但聚合接口已包含）==========
+  // ========== 新增熔断、数据源健康、成本状态等接口 ==========
   static Future<Map<String, dynamic>?> getFuseStatus() async {
     return await httpGet('/fuse/status');
   }
@@ -319,5 +319,184 @@ class ApiService {
   // 新增：系统实时监控
   static Future<Map<String, dynamic>?> getSystemMonitor() async {
     return await httpGet('/system/monitor');
+  }
+
+  // ========== 新增安全相关接口 ==========
+  // 声纹验证
+  static Future<Map<String, dynamic>?> voiceRegister(String userId, String userName, List<double> features) async {
+    return await httpPost('/voice/register', body: {
+      'user_id': userId,
+      'user_name': userName,
+      'features': features,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> voiceVerify(String userId, List<double> features) async {
+    return await httpPost('/voice/verify', body: {
+      'user_id': userId,
+      'features': features,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> voiceIdentify(List<double> features) async {
+    return await httpPost('/voice/identify', body: {
+      'features': features,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> voiceGetUsers() async {
+    return await httpGet('/voice/users');
+  }
+
+  static Future<Map<String, dynamic>?> voiceDelete(String userId) async {
+    return await httpPost('/voice/delete', body: {'user_id': userId});
+  }
+
+  // 指纹验证
+  static Future<Map<String, dynamic>?> fingerprintRegister() async {
+    return await httpPost('/fingerprint/register');
+  }
+
+  static Future<Map<String, dynamic>?> fingerprintVerify(String operation) async {
+    return await httpPost('/fingerprint/verify', body: {'operation': operation});
+  }
+
+  static Future<Map<String, dynamic>?> fingerprintInfo() async {
+    return await httpGet('/fingerprint/info');
+  }
+
+  static Future<Map<String, dynamic>?> fingerprintDelete() async {
+    return await httpPost('/fingerprint/delete');
+  }
+
+  // 权限管理
+  static Future<Map<String, dynamic>?> permissionCheck(String userId, String operation) async {
+    return await httpPost('/permission/check', body: {
+      'user_id': userId,
+      'operation': operation,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> permissionAuthorize(String userId, String operation, String authMethod) async {
+    return await httpPost('/permission/authorize', body: {
+      'user_id': userId,
+      'operation': operation,
+      'auth_method': authMethod,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> permissionUsers() async {
+    return await httpGet('/permission/users');
+  }
+
+  static Future<Map<String, dynamic>?> permissionUpdate(String userId, int level) async {
+    return await httpPost('/permission/update', body: {
+      'user_id': userId,
+      'level': level,
+    });
+  }
+
+  // 指令守卫
+  static Future<Map<String, dynamic>?> commandExecute(String command, String userId, {String? bypassToken}) async {
+    return await httpPost('/command/execute', body: {
+      'command': command,
+      'user_id': userId,
+      'bypass_token': bypassToken,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> commandParse(String command) async {
+    return await httpPost('/command/parse', body: {'command': command});
+  }
+
+  // 频率限制
+  static Future<Map<String, dynamic>?> rateLimitCheck(String userId, String operation) async {
+    return await httpPost('/rate_limit/check', body: {
+      'user_id': userId,
+      'operation': operation,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> rateLimitStatus(String userId, String operation) async {
+    return await httpPost('/rate_limit/status', body: {
+      'user_id': userId,
+      'operation': operation,
+    });
+  }
+
+  // IP白名单
+  static Future<Map<String, dynamic>?> ipWhitelistCheck(String ip) async {
+    return await httpPost('/ip_whitelist/check', body: {'ip': ip});
+  }
+
+  static Future<Map<String, dynamic>?> ipWhitelistAdd(String pattern, {String? reason}) async {
+    return await httpPost('/ip_whitelist/add', body: {
+      'pattern': pattern,
+      'reason': reason,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> ipWhitelistRemove(String pattern) async {
+    return await httpPost('/ip_whitelist/remove', body: {'pattern': pattern});
+  }
+
+  static Future<Map<String, dynamic>?> ipWhitelistList() async {
+    return await httpGet('/ip_whitelist/list');
+  }
+
+  // 紧急停止
+  static Future<Map<String, dynamic>?> emergencyStop(String reason) async {
+    return await httpPost('/emergency/stop', body: {'reason': reason});
+  }
+
+  static Future<Map<String, dynamic>?> emergencyRecover({String? reason}) async {
+    return await httpPost('/emergency/recover', body: {'reason': reason});
+  }
+
+  static Future<Map<String, dynamic>?> emergencyPause(String reason, int duration) async {
+    return await httpPost('/emergency/pause', body: {
+      'reason': reason,
+      'duration': duration,
+    });
+  }
+
+  static Future<Map<String, dynamic>?> emergencyStatus() async {
+    return await httpGet('/emergency/status');
+  }
+
+  // 审计日志
+  static Future<Map<String, dynamic>?> auditLogs({int limit = 100, String? operation, String? userId}) async {
+    String url = '/audit/logs?limit=$limit';
+    if (operation != null) url += '&operation=$operation';
+    if (userId != null) url += '&user_id=$userId';
+    return await httpGet(url);
+  }
+
+  static Future<Map<String, dynamic>?> auditStatistics({int days = 7}) async {
+    return await httpGet('/audit/statistics?days=$days');
+  }
+
+  // 安全中心
+  static Future<Map<String, dynamic>?> securityStatus() async {
+    return await httpGet('/security/status');
+  }
+
+  static Future<Map<String, dynamic>?> securityReport({int days = 7}) async {
+    return await httpGet('/security/report?days=$days');
+  }
+
+  static Future<Map<String, dynamic>?> securityLevelSet(String level) async {
+    return await httpPost('/security/level', body: {'level': level});
+  }
+
+  static Future<Map<String, dynamic>?> securityHealthCheck() async {
+    return await httpGet('/security/health');
+  }
+
+  static Future<Map<String, dynamic>?> securityBypassToken({int duration = 300, String? ip}) async {
+    return await httpPost('/security/bypass_token', body: {
+      'duration': duration,
+      'ip': ip,
+    });
   }
 }

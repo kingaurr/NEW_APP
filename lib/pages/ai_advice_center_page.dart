@@ -1,232 +1,301 @@
-// pages/ai_advice_center_page.dart
+// lib/pages/ai_advice_center_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
-import 'advice_detail_page.dart';
+import '../widgets/strategy_item.dart';
+import '../widgets/pending_rule_item.dart';
+import '../widgets/guardian_suggestion_item.dart';
+import '../widgets/evidence_viewer.dart';
 
+/// AI优化建议中心页面
+/// 整合策略库、外脑待审核规则、守门员建议、进化报告
 class AiAdviceCenterPage extends StatefulWidget {
-  const AiAdviceCenterPage({Key? key}) : super(key: key);
+  const AiAdviceCenterPage({super.key});
 
   @override
-  _AiAdviceCenterPageState createState() => _AiAdviceCenterPageState();
+  State<AiAdviceCenterPage> createState() => _AiAdviceCenterPageState();
 }
 
-class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> {
-  late Future<List<dynamic>> _pendingAdvicesFuture;
-  late Future<List<dynamic>> _historyAdvicesFuture;
+class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTickerProviderStateMixin {
+  bool _isLoading = true;
+  List<dynamic> _strategies = [];
+  List<dynamic> _pendingRules = [];
+  List<dynamic> _guardianSuggestions = [];
+  Map<String, dynamic> _evolutionReport = {};
+  int _pendingCount = 0;
+  int _suggestionCount = 0;
+  String _errorMessage = '';
+  
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _loadData();
   }
 
-  void _loadData() {
-    setState(() {
-      _pendingAdvicesFuture = ApiService.getPendingAdvices();
-      _historyAdvicesFuture = ApiService.getHistoryAdvices();
-    });
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
-  Future<void> _resolveAdvice(String adviceId, String decision, String summary) async {
-    final theme = Theme.of(context);
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.dialogBackgroundColor,
-        title: Text(
-          '$decision 建议',
-          style: theme.textTheme.titleMedium,
-        ),
-        content: Text('确定要$decision建议 “$summary” 吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              '取消',
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: decision == '同意' ? theme.colorScheme.primary : theme.colorScheme.error,
-              foregroundColor: theme.colorScheme.onPrimary,
-            ),
-            child: Text(decision),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-    final result = await ApiService.resolveAdvice(adviceId, decision);
-    if (result == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('已$decision (模拟操作)'),
-          backgroundColor: theme.colorScheme.primary,
-        ),
-      );
-      _loadData(); // 刷新列表
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('操作失败'),
-          backgroundColor: theme.colorScheme.error,
-        ),
-      );
+    try {
+      final results = await Future.wait([
+        ApiService.getStrategies(),
+        ApiService.getPendingRules(),
+        ApiService.getPendingSuggestions(),
+        ApiService.getEvolutionReport(),
+      ]);
+
+      if (results[0] != null) {
+        setState(() {
+          _strategies = results[0];
+        });
+      }
+      
+      if (results[1] != null && results[1]['rules'] != null) {
+        setState(() {
+          _pendingRules = results[1]['rules'];
+          _pendingCount = _pendingRules.length;
+        });
+      }
+      
+      if (results[2] != null && results[2]['suggestions'] != null) {
+        setState(() {
+          _guardianSuggestions = results[2]['suggestions'];
+          _suggestionCount = _guardianSuggestions.length;
+        });
+      }
+      
+      if (results[3] != null) {
+        setState(() {
+          _evolutionReport = results[3];
+        });
+      }
+    } catch (e) {
+      debugPrint('加载AI中心数据失败: $e');
+      setState(() {
+        _errorMessage = '加载失败: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'running':
+        return '进化中';
+      case 'completed':
+        return '已完成';
+      case 'failed':
+        return '失败';
+      default:
+        return '待执行';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'running':
+        return Colors.orange;
+      case 'completed':
+        return Colors.green;
+      case 'failed':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('AI优化建议'),
-          bottom: TabBar(
-            tabs: const [
-              Tab(text: '待处理'),
-              Tab(text: '历史'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildPendingList(theme),
-            _buildHistoryList(theme),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('AI优化建议中心'),
+        backgroundColor: const Color(0xFF1E1E1E),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            const Tab(text: '策略库'),
+            Tab(text: '待审核规则($_pendingCount)'),
+            Tab(text: '守门员建议($_suggestionCount)'),
           ],
+          labelColor: const Color(0xFFD4AF37),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFFD4AF37),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildPendingList(ThemeData theme) {
-    return FutureBuilder<List<dynamic>>(
-      future: _pendingAdvicesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError || snapshot.data == null) {
-          return Center(
-            child: Text(
-              '加载失败: ${snapshot.error ?? '未知错误'}',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
-            ),
-          );
-        }
-        final advices = snapshot.data!;
-        if (advices.isEmpty) {
-          return Center(
-            child: Text(
-              '暂无待处理建议',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(8),
-          itemCount: advices.length,
-          itemBuilder: (ctx, index) {
-            final item = advices[index];
-            final confidence = item['confidence'] != null ? (item['confidence'] * 100).toInt() : 0;
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadData,
+                        child: const Text('重试'),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
                   children: [
-                    Text(
-                      item['summary'] ?? '',
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '类型: ${item['type'] ?? '未知'} · 预期: ${item['expected_profit'] ?? '0%'}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '置信度: $confidence% · ${item['created_at'] ?? ''}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.check, color: theme.colorScheme.primary),
-                          onPressed: () => _resolveAdvice(item['id'], '同意', item['summary']),
+                    // 进化报告卡片（在Tab上方）
+                    if (_evolutionReport.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Card(
+                          color: const Color(0xFF2A2A2A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        '外脑进化报告',
+                                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _evolutionReport['summary'] ?? '暂无新规则',
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(_evolutionReport['status'] ?? 'idle').withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _getStatusText(_evolutionReport['status'] ?? 'idle'),
+                                    style: TextStyle(
+                                      color: _getStatusColor(_evolutionReport['status'] ?? 'idle'),
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.close, color: theme.colorScheme.error),
-                          onPressed: () => _resolveAdvice(item['id'], '拒绝', item['summary']),
-                        ),
-                      ],
+                      ),
+                    // Tab内容
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildStrategiesTab(),
+                          _buildPendingRulesTab(),
+                          _buildGuardianSuggestionsTab(),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
+    );
+  }
+
+  Widget _buildStrategiesTab() {
+    if (_strategies.isEmpty) {
+      return const Center(
+        child: Text(
+          '暂无策略',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _strategies.length,
+      itemBuilder: (context, index) {
+        final strategy = _strategies[index];
+        return StrategyItem(
+          strategy: strategy,
+          onStrategyChanged: _loadData,
         );
       },
     );
   }
 
-  Widget _buildHistoryList(ThemeData theme) {
-    return FutureBuilder<List<dynamic>>(
-      future: _historyAdvicesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError || snapshot.data == null) {
-          return Center(
-            child: Text(
-              '加载失败: ${snapshot.error ?? '未知错误'}',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
-            ),
-          );
-        }
-        final advices = snapshot.data!;
-        if (advices.isEmpty) {
-          return Center(
-            child: Text(
-              '暂无历史建议',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(8),
-          itemCount: advices.length,
-          itemBuilder: (ctx, index) {
-            final item = advices[index];
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                title: Text(
-                  item['summary'] ?? '',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  '${item['result'] ?? ''} · ${item['executed_at'] ?? ''}',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-                trailing: Icon(Icons.history, color: theme.colorScheme.primary),
-              ),
-            );
-          },
+  Widget _buildPendingRulesTab() {
+    if (_pendingRules.isEmpty) {
+      return const Center(
+        child: Text(
+          '暂无待审核规则',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _pendingRules.length,
+      itemBuilder: (context, index) {
+        final rule = _pendingRules[index];
+        return PendingRuleItem(
+          rule: rule,
+          onStatusChanged: _loadData,
+        );
+      },
+    );
+  }
+
+  Widget _buildGuardianSuggestionsTab() {
+    if (_guardianSuggestions.isEmpty) {
+      return const Center(
+        child: Text(
+          '暂无守门员建议',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _guardianSuggestions.length,
+      itemBuilder: (context, index) {
+        final suggestion = _guardianSuggestions[index];
+        return GuardianSuggestionItem(
+          suggestion: suggestion,
+          onStatusChanged: _loadData,
         );
       },
     );

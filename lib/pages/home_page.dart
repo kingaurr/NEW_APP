@@ -1,455 +1,461 @@
 // lib/pages/home_page.dart
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../api_service.dart';
+import '../widgets/fund_card.dart';
+import '../widgets/ai_status_bar.dart';
+import '../widgets/alert_settings.dart';
+import '../pages/guardian_suggestions_page.dart';
+import '../pages/risk_settings_page.dart';
 
+/// 首页
+/// 全局状态总览：资金、AI状态、风控、待处理事项
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  Map<String, dynamic> _status = {};
-  List<String> _alerts = [];
-  bool _hasAiAdvice = false;
+  bool _isLoading = true;
+  Map<String, dynamic> _dashboard = {};
+  int _pendingSuggestions = 0;
+  String _marketStatus = '震荡';
+  String _riskStatus = 'normal';
+  String _alertLevel = 'none';
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _loadData();
   }
 
-  Future<void> _fetchData() async {
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
     try {
-      final status = await ApiService.getStatus();
-      if (status != null) {
+      final results = await Future.wait([
+        ApiService.getDashboard(),
+        ApiService.getPendingAdviceCount(),
+        ApiService.getMarketStatus(),
+        ApiService.getRiskStatus(),
+        ApiService.getFuseStatus(),
+      ]);
+
+      if (results[0] != null) {
         setState(() {
-          _status = status;
+          _dashboard = results[0];
         });
       }
-      final alerts = await ApiService.getAlerts();
-      setState(() {
-        _alerts = alerts;
-      });
-      final hasAdvice = await ApiService.hasNewAiAdvice();
-      setState(() {
-        _hasAiAdvice = hasAdvice;
-      });
+      
+      if (results[1] != null) {
+        setState(() {
+          _pendingSuggestions = results[1]['count'] ?? 0;
+        });
+      }
+      
+      if (results[2] != null) {
+        setState(() {
+          _marketStatus = results[2]['status'] ?? '震荡';
+        });
+      }
+      
+      if (results[3] != null) {
+        setState(() {
+          _riskStatus = results[3]['status'] ?? 'normal';
+        });
+      }
+      
+      if (results[4] != null) {
+        setState(() {
+          _alertLevel = results[4]['level'] ?? 'none';
+        });
+      }
     } catch (e) {
-      debugPrint('主页数据加载失败: $e');
+      debugPrint('加载首页数据失败: $e');
+      setState(() {
+        _errorMessage = '加载失败: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _emergencyStop() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).dialogBackgroundColor,
-        title: Text('紧急停机', style: Theme.of(ctx).textTheme.titleMedium),
-        content: const Text('确定要停止所有交易吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('取消', style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-              foregroundColor: Theme.of(ctx).colorScheme.onError,
-            ),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      const emergencyToken = 'change_me_in_prod';
-      final response = await ApiService.httpPost(
-        '/emergency_stop',
-        body: {'reason': '用户手动触发'},
-        headers: {'X-Emergency-Token': emergencyToken},
-      );
-      if (response != null && response['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('紧急停止指令已发送'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('发送失败: ${response?['error'] ?? '未知错误'}'),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-          ),
-        );
-      }
+  String _getRiskStatusText(String status) {
+    switch (status) {
+      case 'normal':
+        return '正常';
+      case 'warning':
+        return '警告';
+      case 'fuse':
+        return '熔断';
+      default:
+        return '正常';
+    }
+  }
+
+  Color _getRiskStatusColor(String status) {
+    switch (status) {
+      case 'normal':
+        return Colors.green;
+      case 'warning':
+        return Colors.orange;
+      case 'fuse':
+        return Colors.red;
+      default:
+        return Colors.green;
+    }
+  }
+
+  String _getAlertLevelText(String level) {
+    switch (level) {
+      case 'yellow':
+        return '黄色预警';
+      case 'orange':
+        return '橙色预警';
+      case 'red':
+        return '红色预警';
+      default:
+        return '';
+    }
+  }
+
+  Color _getAlertLevelColor(String level) {
+    switch (level) {
+      case 'yellow':
+        return Colors.orange;
+      case 'orange':
+        return Colors.deepOrange;
+      case 'red':
+        return Colors.red;
+      default:
+        return Colors.transparent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mode = _status['mode'] ?? 'sim';
-    final heartRate = _status['heart_rate'] ?? 60;
-    final cpu = _status['cpu_percent'] ?? 0;
-    final memory = _status['memory_percent'] ?? 0;
-    final disk = _status['disk_usage'] ?? 0;
-    final currentTime = DateTime.now();
-    final isTradingTime = _isTradingTime(currentTime);
-
-    // 实盘资金
-    final realFund = _status['fund'] ?? 0.0;
-    final realAvailable = _status['available_fund'] ?? 0.0;
-    final realPosition = _status['position_value'] ?? 0.0;
-
-    // 模拟资金
-    final simFund = _status['sim_fund'] ?? 0.0;
-    final simAvailable = _status['sim_available'] ?? 0.0;
-    final simPosition = _status['sim_position'] ?? 0.0;
-
-    final dailyProfit = _status['today_pnl'] ?? 0.0;
-    final dailyProfitPercent = realFund > 0 ? (dailyProfit / realFund) * 100 : 0.0;
-
-    final tradeCount = _status['trade_count'] ?? 0;
-    final winRate = ((_status['win_rate'] ?? 0) * 100).toStringAsFixed(1);
-    final maxDrawdown = ((_status['max_drawdown'] ?? 0) * 100).toStringAsFixed(1);
-    final signalCount = _status['signal_count'] ?? 0;
-    final approvedCount = _status['approved_count'] ?? 0;
-    final rejectedCount = _status['rejected_count'] ?? 0;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('首页'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.warning, color: theme.colorScheme.error),
-            onPressed: _emergencyStop,
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _fetchData,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // 顶部状态栏
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: Scaffold(
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage.isNotEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildStatusChip(theme, '模式', mode, _getModeColor(theme, mode)),
-                        _buildStatusChip(theme, '心率', heartRate.toString(), heartRate > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
-                        _buildStatusChip(theme, 'CPU', '$cpu%', cpu > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
+                        const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadData,
+                          child: const Text('重试'),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  )
+                : SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatusChip(theme, '内存', '$memory%', memory > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
-                        _buildStatusChip(theme, '磁盘', '$disk%', disk > 80 ? theme.colorScheme.error : theme.colorScheme.primary),
-                        Text(
-                          '${currentTime.hour}:${currentTime.minute.toString().padLeft(2, '0')}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isTradingTime ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                        // 预警级别显示
+                        if (_alertLevel != 'none')
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _getAlertLevelColor(_alertLevel).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _getAlertLevelColor(_alertLevel),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber,
+                                  color: _getAlertLevelColor(_alertLevel),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _getAlertLevelText(_alertLevel),
+                                  style: TextStyle(
+                                    color: _getAlertLevelColor(_alertLevel),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/risk_settings');
+                                  },
+                                  child: const Text(
+                                    '查看详情',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // 资金双卡片
+                        FundCard(
+                          isReal: true,
+                          onRefresh: _loadData,
+                        ),
+                        const SizedBox(height: 12),
+                        FundCard(
+                          isReal: false,
+                          onRefresh: _loadData,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // AI状态栏
+                        AIStatusBar(onRefresh: _loadData),
+                        const SizedBox(height: 16),
+
+                        // 市场与风控
+                        Card(
+                          color: const Color(0xFF2A2A2A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        '市场状态',
+                                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _marketStatus,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      const Text(
+                                        '风控状态',
+                                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: _getRiskStatusColor(_riskStatus).withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          _getRiskStatusText(_riskStatus),
+                                          style: TextStyle(
+                                            color: _getRiskStatusColor(_riskStatus),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-            // 实盘资产卡片
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('实盘资产', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '¥ ${realFund.toStringAsFixed(2)}',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('可用: ¥ ${realAvailable.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
-                        Text('持仓: ¥ ${realPosition.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 模拟资产卡片
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('模拟资产', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '¥ ${simFund.toStringAsFixed(2)}',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('可用: ¥ ${simAvailable.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
-                        Text('持仓: ¥ ${simPosition.toStringAsFixed(2)}', style: theme.textTheme.bodyMedium),
-                      ],
-                    ),
-                    if (simFund == 0.0)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Text(
-                          '注：模拟资金尚未加载，请检查后端配置',
-                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        // 快捷入口
+                        Card(
+                          color: const Color(0xFF2A2A2A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '快捷入口',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    _buildQuickAction(
+                                      icon: Icons.security,
+                                      label: '调整风控',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/risk_settings');
+                                      },
+                                    ),
+                                    _buildQuickAction(
+                                      icon: Icons.rule,
+                                      label: '批准规则',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/ai_advice_center');
+                                      },
+                                    ),
+                                    _buildQuickAction(
+                                      icon: Icons.description,
+                                      label: '今日报告',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/report_list', arguments: {'type': 'daily'});
+                                      },
+                                    ),
+                                    _buildQuickAction(
+                                      icon: Icons.mic,
+                                      label: '语音',
+                                      onTap: () {
+                                        // 语音功能由悬浮球处理
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-            // 资金曲线迷你图
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Container(
-                height: 100,
-                padding: const EdgeInsets.all(8),
-                child: _buildMiniChart(theme),
-              ),
-            ),
-            const SizedBox(height: 16),
+                        // 待处理事项
+                        if (_pendingSuggestions > 0)
+                          Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: const Color(0xFFD4AF37).withOpacity(0.5),
+                              ),
+                            ),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const GuardianSuggestionsPage(),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFD4AF37).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.notifications_active,
+                                        color: Color(0xFFD4AF37),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            '待处理事项',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '有$_pendingSuggestions条守门员建议待处理',
+                                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(Icons.chevron_right, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
 
-            // 今日交易摘要
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(theme, '成交', tradeCount.toString()),
-                        _buildStatItem(theme, '胜率', '$winRate%'),
-                        _buildStatItem(theme, '回撤', '$maxDrawdown%'),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(theme, '信号', signalCount.toString()),
-                        _buildStatItem(theme, '通过', approvedCount.toString()),
-                        _buildStatItem(theme, '否决', rejectedCount.toString()),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-            // AI优化建议提醒
-            if (_hasAiAdvice)
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                color: theme.colorScheme.secondaryContainer,
-                child: ListTile(
-                  leading: Icon(Icons.lightbulb, color: theme.colorScheme.onSecondaryContainer),
-                  title: Text('有新的AI优化建议', style: theme.textTheme.bodyLarge),
-                  trailing: Icon(Icons.arrow_forward_ios, color: theme.colorScheme.onSecondaryContainer),
-                  onTap: () {
-                    Navigator.pushNamed(context, '/ai_advice_center');
-                  },
-                ),
-              ),
-
-            // 告警滚动条（仅当有告警时显示）
-            if (_alerts.isNotEmpty)
-              Container(
-                height: 40,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _alerts.length,
-                  itemBuilder: (ctx, idx) => Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _alerts[idx],
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
-                    ),
-                  ),
-                ),
-              ),
-
-            // 快捷操作栏
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _fetchData,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('刷新'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _emergencyStop,
-                    icon: const Icon(Icons.warning),
-                    label: const Text('紧急停止'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.error,
-                      foregroundColor: theme.colorScheme.onError,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('模式切换功能待实现'),
-                          backgroundColor: theme.colorScheme.secondary,
+                        // 主动提醒设置
+                        AlertSettings(
+                          onSettingsChanged: () {
+                            // 设置变更后的回调
+                          },
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.swap_horiz),
-                    label: const Text('模式切换'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.secondary,
-                      foregroundColor: theme.colorScheme.onSecondary,
+                      ],
                     ),
                   ),
-                ],
-              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: (MediaQuery.of(context).size.width - 56) / 4,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[800],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFFD4AF37), size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildStatusChip(ThemeData theme, String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color),
-      ),
-      child: Text(
-        '$label: $value',
-        style: theme.textTheme.bodySmall?.copyWith(color: color),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(ThemeData theme, String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-        ),
-        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      ],
-    );
-  }
-
-  Widget _buildMiniChart(ThemeData theme) {
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [
-              FlSpot(0, 1),
-              FlSpot(1, 1.2),
-              FlSpot(2, 1.1),
-              FlSpot(3, 1.3),
-              FlSpot(4, 1.25),
-              FlSpot(5, 1.4),
-              FlSpot(6, 1.35),
-            ],
-            isCurved: true,
-            color: theme.colorScheme.primary,
-            barWidth: 2,
-            dotData: FlDotData(show: false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getModeColor(ThemeData theme, String mode) {
-    switch (mode) {
-      case 'real':
-        return theme.colorScheme.error;
-      case 'sim':
-        return theme.colorScheme.primary;
-      case 'train':
-        return theme.colorScheme.secondary;
-      case 'maintenance':
-        return theme.colorScheme.tertiary ?? Colors.orange;
-      default:
-        return theme.colorScheme.onSurfaceVariant;
-    }
-  }
-
-  bool _isTradingTime(DateTime now) {
-    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) return false;
-    final hour = now.hour;
-    final minute = now.minute;
-    final timeValue = hour * 100 + minute;
-    return (timeValue >= 930 && timeValue <= 1130) || (timeValue >= 1300 && timeValue <= 1500);
   }
 }
