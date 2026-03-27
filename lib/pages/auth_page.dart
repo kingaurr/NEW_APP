@@ -18,13 +18,13 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _smsCodeController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isPasswordLogin = true;
   bool _biometricsAvailable = false;
   String _serverUrl = 'http://47.108.206.221:8080/api';
   String _errorMessage = '';
-  
+
   late TabController _tabController;
 
   @override
@@ -79,9 +79,13 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
     try {
       final result = await ApiService.authPassword(password);
-      if (result?['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', result['token']);
+      // 安全类型检查
+      if (result != null && result is Map && result['success'] == true) {
+        final token = result['token'];
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', token.toString());
+        }
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -122,7 +126,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
     try {
       final result = await ApiService.smsSend(phone);
-      if (result?['success'] == true) {
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('验证码已发送'), backgroundColor: Colors.green),
@@ -162,9 +166,12 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
     try {
       final result = await ApiService.smsVerify(code);
-      if (result?['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', result['token']);
+      if (result != null && result is Map && result['success'] == true) {
+        final token = result['token'];
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', token.toString());
+        }
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -200,16 +207,14 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         reason: '验证指纹以登录系统',
         usePasscodeFallback: true,
       );
-      
+
       if (authenticated) {
-        // 指纹验证成功后，使用保存的token或免密登录
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('auth_token');
-        
+
         if (token != null && token.isNotEmpty) {
-          // 验证token有效性
           final result = await ApiService.verifyToken();
-          if (result?['valid'] == true) {
+          if (result != null && result is Map && result['valid'] == true) {
             if (mounted) {
               Navigator.pushReplacement(
                 context,
@@ -219,8 +224,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
             return;
           }
         }
-        
-        // token无效，需要密码登录
+
         setState(() {
           _errorMessage = '请使用密码登录后开启指纹验证';
         });

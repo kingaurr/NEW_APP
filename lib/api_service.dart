@@ -221,6 +221,24 @@ class ApiService {
     return getHistoryAdvices(limit: limit);
   }
 
+  // 别名方法（待审核规则操作）
+  static Future<bool> awaitPendingRule(String ruleId) async {
+    return approveRule(ruleId);
+  }
+
+  static Future<bool> rejectPendingRule(String ruleId) async {
+    return rejectRule(ruleId);
+  }
+
+  // 别名方法（守门员建议操作）
+  static Future<bool> acceptSuggestion(String suggestionId) async {
+    return approveAdvice(suggestionId);
+  }
+
+  static Future<bool> rejectSuggestion(String suggestionId) async {
+    return rejectAdvice(suggestionId);
+  }
+
   // ========== 红蓝军 ==========
   static Future<Map<String, dynamic>?> getLatestWarGame() async {
     return await httpGet('/wargame/latest');
@@ -281,8 +299,10 @@ class ApiService {
   }
 
   // ========== 信号历史 ==========
-  static Future<List<dynamic>?> getSignalHistory() async {
-    return await httpGet('/signals/history');
+  static Future<List<dynamic>?> getSignalHistory({int limit = 50}) async {
+    String url = '/signals/history';
+    if (limit != 50) url += '?limit=$limit';
+    return await httpGet(url);
   }
 
   // ========== 报告 ==========
@@ -525,12 +545,12 @@ class ApiService {
   }
 
   // ========== 预算配置 ==========
-  static Future<Map<String, dynamic>?> getBudgetSettings() async {
+  static Future<Map<String, dynamic>?> getBudgetConfig() async {
     return await httpGet('/settings/budget');
   }
 
-  static Future<bool> updateBudgetSettings(Map<String, dynamic> settings) async {
-    final result = await httpPost('/settings/budget', body: settings);
+  static Future<bool> updateBudgetConfig(Map<String, dynamic> config) async {
+    final result = await httpPost('/settings/budget', body: config);
     return result?['success'] ?? false;
   }
 
@@ -581,9 +601,8 @@ class ApiService {
     return result?['success'] ?? false;
   }
 
-  static Future<List<dynamic>?> getCommandHistory() async {
-    final result = await httpGet('/voice/history');
-    return result?['history'] ?? [];
+  static Future<Map<String, dynamic>?> getCommandHistory({int limit = 50}) async {
+    return await httpGet('/voice/history?limit=$limit');
   }
 
   static Future<Map<String, dynamic>?> voiceExtractFeatures(List<int> audioBytes) async {
@@ -734,6 +753,21 @@ class ApiService {
     return await httpGet('/ip_whitelist/list');
   }
 
+  static Future<bool> ipWhitelistSetMode(String mode) async {
+    final result = await httpPost('/ip_whitelist/mode', body: {'mode': mode});
+    return result?['success'] ?? false;
+  }
+
+  static Future<bool> ipWhitelistSetStrictMode(bool strict) async {
+    final result = await httpPost('/ip_whitelist/strict_mode', body: {'strict_mode': strict});
+    return result?['success'] ?? false;
+  }
+
+  static Future<bool> ipWhitelistSetEnabled(bool enabled) async {
+    final result = await httpPost('/ip_whitelist/enabled', body: {'enabled': enabled});
+    return result?['success'] ?? false;
+  }
+
   // ========== 紧急停止 ==========
   static Future<Map<String, dynamic>?> emergencyStop(String reason) async {
     return await httpPost('/emergency/stop', body: {'reason': reason});
@@ -801,6 +835,24 @@ class ApiService {
     return result?['success'] ?? false;
   }
 
+  // ========== 股票详情 ==========
+  static Future<Map<String, dynamic>?> getStockDetail(String code) async {
+    return await httpGet('/stock/detail?code=$code');
+  }
+
+  // ========== 首页聚合 ==========
+  static Future<Map<String, dynamic>?> getDashboard() async {
+    return await httpGet('/dashboard');
+  }
+
+  static Future<Map<String, dynamic>?> getMarketStatus() async {
+    return await httpGet('/market/status');
+  }
+
+  static Future<Map<String, dynamic>?> getRiskStatus() async {
+    return await httpGet('/risk/status');
+  }
+
   // ========== 登录兼容 ==========
   static Future<Map<String, dynamic>?> login(String password) async {
     return await authPassword(password);
@@ -820,31 +872,28 @@ class ApiService {
     return await getStressTestLatest();
   }
 
-  /// 买入股票（若后端未实现 /positions/buy 则模拟）
+  /// 买入股票
   static Future<bool> buyStock(String code, int shares, double price) async {
-    // 真实调用（如果后端有）可替换为：
-    // final result = await httpPost('/positions/buy', body: {'code': code, 'shares': shares, 'price': price});
-    // return result?['success'] ?? false;
-    debugPrint('buyStock called: $code, $shares, $price');
-    return true; // 模拟成功
+    final result = await httpPost('/positions/buy', body: {'code': code, 'shares': shares, 'price': price});
+    return result?['success'] ?? false;
   }
 
-  /// 执行信号（若后端未实现 /signals/execute 则模拟）
+  /// 执行信号
   static Future<bool> executeSignal(String signalId) async {
-    debugPrint('executeSignal called: $signalId');
-    return true;
+    final result = await httpPost('/signals/execute', body: {'signal_id': signalId});
+    return result?['success'] ?? false;
   }
 
   /// 更新策略状态（启用/禁用）
   static Future<bool> updateStrategyStatus(String strategyId, bool enable) async {
-    debugPrint('updateStrategyStatus called: $strategyId, enable=$enable');
-    return true;
+    final result = await httpPost('/strategies/update_status', body: {'strategy_id': strategyId, 'enabled': enable});
+    return result?['success'] ?? false;
   }
 
   /// 更新实战目标优先级（参数为字符串）
   static Future<bool> updateCombatPriority(String priority) async {
-    debugPrint('updateCombatPriority called: $priority');
-    return true;
+    final result = await httpPost('/combat/priority', body: {'priority': priority});
+    return result?['success'] ?? false;
   }
 
   /// 获取风控设置（组合多个接口数据）
@@ -895,5 +944,19 @@ class ApiService {
     return await httpPost('/strategies/kill', body: {
       'strategy_id': strategyId,
     });
+  }
+
+  // --- 止损止盈快捷方法（别名）---
+  static Future<bool> updateStopLoss(String code, double stopLoss) async {
+    return updatePositionStopLoss(code, stopLoss);
+  }
+
+  static Future<bool> updateTakeProfit(String code, double takeProfit) async {
+    return updatePositionTakeProfit(code, takeProfit);
+  }
+
+  // --- 卖出（别名，兼容无参数调用）---
+  static Future<bool> sellPositionSimple(String code) async {
+    return sellPosition(code);
   }
 }

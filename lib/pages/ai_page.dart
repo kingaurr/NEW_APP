@@ -58,35 +58,36 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
         ApiService.getEvolutionReport(),
       ]);
 
-      if (results[0] != null) {
-        setState(() {
-          _rightBrain = results[0];
-        });
+      // 1. 右脑状态
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        _rightBrain = results[0] as Map<String, dynamic>;
       }
-      
-      if (results[1] != null) {
-        setState(() {
-          _leftBrain = results[1];
-        });
+
+      // 2. 左脑状态
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
+        _leftBrain = results[1] as Map<String, dynamic>;
       }
-      
-      if (results[2] != null) {
-        setState(() {
-          _strategies = results[2];
-        });
+
+      // 3. 策略列表
+      if (results[2] != null && results[2] is List) {
+        _strategies = results[2] as List<dynamic>;
       }
-      
-      if (results[3] != null && results[3]['rules'] != null) {
-        setState(() {
-          _pendingRules = results[3]['rules'];
-        });
+
+      // 4. 待审核规则
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
+        final pendingMap = results[3] as Map<String, dynamic>;
+        final rules = pendingMap['rules'];
+        if (rules != null && rules is List) {
+          _pendingRules = rules;
+        }
       }
-      
-      if (results[4] != null) {
-        setState(() {
-          _evolutionReport = results[4];
-        });
+
+      // 5. 进化报告
+      if (results[4] != null && results[4] is Map<String, dynamic>) {
+        _evolutionReport = results[4] as Map<String, dynamic>;
       }
+
+      setState(() {});
     } catch (e) {
       debugPrint('加载AI页面数据失败: $e');
       setState(() {

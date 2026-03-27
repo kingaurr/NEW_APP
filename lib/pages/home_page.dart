@@ -46,34 +46,36 @@ class _HomePageState extends State<HomePage> {
         ApiService.getFuseStatus(),
       ]);
 
-      if (results[0] != null) {
-        setState(() {
-          _dashboard = results[0];
-        });
+      // 1. 仪表盘数据
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        _dashboard = results[0] as Map<String, dynamic>;
       }
-      
+
+      // 2. 守门员建议数量
       if (results[1] != null) {
-        setState(() {
-          _pendingSuggestions = results[1]['count'] ?? 0;
-        });
+        if (results[1] is int) {
+          _pendingSuggestions = results[1];
+        } else if (results[1] is Map && results[1]['count'] != null) {
+          _pendingSuggestions = results[1]['count'];
+        }
       }
-      
-      if (results[2] != null) {
-        setState(() {
-          _marketStatus = results[2]['status'] ?? '震荡';
-        });
+
+      // 3. 市场状态
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
+        final market = results[2] as Map<String, dynamic>;
+        _marketStatus = market['status'] ?? '震荡';
       }
-      
-      if (results[3] != null) {
-        setState(() {
-          _riskStatus = results[3]['status'] ?? 'normal';
-        });
+
+      // 4. 风控状态
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
+        final risk = results[3] as Map<String, dynamic>;
+        _riskStatus = risk['status'] ?? 'normal';
       }
-      
-      if (results[4] != null) {
-        setState(() {
-          _alertLevel = results[4]['level'] ?? 'none';
-        });
+
+      // 5. 熔断状态
+      if (results[4] != null && results[4] is Map<String, dynamic>) {
+        final fuse = results[4] as Map<String, dynamic>;
+        _alertLevel = fuse['alert_level'] ?? 'none';
       }
     } catch (e) {
       debugPrint('加载首页数据失败: $e');

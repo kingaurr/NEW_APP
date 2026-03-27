@@ -224,7 +224,8 @@ class _RuleDetailPageState extends State<RuleDetailPage> {
                               _buildMetricRow('回测周期', '${backtestYears}年'),
                               _buildMetricRow('胜率', '${(winRate * 100).toInt()}%', winRate >= 0.55),
                               _buildMetricRow('夏普比率', sharpe.toStringAsFixed(2), sharpe >= 0.8),
-                              _buildMetricRow('最大回撤', '${(drawdown * 100).toInt()}%', drawdown <= 0.15, isReverse: true),
+                              // 修复：将命名参数 isReverse 改为位置参数 true
+                              _buildMetricRow('最大回撤', '${(drawdown * 100).toInt()}%', drawdown <= 0.15, true),
                               _buildMetricRow('盈亏比', profitRatio.toStringAsFixed(1), profitRatio >= 1.5),
                               _buildMetricRow('累计收益', '${(totalReturn * 100).toInt()}%', totalReturn >= 0.05),
                             ],

@@ -40,14 +40,21 @@ class _AlertListPageState extends State<AlertListPage> {
     });
 
     try {
-      final result = await ApiService.getAlertsList(
-        severity: _filterSeverity.isEmpty ? null : _filterSeverity,
-      );
-      if (result != null && result['alerts'] != null) {
-        setState(() {
-          _alerts = result['alerts'];
-          _unreadCount = result['unread_count'] ?? 0;
-        });
+      // 使用已有的 getAlerts 方法（返回未读数量和告警列表）
+      final result = await ApiService.getAlerts();
+      if (result != null && result is Map<String, dynamic>) {
+        final alerts = result['alerts'];
+        final unread = result['unread_count'];
+        if (alerts != null && alerts is List) {
+          setState(() {
+            _alerts = alerts;
+            _unreadCount = unread ?? 0;
+          });
+        } else {
+          setState(() {
+            _errorMessage = '获取告警列表失败';
+          });
+        }
       } else {
         setState(() {
           _errorMessage = '获取告警列表失败';
@@ -69,14 +76,16 @@ class _AlertListPageState extends State<AlertListPage> {
 
   Future<void> _markAsRead(String alertId) async {
     try {
-      await ApiService.markAlertRead(alertId);
-      setState(() {
-        _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
-        final index = _alerts.indexWhere((a) => a['id'] == alertId);
-        if (index != -1) {
-          _alerts[index]['read'] = true;
-        }
-      });
+      final result = await ApiService.acknowledgeAlert(alertId);
+      if (result?['success'] == true) {
+        setState(() {
+          _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
+          final index = _alerts.indexWhere((a) => a['id'] == alertId);
+          if (index != -1) {
+            _alerts[index]['read'] = true;
+          }
+        });
+      }
     } catch (e) {
       debugPrint('标记已读失败: $e');
     }
@@ -112,7 +121,12 @@ class _AlertListPageState extends State<AlertListPage> {
     if (confirmed != true) return;
 
     try {
-      await ApiService.markAllAlertsRead();
+      // 逐个标记已读（若后端无批量接口）
+      for (final alert in _alerts) {
+        if (alert['read'] != true) {
+          await ApiService.acknowledgeAlert(alert['id']);
+        }
+      }
       setState(() {
         for (var alert in _alerts) {
           alert['read'] = true;

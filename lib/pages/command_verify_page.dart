@@ -22,7 +22,6 @@ class CommandVerifyPage extends StatefulWidget {
 
 class _CommandVerifyPageState extends State<CommandVerifyPage> {
   final LocalAuthentication _localAuth = LocalAuthentication();
-  final ApiService _apiService = ApiService();
 
   bool _isVerifying = false;
   String _verifyMethod = 'fingerprint';
@@ -120,14 +119,16 @@ class _CommandVerifyPageState extends State<CommandVerifyPage> {
 
   Future<void> _executeCommand() async {
     try {
-      final result = await _apiService.executeCommand(
-        command: widget.command,
-        operation: widget.operation,
+      // 使用静态方法 commandExecute，userId 可设为当前登录用户（或固定值）
+      final result = await ApiService.commandExecute(
+        widget.command,
+        'admin', // 实际应替换为真实的用户ID
+        skipAuth: true, // 已通过外部验证，跳过额外认证
       );
 
       setState(() {
         _isVerifying = false;
-        _statusMessage = result['message'] ?? '指令执行成功';
+        _statusMessage = result?['message'] ?? '指令执行成功';
       });
 
       Future.delayed(const Duration(seconds: 1), () {

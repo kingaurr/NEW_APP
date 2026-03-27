@@ -35,15 +35,16 @@ class _WarGameHistoryPageState extends State<WarGameHistoryPage> {
         ApiService.getDeepWarGameHistory(),
       ]);
 
-      if (results[0] != null && results[0]['games'] != null) {
+      // 直接使用返回的列表，不需要通过 ['games'] 取值
+      if (results[0] != null && results[0] is List) {
         setState(() {
-          _lightGames = results[0]['games'];
+          _lightGames = results[0] as List<dynamic>;
         });
       }
       
-      if (results[1] != null && results[1]['games'] != null) {
+      if (results[1] != null && results[1] is List) {
         setState(() {
-          _deepGames = results[1]['games'];
+          _deepGames = results[1] as List<dynamic>;
         });
       }
     } catch (e) {

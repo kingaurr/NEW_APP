@@ -534,7 +534,8 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
       // 使用已有的 applyWarGameSuggestion 接口，传递报告ID（如果存在）
       final reportId = deepReport['id'] ?? '';
       final result = await ApiService.applyWarGameSuggestion(reportId);
-      if (result?['success'] == true) {
+      // 安全类型检查：确保 result 是 Map 且 success 字段为 true
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),
