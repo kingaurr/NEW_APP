@@ -46,12 +46,10 @@ class _HomePageState extends State<HomePage> {
         ApiService.getFuseStatus(),
       ]);
 
-      // 1. 仪表盘数据
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         _dashboard = results[0] as Map<String, dynamic>;
       }
 
-      // 2. 守门员建议数量 - 增强类型安全
       if (results[1] != null) {
         if (results[1] is int) {
           _pendingSuggestions = results[1] as int;
@@ -63,19 +61,16 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-      // 3. 市场状态
       if (results[2] != null && results[2] is Map<String, dynamic>) {
         final market = results[2] as Map<String, dynamic>;
         _marketStatus = market['status'] ?? '震荡';
       }
 
-      // 4. 风控状态
       if (results[3] != null && results[3] is Map<String, dynamic>) {
         final risk = results[3] as Map<String, dynamic>;
         _riskStatus = risk['status'] ?? 'normal';
       }
 
-      // 5. 熔断状态
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         final fuse = results[4] as Map<String, dynamic>;
         _alertLevel = fuse['alert_level'] ?? 'none';
@@ -430,7 +425,6 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-        ),
       ),
     );
   }

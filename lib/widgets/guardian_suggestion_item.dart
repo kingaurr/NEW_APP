@@ -416,3 +416,91 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
     );
   }
 }
+// ==================== 新增 GuardianSuggestionItem 组件 ====================
+class GuardianSuggestionItem extends StatelessWidget {
+  final Map<String, dynamic> suggestion;
+  final VoidCallback onStatusChanged;
+
+  const GuardianSuggestionItem({
+    Key? key,
+    required this.suggestion,
+    required this.onStatusChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      color: const Color(0xFF2A2A2A),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              suggestion['title'] ?? '建议',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              suggestion['description'] ?? suggestion['content'] ?? '',
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => _handleReject(context),
+                  child: const Text('拒绝', style: TextStyle(color: Colors.red)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => _handleApprove(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37)),
+                  child: const Text('批准', style: TextStyle(color: Colors.black)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleApprove(BuildContext context) async {
+    try {
+      final result = await ApiService.approveSuggestion(suggestion['id']);
+      if (result != null && result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('批准成功'), backgroundColor: Colors.green),
+        );
+        onStatusChanged();
+      } else {
+        throw Exception('批准失败');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('批准失败: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _handleReject(BuildContext context) async {
+    try {
+      final result = await ApiService.rejectSuggestion(suggestion['id']);
+      if (result != null && result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已拒绝'), backgroundColor: Colors.green),
+        );
+        onStatusChanged();
+      } else {
+        throw Exception('拒绝失败');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('拒绝失败: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+}
