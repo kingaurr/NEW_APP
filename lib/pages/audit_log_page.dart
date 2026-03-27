@@ -56,13 +56,14 @@ class _AuditLogPageState extends State<AuditLogPage> {
         userId: _filterUserId.isEmpty ? null : _filterUserId,
       );
 
-      if (result != null && result['logs'] != null) {
+      // 增加类型安全判断
+      if (result is Map && result['logs'] != null) {
         setState(() {
-          _logs = result['logs'];
+          _logs = result['logs'] as List<dynamic>;
         });
       } else {
         setState(() {
-          _errorMessage = '获取审计日志失败';
+          _errorMessage = '获取审计日志失败：数据格式错误';
         });
       }
     } catch (e) {
@@ -82,7 +83,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
   Future<void> _exportLogs() async {
     try {
       final result = await ApiService.auditLogs(limit: 1000);
-      if (result == null || result['logs'] == null) {
+      if (result is! Map || result['logs'] is! List) {
         throw Exception('获取日志失败');
       }
 

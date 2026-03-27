@@ -63,8 +63,9 @@ class _BrokerCardState extends State<BrokerCard> {
     });
 
     try {
-      final result = await ApiService.testBrokerConnection();
-      if (result != null && result['success'] == true) {
+      // 修复：testBrokerConnection 返回 bool，不是 Map
+      final success = await ApiService.testBrokerConnection();
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -75,7 +76,7 @@ class _BrokerCardState extends State<BrokerCard> {
         }
         await _loadBrokerStatus();
       } else {
-        throw Exception(result?['message'] ?? '连接测试失败');
+        throw Exception('连接测试失败');
       }
     } catch (e) {
       if (mounted) {

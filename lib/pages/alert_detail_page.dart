@@ -106,8 +106,9 @@ class _AlertDetailPageState extends State<AlertDetailPage> {
     });
 
     try {
-      final result = await ApiService.acknowledgeAlert(widget.alert['id']);
-      if (result?['success'] == true) {
+      // 修复：acknowledgeAlert 返回 bool，不是 Map
+      final success = await ApiService.acknowledgeAlert(widget.alert['id']);
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('告警已确认'), backgroundColor: Colors.green),
@@ -115,7 +116,7 @@ class _AlertDetailPageState extends State<AlertDetailPage> {
           Navigator.pop(context, true);
         }
       } else {
-        throw Exception(result?['message'] ?? '操作失败');
+        throw Exception('操作失败');
       }
     } catch (e) {
       if (mounted) {
@@ -166,8 +167,9 @@ class _AlertDetailPageState extends State<AlertDetailPage> {
     });
 
     try {
-      final result = await ApiService.ignoreAlert(widget.alert['id']);
-      if (result?['success'] == true) {
+      // 修复：ignoreAlert 返回 bool，不是 Map
+      final success = await ApiService.ignoreAlert(widget.alert['id']);
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('告警已忽略'), backgroundColor: Colors.orange),
@@ -175,7 +177,7 @@ class _AlertDetailPageState extends State<AlertDetailPage> {
           Navigator.pop(context, true);
         }
       } else {
-        throw Exception(result?['message'] ?? '操作失败');
+        throw Exception('操作失败');
       }
     } catch (e) {
       if (mounted) {
@@ -197,7 +199,8 @@ class _AlertDetailPageState extends State<AlertDetailPage> {
     final severity = widget.alert['severity'] ?? 'medium';
     final title = widget.alert['title'] ?? '';
     final message = widget.alert['message'] ?? '';
-    const recommendations = widget.alert['recommendations'] ?? [];
+    // 修复：去掉 const，因为 widget.alert 不是编译时常量
+    final recommendations = widget.alert['recommendations'] ?? [];
     final timestamp = widget.alert['timestamp'];
 
     return Scaffold(

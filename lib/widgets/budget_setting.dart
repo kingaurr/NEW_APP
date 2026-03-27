@@ -113,11 +113,12 @@ class _BudgetSettingState extends State<BudgetSetting> {
     });
 
     try {
-      final result = await ApiService.updateBudgetConfig(
-        dailyBudget: newValue,
-        monthlyBudget: _monthlyBudget,
-      );
-      if (result?['success'] == true) {
+      // 修复：updateBudgetConfig 接受 Map 参数
+      final success = await ApiService.updateBudgetConfig({
+        'daily_budget': newValue,
+        'monthly_budget': _monthlyBudget,
+      });
+      if (success == true) {
         setState(() {
           _dailyBudget = newValue;
           _dailyController.text = newValue.toStringAsFixed(2);
@@ -130,7 +131,7 @@ class _BudgetSettingState extends State<BudgetSetting> {
           );
         }
       } else {
-        throw Exception(result?['message'] ?? '保存失败');
+        throw Exception('保存失败');
       }
     } catch (e) {
       if (mounted) {
@@ -181,11 +182,12 @@ class _BudgetSettingState extends State<BudgetSetting> {
     });
 
     try {
-      final result = await ApiService.updateBudgetConfig(
-        dailyBudget: _dailyBudget,
-        monthlyBudget: newValue,
-      );
-      if (result?['success'] == true) {
+      // 修复：updateBudgetConfig 接受 Map 参数
+      final success = await ApiService.updateBudgetConfig({
+        'daily_budget': _dailyBudget,
+        'monthly_budget': newValue,
+      });
+      if (success == true) {
         setState(() {
           _monthlyBudget = newValue;
           _monthlyController.text = newValue.toStringAsFixed(2);
@@ -198,7 +200,7 @@ class _BudgetSettingState extends State<BudgetSetting> {
           );
         }
       } else {
-        throw Exception(result?['message'] ?? '保存失败');
+        throw Exception('保存失败');
       }
     } catch (e) {
       if (mounted) {

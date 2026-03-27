@@ -31,13 +31,18 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
 
     try {
       final result = await ApiService.getVersions();
-      if (result != null && result['versions'] != null) {
+      // 修复：兼容后端返回 List 或 {versions: [...]} 两种格式
+      if (result is List) {
+        setState(() {
+          _versions = result;
+        });
+      } else if (result is Map && result['versions'] is List) {
         setState(() {
           _versions = result['versions'];
         });
       } else {
         setState(() {
-          _errorMessage = '获取版本列表失败';
+          _errorMessage = '获取版本列表失败：数据格式错误';
         });
       }
     } catch (e) {
@@ -105,8 +110,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     });
 
     try {
-      final result = await ApiService.rollbackVersion(version['id']);
-      if (result?['success'] == true) {
+      // 修复：ApiService.rollbackVersion 返回 bool，不是 Map
+      final success = await ApiService.rollbackVersion(version['id']);
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('版本回滚成功'), backgroundColor: Colors.green),
@@ -114,7 +120,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
           _loadVersions();
         }
       } else {
-        throw Exception(result?['message'] ?? '回滚失败');
+        throw Exception('回滚失败');
       }
     } catch (e) {
       if (mounted) {

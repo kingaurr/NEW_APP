@@ -26,6 +26,7 @@ import 'pages/command_history_page.dart';
 import 'pages/brain_detail_page.dart';
 import 'pages/risk_settings_page.dart';
 import 'pages/guardian_suggestions_page.dart';
+import 'pages/report_list_page.dart'; // 新增：修复 ReportListPage 未定义
 import 'widgets/voice_floating_button.dart';
 
 void main() {

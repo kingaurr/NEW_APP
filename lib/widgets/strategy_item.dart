@@ -54,12 +54,13 @@ class _StrategyItemState extends State<StrategyItem> {
 
     try {
       final newEnabled = !(widget.strategy['enabled'] ?? true);
-      final result = await ApiService.updateStrategyStatus(
+      // 修复：updateStrategyStatus 返回 bool
+      final success = await ApiService.updateStrategyStatus(
         widget.strategy['id'],
         newEnabled,
       );
 
-      if (result != null && result is Map && result['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -70,7 +71,7 @@ class _StrategyItemState extends State<StrategyItem> {
           widget.onStrategyChanged?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '操作失败');
+        throw Exception('操作失败');
       }
     } catch (e) {
       if (mounted) {
@@ -141,12 +142,13 @@ class _StrategyItemState extends State<StrategyItem> {
     });
 
     try {
-      final result = await ApiService.updateStrategyWeight(
+      // 修复：updateStrategyWeight 返回 bool
+      final success = await ApiService.updateStrategyWeight(
         widget.strategy['id'],
         newWeight,
       );
 
-      if (result != null && result is Map && result['success'] == true) {
+      if (success == true) {
         setState(() {
           _weight = newWeight;
         });
@@ -157,7 +159,7 @@ class _StrategyItemState extends State<StrategyItem> {
           widget.onStrategyChanged?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '更新失败');
+        throw Exception('更新失败');
       }
     } catch (e) {
       if (mounted) {
@@ -439,8 +441,9 @@ class _StrategyItemState extends State<StrategyItem> {
     });
 
     try {
-      final result = await ApiService.killStrategy(widget.strategy['id']);
-      if (result != null && result is Map && result['success'] == true) {
+      // 修复：killStrategy 返回 bool
+      final success = await ApiService.killStrategy(widget.strategy['id']);
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('策略已淘汰'), backgroundColor: Colors.orange),
@@ -448,7 +451,7 @@ class _StrategyItemState extends State<StrategyItem> {
           widget.onStrategyChanged?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '淘汰失败');
+        throw Exception('淘汰失败');
       }
     } catch (e) {
       if (mounted) {

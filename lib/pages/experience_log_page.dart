@@ -39,17 +39,19 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
     });
 
     try {
-      // API 不支持 action 筛选，获取全部后本地筛选
       final result = await ApiService.getExperienceLogs(limit: _pageSize);
-      if (result != null && result is List) {
-        setState(() {
-          _experiences = result;
-        });
-      } else {
-        setState(() {
-          _experiences = [];
-        });
+      // 兼容后端返回 List 或 {logs: [...]} 两种格式
+      List<dynamic> logsList = [];
+      if (result != null) {
+        if (result is List) {
+          logsList = result as List<dynamic>;
+        } else if (result is Map && result['logs'] is List) {
+          logsList = result['logs'] as List<dynamic>;
+        }
       }
+      setState(() {
+        _experiences = logsList;
+      });
     } catch (e) {
       debugPrint('加载经验日志失败: $e');
       if (mounted) {

@@ -43,8 +43,10 @@ class _RiskBaseFundSettingState extends State<RiskBaseFundSetting> {
       // 获取风控基准资金
       final config = await ApiService.getRiskBaseFund();
       if (config != null) {
+        // 修复：兼容字段名 risk_base_fund 或 base_fund
+        final base = config['risk_base_fund'] ?? config['base_fund'] ?? 0.0;
         setState(() {
-          _baseFund = config['base_fund'] ?? 0.0;
+          _baseFund = base is num ? base.toDouble() : 0.0;
           _controller.text = _formatNumber(_baseFund);
         });
       }
@@ -53,7 +55,7 @@ class _RiskBaseFundSettingState extends State<RiskBaseFundSetting> {
       final fund = await ApiService.getFund();
       if (fund != null) {
         setState(() {
-          _currentFund = fund['total'] ?? 0.0;
+          _currentFund = fund['total'] ?? fund['current_fund'] ?? 0.0;
         });
       }
 
@@ -132,8 +134,9 @@ class _RiskBaseFundSettingState extends State<RiskBaseFundSetting> {
     });
 
     try {
-      final result = await ApiService.updateRiskBaseFund(newValue);
-      if (result?['success'] == true) {
+      // 修复：updateRiskBaseFund 返回 bool
+      final success = await ApiService.updateRiskBaseFund(newValue);
+      if (success == true) {
         setState(() {
           _baseFund = newValue;
           _controller.text = _formatNumber(newValue);
@@ -147,7 +150,7 @@ class _RiskBaseFundSettingState extends State<RiskBaseFundSetting> {
           );
         }
       } else {
-        throw Exception(result?['message'] ?? '保存失败');
+        throw Exception('保存失败');
       }
     } catch (e) {
       if (mounted) {

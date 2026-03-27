@@ -48,12 +48,17 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
     try {
       // 获取目标配置
       final config = await ApiService.getPublicConfig();
-      if (config != null && config['combat_target'] != null) {
-        final targetData = config['combat_target'];
-        setState(() {
+      if (config != null) {
+        // 兼容不同字段结构
+        Map<String, dynamic> targetData = {};
+        if (config is Map && config['combat_target'] is Map) {
+          targetData = config['combat_target'] as Map<String, dynamic>;
           _target = targetData['target'] ?? {};
           _priority = targetData['priority'] ?? 'balanced';
-        });
+        } else if (config is Map && config['target'] is Map) {
+          _target = config['target'] ?? {};
+          _priority = config['priority'] ?? 'balanced';
+        }
 
         // 填充控制器
         _winRateController.text = ((_target['win_rate'] ?? 0.55) * 100).toStringAsFixed(0);
@@ -63,26 +68,38 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
 
       // 获取进度
       final heartSummary = await ApiService.getHeartSummary();
-      if (heartSummary != null && heartSummary['combat_progress'] != null) {
+      if (heartSummary != null && heartSummary is Map) {
         setState(() {
-          _progress = heartSummary['combat_progress'];
+          _progress = heartSummary['combat_progress'] is Map
+              ? heartSummary['combat_progress'] as Map<String, dynamic>
+              : {};
         });
       }
 
       // 获取预测
       final learningProgress = await ApiService.getLearningProgress();
-      if (learningProgress != null && learningProgress['target_prediction'] != null) {
+      if (learningProgress != null && learningProgress is Map) {
         setState(() {
-          _prediction = learningProgress['target_prediction'];
+          _prediction = learningProgress['target_prediction'] is Map
+              ? learningProgress['target_prediction'] as Map<String, dynamic>
+              : {};
         });
       }
 
       // 获取策略贡献分析
       final strategies = await ApiService.getStrategies();
       if (strategies != null) {
-        final contributions = strategies.where((s) =>
-          s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0
-        ).toList();
+        List<dynamic> contributions = [];
+        if (strategies is List) {
+          contributions = strategies.where((s) =>
+            s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
+          ).toList();
+        } else if (strategies is Map && strategies['strategies'] is List) {
+          final list = strategies['strategies'] as List;
+          contributions = list.where((s) =>
+            s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
+          ).toList();
+        }
         setState(() {
           _strategyContributions = contributions;
         });
@@ -132,15 +149,16 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
         'max_drawdown': drawdown / 100,
       };
 
-      final result = await ApiService.updateCombatTarget(newTarget);
-      if (result?['success'] == true) {
+      // 修复：updateCombatTarget 返回 bool
+      final success = await ApiService.updateCombatTarget(newTarget);
+      if (success == true) {
         setState(() {
           _target = newTarget;
         });
         _showSuccess('目标已更新');
         _loadData();
       } else {
-        _showError(result?['message'] ?? '保存失败');
+        _showError('保存失败');
       }
     } catch (e) {
       _showError('保存失败: $e');
@@ -160,12 +178,12 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
     });
 
     try {
-      // 注意：ApiService.updateCombatPriority 需要接收 String 参数
-      final result = await ApiService.updateCombatPriority(priority);
-      if (result?['success'] == true) {
+      // 修复：updateCombatPriority 返回 bool
+      final success = await ApiService.updateCombatPriority(priority);
+      if (success == true) {
         _showSuccess('优先级已切换为${_getPriorityName(priority)}');
       } else {
-        _showError(result?['message'] ?? '切换失败');
+        _showError('切换失败');
         setState(() {
           _priority = _priority;
         });

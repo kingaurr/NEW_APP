@@ -282,8 +282,9 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           children: [
             Row(
               children: [
+                // 修复：Icons.panic 不存在，改为 Icons.warning
                 Icon(
-                  isActive ? Icons.panic : Icons.security,
+                  isActive ? Icons.warning : Icons.security,
                   color: isActive ? Colors.red : const Color(0xFFD4AF37),
                   size: 24,
                 ),

@@ -113,9 +113,9 @@ class _ShadowSummaryState extends State<ShadowSummary> {
     });
 
     try {
-      final result = await ApiService.applyShadowSuggestion();
-      // 安全类型检查：result 是 Map 且 success 为 true
-      if (result != null && result is Map && result['success'] == true) {
+      // 修复：applyShadowSuggestion 返回 bool
+      final success = await ApiService.applyShadowSuggestion();
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),
@@ -124,7 +124,7 @@ class _ShadowSummaryState extends State<ShadowSummary> {
           _loadShadowData();
         }
       } else {
-        throw Exception(result?['message'] ?? '应用失败');
+        throw Exception('应用失败');
       }
     } catch (e) {
       if (mounted) {

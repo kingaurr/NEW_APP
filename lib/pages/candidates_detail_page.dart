@@ -136,13 +136,14 @@ class _CandidatesDetailPageState extends State<CandidatesDetailPage> {
     });
 
     try {
-      final result = await ApiService.buyStock(
-        code: widget.stock['code'],
-        shares: shares,
-        price: currentPrice,
+      // 修复：ApiService.buyStock 需要三个位置参数，返回 bool
+      final success = await ApiService.buyStock(
+        widget.stock['code'],
+        shares,
+        currentPrice,
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('买入成功'), backgroundColor: Colors.green),
@@ -150,7 +151,7 @@ class _CandidatesDetailPageState extends State<CandidatesDetailPage> {
           Navigator.pop(context, true);
         }
       } else {
-        throw Exception(result?['message'] ?? '买入失败');
+        throw Exception('买入失败');
       }
     } catch (e) {
       if (mounted) {

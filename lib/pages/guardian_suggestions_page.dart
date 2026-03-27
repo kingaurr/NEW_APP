@@ -68,13 +68,32 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
         ApiService.getHistorySuggestions(),
       ]);
       
-      final pendingSuggestions = results[0]?['suggestions'] ?? [];
-      final historySuggestions = results[1]?['suggestions'] ?? [];
+      // 修复：兼容后端返回 List 或 {suggestions: [...]} 两种格式
+      List<dynamic> pendingList = [];
+      List<dynamic> historyList = [];
+      
+      // 处理待处理建议
+      if (results[0] != null) {
+        if (results[0] is List) {
+          pendingList = results[0] as List<dynamic>;
+        } else if (results[0] is Map && results[0]['suggestions'] is List) {
+          pendingList = results[0]['suggestions'] as List<dynamic>;
+        }
+      }
+      
+      // 处理历史建议
+      if (results[1] != null) {
+        if (results[1] is List) {
+          historyList = results[1] as List<dynamic>;
+        } else if (results[1] is Map && results[1]['suggestions'] is List) {
+          historyList = results[1]['suggestions'] as List<dynamic>;
+        }
+      }
       
       setState(() {
-        _pendingCount = pendingSuggestions.length;
-        _historyCount = historySuggestions.length;
-        _suggestions = [...pendingSuggestions, ...historySuggestions];
+        _pendingCount = pendingList.length;
+        _historyCount = historyList.length;
+        _suggestions = [...pendingList, ...historyList];
       });
       
       _applyFilters();

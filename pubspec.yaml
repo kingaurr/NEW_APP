@@ -1,4 +1,4 @@
-name: trading_app
+name: trading_app_final
 description: AI量化交易助手APP
 publish_to: 'none'
 version: 2.0.0+1
@@ -35,5 +35,18 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
 
+# 固定依赖版本，避免平台实现缺失警告（仅增加）
+dependency_overrides:
+  record: 5.0.0
+  record_platform_interface: 1.5.0
+  record_linux: 0.7.2
+  record_macos: 1.0.1
+  record_windows: 1.0.1
+
 flutter:
   uses-material-design: true
+  # 增加资源目录预留（仅增加）
+  assets:
+    - assets/          # 预留资源文件夹
+    - assets/voices/   # 预留语音文件
+    - assets/icons/    # 预留图标

@@ -187,16 +187,16 @@ class _WarGameReportState extends State<WarGameReport> {
     if (confirmed != true) return;
 
     try {
-      final result = await ApiService.applyWarGameSuggestion(_report['id']);
-      // 安全类型检查：确保 result 是 Map 且 success 字段为 true
-      if (result != null && result is Map && result['success'] == true) {
+      // 修复：applyWarGameSuggestion 返回 bool
+      final success = await ApiService.applyWarGameSuggestion(_report['id']);
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),
           );
         }
       } else {
-        throw Exception(result?['message'] ?? '应用失败');
+        throw Exception('应用失败');
       }
     } catch (e) {
       if (mounted) {

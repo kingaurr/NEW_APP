@@ -40,26 +40,27 @@ class _AlertListPageState extends State<AlertListPage> {
     });
 
     try {
-      // 使用已有的 getAlerts 方法（返回未读数量和告警列表）
       final result = await ApiService.getAlerts();
-      if (result != null && result is Map<String, dynamic>) {
-        final alerts = result['alerts'];
-        final unread = result['unread_count'];
-        if (alerts != null && alerts is List) {
-          setState(() {
-            _alerts = alerts;
-            _unreadCount = unread ?? 0;
-          });
-        } else {
-          setState(() {
-            _errorMessage = '获取告警列表失败';
-          });
+      // 兼容不同的后端返回格式
+      List<dynamic> alertsList = [];
+      int unread = 0;
+
+      if (result is Map<String, dynamic>) {
+        // 格式1: { "alerts": [...], "unread_count": N }
+        if (result['alerts'] is List) {
+          alertsList = result['alerts'] as List<dynamic>;
         }
-      } else {
-        setState(() {
-          _errorMessage = '获取告警列表失败';
-        });
+        unread = result['unread_count'] ?? 0;
+      } else if (result is List) {
+        // 格式2: 直接返回告警列表
+        alertsList = result;
+        unread = alertsList.where((a) => a['read'] != true).length;
       }
+
+      setState(() {
+        _alerts = alertsList;
+        _unreadCount = unread;
+      });
     } catch (e) {
       debugPrint('加载告警列表失败: $e');
       setState(() {
@@ -76,8 +77,9 @@ class _AlertListPageState extends State<AlertListPage> {
 
   Future<void> _markAsRead(String alertId) async {
     try {
-      final result = await ApiService.acknowledgeAlert(alertId);
-      if (result?['success'] == true) {
+      // 修复：acknowledgeAlert 返回 bool
+      final success = await ApiService.acknowledgeAlert(alertId);
+      if (success == true) {
         setState(() {
           _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
           final index = _alerts.indexWhere((a) => a['id'] == alertId);
@@ -85,6 +87,8 @@ class _AlertListPageState extends State<AlertListPage> {
             _alerts[index]['read'] = true;
           }
         });
+      } else {
+        throw Exception('标记失败');
       }
     } catch (e) {
       debugPrint('标记已读失败: $e');

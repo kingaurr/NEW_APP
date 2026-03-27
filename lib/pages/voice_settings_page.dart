@@ -105,22 +105,25 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
     });
 
     try {
-      final path = await _recorder.start(
+      // 修复：start 方法返回 Future<void>，不能直接获取路径
+      await _recorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.aac,
+          encoder: AudioEncoder.aacLc, // 修复：原 aac 不存在，改为 aacLc
           bitRate: 128000,
           sampleRate: 16000,
         ),
         path: 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a',
       );
-      _recordedFilePath = path;
 
+      // 录音 5 秒
       await Future.delayed(const Duration(seconds: 5));
 
-      final filePath = await _recorder.stop();
-      if (filePath != null) {
+      // 停止录音并获取文件路径
+      final path = await _recorder.stop();
+      if (path != null) {
+        _recordedFilePath = path;
         _statusMessage = '录音完成，正在提取声纹特征...';
-        await _extractFeatures(filePath);
+        await _extractFeatures(path);
       } else {
         _showError('录音失败');
       }

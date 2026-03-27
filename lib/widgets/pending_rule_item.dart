@@ -39,11 +39,12 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
     });
 
     try {
-      final result = await ApiService.approvePendingRule(
+      // 修复：approvePendingRule 返回 bool
+      final success = await ApiService.approvePendingRule(
         widget.rule['id'] ?? widget.rule['rule_id'],
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -54,7 +55,7 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
           widget.onStatusChanged?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '批准失败');
+        throw Exception('批准失败');
       }
     } catch (e) {
       if (mounted) {
@@ -92,12 +93,13 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
     });
 
     try {
-      final result = await ApiService.rejectPendingRule(
+      // 修复：rejectPendingRule 只接受 ruleId 参数，不支持 reason
+      // 保留 reason 变量（可用于日志或未来扩展），但调用时不传递
+      final success = await ApiService.rejectPendingRule(
         widget.rule['id'] ?? widget.rule['rule_id'],
-        reason: reason.isEmpty ? null : reason,
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -108,7 +110,7 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
           widget.onStatusChanged?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '拒绝失败');
+        throw Exception('拒绝失败');
       }
     } catch (e) {
       if (mounted) {

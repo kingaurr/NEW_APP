@@ -42,19 +42,19 @@ class _AIStatusBarState extends State<AIStatusBar> {
         ApiService.getPendingAdviceCount(),
       ]);
 
-      // 1. 右脑状态
-      if (results[0] != null && results[0] is Map<String, dynamic>) {
-        _rightBrain = results[0];
+      // 1. 右脑状态：确保是 Map 类型
+      if (results[0] is Map<String, dynamic>) {
+        _rightBrain = results[0] as Map<String, dynamic>;
       }
 
       // 2. 左脑状态
-      if (results[1] != null && results[1] is Map<String, dynamic>) {
-        _leftBrain = results[1];
+      if (results[1] is Map<String, dynamic>) {
+        _leftBrain = results[1] as Map<String, dynamic>;
       }
 
       // 3. 外脑进化报告
-      if (results[2] != null && results[2] is Map<String, dynamic>) {
-        final report = results[2];
+      if (results[2] is Map<String, dynamic>) {
+        final report = results[2] as Map<String, dynamic>;
         // 根据后端返回的字段构建外脑状态
         _outerBrain = {
           'status': report['status'] ?? 'idle',
@@ -66,9 +66,10 @@ class _AIStatusBarState extends State<AIStatusBar> {
       // 4. 待处理建议数量
       if (results[3] != null) {
         if (results[3] is int) {
-          _pendingSuggestions = results[3];
-        } else if (results[3] is Map && results[3]['count'] != null) {
-          _pendingSuggestions = results[3]['count'];
+          _pendingSuggestions = results[3] as int;
+        } else if (results[3] is Map) {
+          final map = results[3] as Map;
+          _pendingSuggestions = (map['count'] as int?) ?? 0;
         }
       }
 

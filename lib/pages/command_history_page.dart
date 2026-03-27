@@ -214,21 +214,21 @@ class _CommandHistoryPageState extends State<CommandHistoryPage> {
     }
 
     try {
-      // 使用正确的 executeCommand 签名：command, userId
-      final result = await ApiService.executeCommand(
+      // 修复：executeCommand 返回 bool，不是 Map
+      final success = await ApiService.executeCommand(
         command['command'],
         'retry_user', // 可考虑从会话中获取真实用户ID
       );
 
-      if (result != null && result is Map && result['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? '执行成功'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('执行成功'), backgroundColor: Colors.green),
           );
         }
         _loadData();
       } else {
-        throw Exception(result?['message'] ?? '执行失败');
+        throw Exception('执行失败');
       }
     } catch (e) {
       if (mounted) {

@@ -41,7 +41,7 @@ class _IPWhitelistPageState extends State<IPWhitelistPage> {
 
     try {
       final result = await ApiService.ipWhitelistList();
-      if (result != null) {
+      if (result != null && result is Map<String, dynamic>) {
         setState(() {
           _enabled = result['enabled'] ?? true;
           _mode = result['mode'] ?? 'whitelist';
@@ -71,6 +71,7 @@ class _IPWhitelistPageState extends State<IPWhitelistPage> {
     });
 
     try {
+      // 这三个方法返回 bool，不需要额外处理
       await ApiService.ipWhitelistSetMode(_mode);
       await ApiService.ipWhitelistSetStrictMode(_strictMode);
       await ApiService.ipWhitelistSetEnabled(_enabled);
@@ -109,12 +110,13 @@ class _IPWhitelistPageState extends State<IPWhitelistPage> {
     });
 
     try {
+      // ipWhitelistAdd 返回 Map，包含 success 字段
       final result = await ApiService.ipWhitelistAdd(
         ip,
         reason: _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
       );
 
-      if (result?['success'] == true) {
+      if (result != null && result['success'] == true) {
         _ipController.clear();
         _reasonController.clear();
         await _loadData();
@@ -170,7 +172,7 @@ class _IPWhitelistPageState extends State<IPWhitelistPage> {
 
     try {
       final result = await ApiService.ipWhitelistRemove(pattern);
-      if (result?['success'] == true) {
+      if (result != null && result['success'] == true) {
         await _loadData();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

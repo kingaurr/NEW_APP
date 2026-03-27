@@ -116,12 +116,13 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
     });
 
     try {
-      final result = await ApiService.updateStopLoss(
+      // 修复：ApiService.updateStopLoss 返回 bool，不是 Map
+      final success = await ApiService.updateStopLoss(
         widget.position['code'],
         stopLoss,
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('止损价已更新'), backgroundColor: Colors.green),
@@ -129,7 +130,7 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
           _loadDetail();
         }
       } else {
-        throw Exception(result?['message'] ?? '更新失败');
+        throw Exception('更新失败');
       }
     } catch (e) {
       if (mounted) {
@@ -168,12 +169,13 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
     });
 
     try {
-      final result = await ApiService.updateTakeProfit(
+      // 修复：ApiService.updateTakeProfit 返回 bool，不是 Map
+      final success = await ApiService.updateTakeProfit(
         widget.position['code'],
         takeProfit,
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('止盈价已更新'), backgroundColor: Colors.green),
@@ -181,7 +183,7 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
           _loadDetail();
         }
       } else {
-        throw Exception(result?['message'] ?? '更新失败');
+        throw Exception('更新失败');
       }
     } catch (e) {
       if (mounted) {
@@ -235,12 +237,13 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
     });
 
     try {
-      final result = await ApiService.sellPosition(
-        code: widget.position['code'],
+      // 修复：ApiService.sellPosition 需要位置参数 code，可选命名参数 shares，返回 bool
+      final success = await ApiService.sellPosition(
+        widget.position['code'],
         shares: widget.position['shares'],
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('卖出成功'), backgroundColor: Colors.green),
@@ -248,7 +251,7 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
           Navigator.pop(context, true);
         }
       } else {
-        throw Exception(result?['message'] ?? '卖出失败');
+        throw Exception('卖出失败');
       }
     } catch (e) {
       if (mounted) {

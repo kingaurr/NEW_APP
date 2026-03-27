@@ -301,9 +301,10 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
 
                         // 记录列表
                         if (_records.isNotEmpty) ...[
-                          const Text(
+                          // 修复：将 const Text 改为普通 Text，因为 isRight 不是编译时常量
+                          Text(
                             isRight ? '最近信号' : '最近决策',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

@@ -44,16 +44,23 @@ class _TradePoolPageState extends State<TradePoolPage> {
 
     try {
       final result = await ApiService.getTradePool();
-      if (result != null && result['stocks'] != null) {
-        setState(() {
-          _stocks = result['stocks'];
-          _applyFilters();
-        });
-      } else {
-        setState(() {
-          _errorMessage = '获取交易池失败';
-        });
+      // 修复：兼容后端返回 List 或 {stocks: [...]} 两种格式
+      List<dynamic> stocksList = [];
+      if (result != null) {
+        if (result is List) {
+          stocksList = result as List<dynamic>;
+        } else if (result is Map && result['stocks'] is List) {
+          stocksList = result['stocks'] as List<dynamic>;
+        } else {
+          setState(() {
+            _errorMessage = '获取交易池失败：数据格式错误';
+          });
+        }
       }
+      setState(() {
+        _stocks = stocksList;
+      });
+      _applyFilters();
     } catch (e) {
       debugPrint('加载交易池失败: $e');
       setState(() {

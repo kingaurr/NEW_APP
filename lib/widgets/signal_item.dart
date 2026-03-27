@@ -97,9 +97,9 @@ class _SignalItemState extends State<SignalItem> {
     });
 
     try {
-      final result = await ApiService.executeSignal(widget.signal['id']);
-      // 安全类型检查：确保 result 是 Map 且 success 字段为 true
-      if (result != null && result is Map && result['success'] == true) {
+      // 修复：executeSignal 返回 bool
+      final success = await ApiService.executeSignal(widget.signal['id']);
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -110,7 +110,7 @@ class _SignalItemState extends State<SignalItem> {
           widget.onExecuted?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '执行失败');
+        throw Exception('执行失败');
       }
     } catch (e) {
       if (mounted) {

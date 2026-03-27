@@ -51,12 +51,15 @@ class _HomePageState extends State<HomePage> {
         _dashboard = results[0] as Map<String, dynamic>;
       }
 
-      // 2. 守门员建议数量
+      // 2. 守门员建议数量 - 增强类型安全
       if (results[1] != null) {
         if (results[1] is int) {
-          _pendingSuggestions = results[1];
-        } else if (results[1] is Map && results[1]['count'] != null) {
-          _pendingSuggestions = results[1]['count'];
+          _pendingSuggestions = results[1] as int;
+        } else if (results[1] is Map) {
+          final map = results[1] as Map;
+          _pendingSuggestions = (map['count'] as int?) ?? 0;
+        } else {
+          _pendingSuggestions = 0;
         }
       }
 

@@ -82,12 +82,13 @@ class _PositionItemState extends State<PositionItem> {
     });
 
     try {
-      final result = await ApiService.sellPosition(
-        code: widget.position['code'],
+      // 修复：sellPosition 第一个参数是位置参数 code，第二个是命名参数 shares
+      final success = await ApiService.sellPosition(
+        widget.position['code'],
         shares: widget.position['shares'],
       );
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('卖出成功'), backgroundColor: Colors.green),
@@ -95,7 +96,7 @@ class _PositionItemState extends State<PositionItem> {
           widget.onPositionChanged?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '卖出失败');
+        throw Exception('卖出失败');
       }
     } catch (e) {
       if (mounted) {

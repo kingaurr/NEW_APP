@@ -163,16 +163,17 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
     });
 
     try {
-      final result = await ApiService.updateRiskBaseFund(_riskBaseFund);
+      // 修复：updateRiskBaseFund 返回 bool，不是 Map
+      final success = await ApiService.updateRiskBaseFund(_riskBaseFund);
 
-      if (result?['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('风控基准资金已保存'), backgroundColor: Colors.green),
           );
         }
       } else {
-        throw Exception(result?['message'] ?? '保存失败');
+        throw Exception('保存失败');
       }
     } catch (e) {
       if (mounted) {
