@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 2.0.0+1
 
 environment:
-  sdk: '^3.11.0'
+  sdk: '>=2.19.0 <4.0.0' # 放宽 SDK 限制，兼容旧版 Flutter
 
 dependencies:
   flutter:
@@ -19,7 +19,7 @@ dependencies:
   package_info_plus: ^4.0.0
   local_auth: ^2.1.7
   flutter_markdown: ^0.6.18
-  file_picker: ^6.1.1  # 升级版本以修复平台实现警告
+  file_picker: ^5.5.0  # 回退到 5.5.0，解决平台实现缺失问题
   intl: ^0.18.1
   
   # 语音相关
@@ -34,12 +34,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-
-# 移除 record 的强制覆盖，避免版本冲突
-# dependency_overrides: 
-#   record: 5.0.0
-#   record_platform_interface: 1.5.0
-
+  
 flutter:
   uses-material-design: true
   assets:
