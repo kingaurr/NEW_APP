@@ -4,29 +4,29 @@ publish_to: 'none'
 version: 2.0.0+1
 
 environment:
-  sdk: '>=2.19.0 <4.0.0' # 放宽 SDK 限制，兼容旧版 Flutter
+  sdk: '>=2.19.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # 网络与存储
   http: ^1.1.0
   shared_preferences: ^2.2.0
-  
+
   # UI 组件
   fl_chart: ^0.65.0
   package_info_plus: ^4.0.0
   local_auth: ^2.1.7
   flutter_markdown: ^0.6.18
-  file_picker: ^5.5.0  # 回退到 5.5.0，解决平台实现缺失问题
+  file_picker: ^5.5.0
   intl: ^0.18.1
-  
+
   # 语音相关
   speech_to_text: ^6.6.0
-  record: ^5.0.0
+  record: ^4.4.0
   audioplayers: ^5.2.1
-  
+
   # 状态管理
   provider: ^6.1.1
 
@@ -34,7 +34,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  
+
 flutter:
   uses-material-design: true
   assets:

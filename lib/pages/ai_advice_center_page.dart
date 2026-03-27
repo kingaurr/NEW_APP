@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../widgets/strategy_item.dart';
 import '../widgets/pending_rule_item.dart';
-import '../widgets/guardian_suggestion_item.dart'; // 导入的是 suggestion (单数)
-import '../widgets/evidence_viewer.dart';
+import '../widgets/guardian_suggestion_item.dart' as guardian; // 使用别名，避免与 PendingRuleItem 冲突
 
 /// AI优化建议中心页面
 /// 整合策略库、外脑待审核规则、守门员建议、进化报告
@@ -305,8 +304,8 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       itemCount: _guardianSuggestions.length,
       itemBuilder: (context, index) {
         final suggestion = _guardianSuggestions[index];
-        // 修复点：此处类名由 GuardianSuggestionItem 改为 GuardianSuggestionItem
-        return GuardianSuggestionItem(
+        // 使用别名访问 GuardianSuggestionItem
+        return guardian.GuardianSuggestionItem(
           suggestion: suggestion,
           onStatusChanged: _loadData,
         );
