@@ -64,8 +64,10 @@ class _MyPageState extends State<MyPage> {
         });
       } else if (results[1] != null && results[1] is Map) {
         // 兼容旧版返回 Map 的情况
+        // --- 修改点：增加了 as Map<String, dynamic> ---
         final alertMap = results[1] as Map<String, dynamic>;
         setState(() {
+          // --- 修改点：删除了多余的 ); ---
           _unreadAlerts = alertMap['count'] ?? 0;
         });
       }

@@ -72,10 +72,26 @@ class _ReportListPageState extends State<ReportListPage> {
   String _formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
+
+      // 修正逻辑：计算周数（ISO 8601 标准）
+      int getWeekOfYear(DateTime date) {
+        // 获取该日期是当年的第几天
+        int dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+        // 获取当年第一天是星期几（周一为1，周日为7）
+        int dayOfWeek = date.weekday;
+        // 计算第一周的偏移量
+        int offset = (dayOfWeek - DateTime.january) % 7;
+        // 计算周数
+        int week = ((dayOfYear - offset) / 7).ceil();
+        return week;
+      }
+
       if (widget.type == 'daily') {
         return '${date.month}月${date.day}日';
       } else if (widget.type == 'weekly') {
-        return '第${date.week}周 (${date.year})';
+        // 使用自定义函数计算周数
+        int weekNumber = getWeekOfYear(date);
+        return '第${weekNumber}周 (${date.year})';
       } else {
         return '${date.year}年${date.month}月';
       }

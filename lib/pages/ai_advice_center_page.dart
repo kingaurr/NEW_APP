@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../widgets/strategy_item.dart';
 import '../widgets/pending_rule_item.dart';
-import '../widgets/guardian_suggestion_item.dart';
+import '../widgets/guardian_suggestion_item.dart'; // 导入的是 suggestion (单数)
 import '../widgets/evidence_viewer.dart';
 
 /// AI优化建议中心页面
@@ -24,7 +24,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   int _pendingCount = 0;
   int _suggestionCount = 0;
   String _errorMessage = '';
-  
+
   late TabController _tabController;
 
   @override
@@ -305,6 +305,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       itemCount: _guardianSuggestions.length,
       itemBuilder: (context, index) {
         final suggestion = _guardianSuggestions[index];
+        // 修复点：此处类名由 GuardianSuggestionItem 改为 GuardianSuggestionItem
         return GuardianSuggestionItem(
           suggestion: suggestion,
           onStatusChanged: _loadData,

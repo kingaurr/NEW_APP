@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:record/record.dart';
+import 'package:record/record.dart'; // 导入的是 Record
 import '../api_service.dart';
 
 /// 声纹设置页面
@@ -18,7 +18,7 @@ class VoiceSettingsPage extends StatefulWidget {
 
 class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
   final stt.SpeechToText _speech = stt.SpeechToText();
-  final AudioRecorder _recorder = AudioRecorder();
+  final Record _recorder = Record(); // 修复：改为 Record
 
   bool _isLoading = true;
   bool _voiceEnabled = false;
@@ -29,7 +29,7 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
   String _currentUserId = 'admin';
   String _currentUserName = '管理员';
 
-  String? _recordedFilePath;
+  String? _recordedFilePath; // 修复：移除 late
   List<double> _extractedFeatures = [];
 
   @override

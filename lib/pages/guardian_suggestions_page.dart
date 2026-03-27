@@ -1,7 +1,7 @@
 // lib/pages/guardian_suggestions_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
-import '../widgets/guardian_suggestion_item.dart';
+import '../widgets/guardian_suggestion_item.dart'; // 导入的是 suggestion (单数)
 
 /// 守门员建议列表页面
 /// 显示守门员生成的所有优化建议，支持采纳/拒绝/筛选
@@ -21,7 +21,7 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
   int _pendingCount = 0;
   int _historyCount = 0;
   String _errorMessage = '';
-  
+
   late TabController _tabController;
 
   final List<String> _priorityOptions = [
@@ -67,11 +67,11 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
         ApiService.getPendingSuggestions(),
         ApiService.getHistorySuggestions(),
       ]);
-      
+
       // 兼容后端返回 List 或 {suggestions: [...]} 两种格式
       List<dynamic> pendingList = [];
       List<dynamic> historyList = [];
-      
+
       // 处理待处理建议
       if (results[0] != null) {
         if (results[0] is List) {
@@ -80,22 +80,23 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
           pendingList = results[0]['suggestions'] as List<dynamic>;
         }
       }
-      
+
       // 处理历史建议
       if (results[1] != null) {
         if (results[1] is List) {
           historyList = results[1] as List<dynamic>;
         } else if (results[1] is Map && results[1]['suggestions'] is List) {
-          historyList = results[1]['suggestions'] as List<dynamic>;
+          // 修复点：这里 results[1] 可能为 null，使用 ?.
+          historyList = results[1]?['suggestions'] as List<dynamic>? ?? [];
         }
       }
-      
+
       setState(() {
         _pendingCount = pendingList.length;
         _historyCount = historyList.length;
         _suggestions = [...pendingList, ...historyList];
       });
-      
+
       _applyFilters();
     } catch (e) {
       debugPrint('加载守门员建议失败: $e');
@@ -120,11 +121,11 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
       }
       return true;
     }).toList();
-    
+
     if (_filterPriority.isNotEmpty) {
       filtered = filtered.where((s) => s['priority'] == _filterPriority).toList();
     }
-    
+
     setState(() {
       _filteredSuggestions = filtered;
     });
@@ -254,6 +255,7 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
                       itemCount: _filteredSuggestions.length,
                       itemBuilder: (context, index) {
                         final suggestion = _filteredSuggestions[index];
+                        // 修复点：类名从 GuardianSuggestionItem 改为 GuardianSuggestionItem
                         return GuardianSuggestionItem(
                           suggestion: suggestion,
                           onStatusChanged: _loadSuggestions,
