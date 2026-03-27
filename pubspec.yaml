@@ -24,7 +24,7 @@ dependencies:
 
   # 语音相关
   speech_to_text: ^6.6.0
-  record: ^5.0.0
+  record: ^4.4.0
   audioplayers: ^5.2.1
 
   # 状态管理
