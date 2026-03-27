@@ -36,7 +36,7 @@ class _WarGameReportState extends State<WarGameReport> {
           ? await ApiService.getLatestLightWarGame()
           : await ApiService.getLatestDeepWarGame();
 
-      if (result != null) {
+      if (result != null && result is Map<String, dynamic>) {
         setState(() {
           _report = result;
         });
@@ -188,7 +188,8 @@ class _WarGameReportState extends State<WarGameReport> {
 
     try {
       final result = await ApiService.applyWarGameSuggestion(_report['id']);
-      if (result?['success'] == true) {
+      // 安全类型检查：确保 result 是 Map 且 success 字段为 true
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),

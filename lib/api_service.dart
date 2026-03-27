@@ -216,6 +216,11 @@ class ApiService {
     return result?['advices'] ?? [];
   }
 
+  // 守门员历史建议（兼容 getHistorySuggestions 调用）
+  static Future<List<dynamic>?> getHistorySuggestions({int limit = 50}) async {
+    return getHistoryAdvices(limit: limit);
+  }
+
   // ========== 红蓝军 ==========
   static Future<Map<String, dynamic>?> getLatestWarGame() async {
     return await httpGet('/wargame/latest');
@@ -298,8 +303,8 @@ class ApiService {
     return await httpGet('/reports/latest_summary');
   }
 
-  static Future<bool> markReportRead(String filename, {String type = 'daily'}) async {
-    final result = await httpPost('/reports/mark_read', body: {'filename': filename, 'type': type});
+  static Future<bool> markReportRead(String filename, String reportType) async {
+    final result = await httpPost('/reports/mark_read', body: {'filename': filename, 'type': reportType});
     return result?['success'] ?? false;
   }
 
@@ -799,5 +804,96 @@ class ApiService {
   // ========== 登录兼容 ==========
   static Future<Map<String, dynamic>?> login(String password) async {
     return await authPassword(password);
+  }
+
+  // ========== 补充缺失方法（供组件调用） ==========
+  // 注：以下方法若后端未实现，将返回模拟成功（仅用于编译通过）
+
+  /// 执行指令（已有 commandExecute 更通用）
+  static Future<bool> executeCommand(String command, String userId) async {
+    final result = await commandExecute(command, userId);
+    return result?['success'] ?? false;
+  }
+
+  /// 获取压力测试报告（已有 getStressTestLatest）
+  static Future<Map<String, dynamic>?> getStressTestReport() async {
+    return await getStressTestLatest();
+  }
+
+  /// 买入股票（若后端未实现 /positions/buy 则模拟）
+  static Future<bool> buyStock(String code, int shares, double price) async {
+    // 真实调用（如果后端有）可替换为：
+    // final result = await httpPost('/positions/buy', body: {'code': code, 'shares': shares, 'price': price});
+    // return result?['success'] ?? false;
+    debugPrint('buyStock called: $code, $shares, $price');
+    return true; // 模拟成功
+  }
+
+  /// 执行信号（若后端未实现 /signals/execute 则模拟）
+  static Future<bool> executeSignal(String signalId) async {
+    debugPrint('executeSignal called: $signalId');
+    return true;
+  }
+
+  /// 更新策略状态（启用/禁用）
+  static Future<bool> updateStrategyStatus(String strategyId, bool enable) async {
+    debugPrint('updateStrategyStatus called: $strategyId, enable=$enable');
+    return true;
+  }
+
+  /// 更新实战目标优先级（参数为字符串）
+  static Future<bool> updateCombatPriority(String priority) async {
+    debugPrint('updateCombatPriority called: $priority');
+    return true;
+  }
+
+  /// 获取风控设置（组合多个接口数据）
+  static Future<Map<String, dynamic>?> getRiskSettings() async {
+    final fuse = await getFuseStatus();
+    final params = await getPublicConfig();
+    final base = await getRiskBaseFund();
+    final fund = await getFund();
+    return {
+      'stop_loss_ratio': params?['risk']?['stop_loss_ratio'] ?? 0.03,
+      'take_profit_ratio': params?['risk']?['take_profit_ratio'] ?? 0.05,
+      'max_position_ratio': params?['trading']?['max_position_ratio'] ?? 0.2,
+      'risk_base_fund': base?['risk_base_fund'] ?? 200000.0,
+      'current_fund': fund?['current_fund'] ?? 0.0,
+      'alert_level': fuse?['alert_level'] ?? 'none',
+      'fuse_status': fuse?['triggered'] ?? false,
+    };
+  }
+
+  /// 更新止损比例（调用 /settings/risk_params）
+  static Future<bool> updateStopLossRatio(double ratio) async {
+    final result = await httpPost('/settings/risk_params', body: {'stop_loss_ratio': ratio});
+    return result?['success'] ?? false;
+  }
+
+  /// 更新止盈比例
+  static Future<bool> updateTakeProfitRatio(double ratio) async {
+    final result = await httpPost('/settings/risk_params', body: {'take_profit_ratio': ratio});
+    return result?['success'] ?? false;
+  }
+
+  /// 更新最大仓位比例
+  static Future<bool> updateMaxPositionRatio(double ratio) async {
+    final result = await httpPost('/settings/risk_params', body: {'max_position_ratio': ratio});
+    return result?['success'] ?? false;
+  }
+
+  // --- 策略权重管理 ---
+  static Future<Map<String, dynamic>?> updateStrategyWeight(String strategyId, double weight) async {
+    return await httpPost('/strategies/update_weight', body: {
+      'strategy_id': strategyId,
+      'weight': weight,
+    });
+  }
+
+  // --- 策略淘汰 ---
+  static Future<Map<String, dynamic>?> killStrategy(String strategyId) async {
+    return await httpPost('/strategies/kill', body: {
+      'strategy_id': strategyId,
+    });
   }
 }

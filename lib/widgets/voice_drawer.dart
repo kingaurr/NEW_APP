@@ -1,7 +1,6 @@
 // lib/widgets/voice_drawer.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// 语音对话框组件
 /// 显示语音识别结果和处理状态
@@ -20,7 +19,6 @@ class VoiceDrawer extends StatefulWidget {
 }
 
 class _VoiceDrawerState extends State<VoiceDrawer> {
-  final ApiService _apiService = ApiService();
   bool _isProcessing = true;
   bool _isSuccess = false;
   String _responseText = '';
@@ -39,18 +37,18 @@ class _VoiceDrawerState extends State<VoiceDrawer> {
     });
 
     try {
-      // 调用后端语音接口
-      final result = await _apiService.voiceAsk(widget.command);
+      // 调用后端语音接口（静态方法）
+      final result = await ApiService.voiceAsk(widget.command);
 
       setState(() {
         _isProcessing = false;
-        _isSuccess = result['success'] ?? false;
+        _isSuccess = result?['success'] ?? false;
         _result = result;
         _responseText = _formatResponse(result);
       });
 
       // 回调给父组件
-      widget.onResult(result);
+      widget.onResult(result ?? {'success': false, 'message': '无响应'});
     } catch (e) {
       setState(() {
         _isProcessing = false;
@@ -65,7 +63,8 @@ class _VoiceDrawerState extends State<VoiceDrawer> {
   }
 
   /// 格式化响应文本
-  String _formatResponse(Map<String, dynamic> result) {
+  String _formatResponse(Map<String, dynamic>? result) {
+    if (result == null) return '无响应';
     if (result['success'] == true) {
       return result['message'] ?? '指令已执行';
     }
@@ -201,7 +200,7 @@ class _VoiceDrawerState extends State<VoiceDrawer> {
                       onPressed: () {
                         // 重新开始录音
                         Navigator.pop(context);
-                        // 通知父组件重新录音
+                        // 父组件可通过回调重新录音
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD4AF37),

@@ -40,40 +40,64 @@ class _RealTradePageState extends State<RealTradePage> {
 
     try {
       final results = await Future.wait([
-        ApiService.getRealSummary(),
-        ApiService.getPositions(),
-        ApiService.getTradePool(),
-        ApiService.getSignals(),
-        ApiService.getShadowCompare(),
+        ApiService.getStatus(), // 原 getRealSummary → 用 getStatus
+        ApiService.getPositions(), // 持仓
+        ApiService.getTradePool(), // 交易池
+        ApiService.getSignalHistory(), // 原 getSignals → getSignalHistory
+        ApiService.getShadowRealtimeCompare(), // 原 getShadowCompare → getShadowRealtimeCompare
       ]);
 
-      if (results[0] != null) {
+      // 1. 摘要数据（来自 getStatus）
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        final status = results[0] as Map<String, dynamic>;
         setState(() {
-          _summary = results[0];
+          _summary = {
+            'total_assets': (status['fund'] ?? 0.0) + (status['position_value'] ?? 0.0),
+            'today_pnl': status['today_pnl'] ?? 0.0,
+            'position_ratio': (status['position_value'] ?? 0.0) / (status['fund'] ?? 1.0).clamp(1.0, double.infinity),
+            'risk_status': status['status'] == 'healthy' ? 'normal' : (status['status'] == 'degraded' ? 'warning' : 'fuse'),
+            'today_trades': status['trade_count'] ?? 0,
+          };
         });
       }
-      
-      if (results[1] != null && results[1]['positions'] != null) {
+
+      // 2. 持仓数据（getPositions 返回 Map<String, dynamic>，需转为 List）
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
+        final positionsMap = results[1] as Map<String, dynamic>;
+        final positionsList = positionsMap.entries.map((entry) {
+          final value = entry.value;
+          if (value is Map) {
+            return {
+              'code': entry.key,
+              ...value,
+            };
+          }
+          return {'code': entry.key, 'value': value};
+        }).toList();
         setState(() {
-          _positions = results[1]['positions'];
+          _positions = positionsList;
         });
       }
-      
-      if (results[2] != null && results[2]['stocks'] != null) {
+
+      // 3. 交易池数据（getTradePool 返回 Map，有 stocks 字段）
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
+        final tradePoolMap = results[2] as Map<String, dynamic>;
         setState(() {
-          _tradePool = results[2]['stocks'];
+          _tradePool = tradePoolMap['stocks'] ?? [];
         });
       }
-      
-      if (results[3] != null && results[3]['signals'] != null) {
+
+      // 4. 信号历史数据（getSignalHistory 直接返回 List）
+      if (results[3] != null && results[3] is List) {
         setState(() {
-          _signals = results[3]['signals'];
+          _signals = results[3] as List<dynamic>;
         });
       }
-      
-      if (results[4] != null) {
+
+      // 5. 影子账户实时对比（getShadowRealtimeCompare 返回 Map）
+      if (results[4] != null && results[4] is Map<String, dynamic>) {
         setState(() {
-          _shadowCompare = results[4];
+          _shadowCompare = results[4] as Map<String, dynamic>;
         });
       }
     } catch (e) {

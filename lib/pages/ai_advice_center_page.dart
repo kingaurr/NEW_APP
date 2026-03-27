@@ -54,29 +54,41 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
         ApiService.getEvolutionReport(),
       ]);
 
-      if (results[0] != null) {
+      // 1. 策略列表 - 应为 List
+      if (results[0] != null && results[0] is List) {
         setState(() {
-          _strategies = results[0];
+          _strategies = results[0] as List<dynamic>;
         });
       }
-      
-      if (results[1] != null && results[1]['rules'] != null) {
-        setState(() {
-          _pendingRules = results[1]['rules'];
-          _pendingCount = _pendingRules.length;
-        });
+
+      // 2. 待审核规则 - 后端返回 { "rules": [...] }
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
+        final pendingMap = results[1] as Map<String, dynamic>;
+        final rules = pendingMap['rules'];
+        if (rules != null && rules is List) {
+          setState(() {
+            _pendingRules = rules;
+            _pendingCount = _pendingRules.length;
+          });
+        }
       }
-      
-      if (results[2] != null && results[2]['suggestions'] != null) {
-        setState(() {
-          _guardianSuggestions = results[2]['suggestions'];
-          _suggestionCount = _guardianSuggestions.length;
-        });
+
+      // 3. 守门员建议 - 后端返回 { "suggestions": [...] }
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
+        final suggestionMap = results[2] as Map<String, dynamic>;
+        final suggestions = suggestionMap['suggestions'];
+        if (suggestions != null && suggestions is List) {
+          setState(() {
+            _guardianSuggestions = suggestions;
+            _suggestionCount = _guardianSuggestions.length;
+          });
+        }
       }
-      
-      if (results[3] != null) {
+
+      // 4. 进化报告 - 应为 Map
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
         setState(() {
-          _evolutionReport = results[3];
+          _evolutionReport = results[3] as Map<String, dynamic>;
         });
       }
     } catch (e) {

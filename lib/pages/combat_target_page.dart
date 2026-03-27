@@ -80,7 +80,7 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
       // 获取策略贡献分析
       final strategies = await ApiService.getStrategies();
       if (strategies != null) {
-        final contributions = strategies.where((s) => 
+        final contributions = strategies.where((s) =>
           s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0
         ).toList();
         setState(() {
@@ -160,6 +160,7 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
     });
 
     try {
+      // 注意：ApiService.updateCombatPriority 需要接收 String 参数
       final result = await ApiService.updateCombatPriority(priority);
       if (result?['success'] == true) {
         _showSuccess('优先级已切换为${_getPriorityName(priority)}');
@@ -299,11 +300,12 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.target, color: Color(0xFFD4AF37), size: 20),
-                SizedBox(width: 8),
-                Text(
+                // 修复：Icons.target 不存在，改为 Icons.flag
+                const Icon(Icons.flag, color: Color(0xFFD4AF37), size: 20),
+                const SizedBox(width: 8),
+                const Text(
                   '当前进度',
                   style: TextStyle(
                     color: Colors.white,

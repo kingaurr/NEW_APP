@@ -44,37 +44,43 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
         ApiService.getShadowStatus(),
         ApiService.getLatestLightWarGame(),
         ApiService.getLatestDeepWarGame(),
-        ApiService.getStressTestReport(),
+        ApiService.getStressTestLatest(), // 使用 getStressTestLatest
         ApiService.getPendingRules(),
       ]);
 
-      if (results[0] != null) {
+      // 1. 影子账户状态
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
         setState(() {
-          _shadowStatus = results[0];
+          _shadowStatus = results[0] as Map<String, dynamic>;
         });
       }
-      
-      if (results[1] != null) {
+
+      // 2. 轻量红蓝军
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
         setState(() {
-          _lightWarGame = results[1];
+          _lightWarGame = results[1] as Map<String, dynamic>;
         });
       }
-      
-      if (results[2] != null) {
+
+      // 3. 深度红蓝军
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
         setState(() {
-          _deepWarGame = results[2];
+          _deepWarGame = results[2] as Map<String, dynamic>;
         });
       }
-      
-      if (results[3] != null) {
+
+      // 4. 压力测试报告
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
         setState(() {
-          _stressTest = results[3];
+          _stressTest = results[3] as Map<String, dynamic>;
         });
       }
-      
-      if (results[4] != null && results[4]['rules'] != null) {
+
+      // 5. 待验证规则
+      if (results[4] != null && results[4] is Map<String, dynamic>) {
+        final pendingMap = results[4] as Map<String, dynamic>;
         setState(() {
-          _pendingRules = results[4]['rules'];
+          _pendingRules = pendingMap['rules'] ?? [];
         });
       }
     } catch (e) {
@@ -288,7 +294,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                                         width: double.infinity,
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            _applySuggestion(_deepWarGame['suggestion'] ?? '');
+                                            _applySuggestion(_deepWarGame);
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFFD4AF37),
@@ -373,9 +379,9 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                                             style: TextStyle(color: Colors.grey, fontSize: 12),
                                           ),
                                           Text(
-                                            '${(_stressTest['max_loss'] ?? 0) * 100}%',
+                                            '${(_stressTest['extreme_loss'] ?? 0) * 100}%',
                                             style: TextStyle(
-                                              color: (_stressTest['max_loss'] ?? 0) > 0.2 ? Colors.red : Colors.orange,
+                                              color: (_stressTest['extreme_loss'] ?? 0) < -0.2 ? Colors.red : Colors.orange,
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -496,15 +502,15 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     );
   }
 
-  Future<void> _applySuggestion(String suggestion) async {
-    if (suggestion.isEmpty) return;
+  Future<void> _applySuggestion(Map<String, dynamic> deepReport) async {
+    if (deepReport.isEmpty) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF2A2A2A),
         title: const Text('确认应用建议', style: TextStyle(color: Colors.white)),
-        content: Text(suggestion, style: const TextStyle(color: Colors.white70)),
+        content: Text(deepReport['suggestion'] ?? '应用深度对抗报告的建议', style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -525,7 +531,9 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     if (confirmed != true) return;
 
     try {
-      final result = await ApiService.applyDeepWarGameSuggestion();
+      // 使用已有的 applyWarGameSuggestion 接口，传递报告ID（如果存在）
+      final reportId = deepReport['id'] ?? '';
+      final result = await ApiService.applyWarGameSuggestion(reportId);
       if (result?['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -533,6 +541,8 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
           );
           _loadData();
         }
+      } else {
+        throw Exception(result?['message'] ?? '应用失败');
       }
     } catch (e) {
       if (mounted) {

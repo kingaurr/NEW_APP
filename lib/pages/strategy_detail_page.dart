@@ -44,22 +44,27 @@ class _StrategyDetailPageState extends State<StrategyDetailPage> {
         ApiService.getStrategyComparison(widget.strategy['id']),
       ]);
 
-      if (results[0] != null) {
+      // 1. 策略详情
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        final detail = results[0] as Map<String, dynamic>;
         setState(() {
-          _detail = results[0];
-          _performanceData = results[0]['performance_curve'] ?? [];
+          _detail = detail;
+          // 获取绩效曲线，注意字段名可能是 'performance_curve' 或 'curve'
+          _performanceData = (detail['performance_curve'] ?? detail['curve'] ?? []) as List<double>;
         });
       }
-      
-      if (results[1] != null) {
+
+      // 2. 决策树
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
         setState(() {
-          _decisionTree = results[1];
+          _decisionTree = results[1] as Map<String, dynamic>;
         });
       }
-      
-      if (results[2] != null) {
+
+      // 3. 对比分析
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
         setState(() {
-          _comparison = results[2];
+          _comparison = results[2] as Map<String, dynamic>;
         });
       }
     } catch (e) {
@@ -96,7 +101,7 @@ class _StrategyDetailPageState extends State<StrategyDetailPage> {
   Widget _buildDecisionTreeNode(Map<String, dynamic> node, int level) {
     final children = node['children'] as List? ?? [];
     final indent = level * 16.0;
-    
+
     return Padding(
       padding: EdgeInsets.only(left: indent),
       child: Column(

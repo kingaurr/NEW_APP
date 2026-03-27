@@ -15,14 +15,14 @@ class RiskSettingsPage extends StatefulWidget {
 class _RiskSettingsPageState extends State<RiskSettingsPage> {
   bool _isLoading = true;
   bool _isSaving = false;
-  
+
   double _stopLossRatio = 0.03;
   double _takeProfitRatio = 0.05;
   double _maxPositionRatio = 0.2;
   double _riskBaseFund = 200000.0;
   double _currentFund = 0.0;
   String _alertLevel = 'none';
-  String _fuseStatus = 'normal';
+  bool _fuseTriggered = false;
   String _errorMessage = '';
 
   @override
@@ -39,36 +39,44 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
 
     try {
       final results = await Future.wait([
-        ApiService.getRiskParams(),
-        ApiService.getRiskBaseFund(),
-        ApiService.getFund(),
-        ApiService.getFuseStatus(),
+        ApiService.getRiskSettings(), // 包含 stop_loss_ratio, take_profit_ratio, max_position_ratio
+        ApiService.getRiskBaseFund(), // 返回 { "risk_base_fund": xxx }
+        ApiService.getFund(), // 返回 { "current_fund": xxx, ... }
+        ApiService.getFuseStatus(), // 返回 { "triggered": bool, "reason": str, "alert_level": str }
       ]);
 
-      if (results[0] != null) {
+      // 1. 风控参数
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        final risk = results[0] as Map<String, dynamic>;
         setState(() {
-          _stopLossRatio = results[0]['stop_loss_ratio'] ?? 0.03;
-          _takeProfitRatio = results[0]['take_profit_ratio'] ?? 0.05;
-          _maxPositionRatio = results[0]['max_position_ratio'] ?? 0.2;
+          _stopLossRatio = (risk['stop_loss_ratio'] ?? 0.03).toDouble();
+          _takeProfitRatio = (risk['take_profit_ratio'] ?? 0.05).toDouble();
+          _maxPositionRatio = (risk['max_position_ratio'] ?? 0.2).toDouble();
         });
       }
-      
-      if (results[1] != null) {
+
+      // 2. 风控基准资金
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
+        final base = results[1] as Map<String, dynamic>;
         setState(() {
-          _riskBaseFund = results[1]['base_fund'] ?? 200000.0;
+          _riskBaseFund = (base['risk_base_fund'] ?? 200000.0).toDouble();
         });
       }
-      
-      if (results[2] != null) {
+
+      // 3. 当前资金
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
+        final fund = results[2] as Map<String, dynamic>;
         setState(() {
-          _currentFund = results[2]['total'] ?? 0.0;
+          _currentFund = (fund['current_fund'] ?? 0.0).toDouble();
         });
       }
-      
-      if (results[3] != null) {
+
+      // 4. 熔断状态
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
+        final fuse = results[3] as Map<String, dynamic>;
         setState(() {
-          _alertLevel = results[3]['level'] ?? 'none';
-          _fuseStatus = results[3]['status'] ?? 'normal';
+          _fuseTriggered = fuse['triggered'] ?? false;
+          _alertLevel = fuse['alert_level'] ?? 'none';
         });
       }
     } catch (e) {
@@ -91,7 +99,7 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
       operation: 'modify_risk_params',
       operationDesc: '修改风控参数',
     );
-    
+
     if (!authenticated) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,20 +114,19 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
     });
 
     try {
-      final result = await ApiService.updateRiskParams({
-        'stop_loss_ratio': _stopLossRatio,
-        'take_profit_ratio': _takeProfitRatio,
-        'max_position_ratio': _maxPositionRatio,
-      });
+      // 分别调用三个更新接口（后端可能没有批量接口）
+      final stopLossOk = await ApiService.updateStopLossRatio(_stopLossRatio);
+      final takeProfitOk = await ApiService.updateTakeProfitRatio(_takeProfitRatio);
+      final maxPosOk = await ApiService.updateMaxPositionRatio(_maxPositionRatio);
 
-      if (result?['success'] == true) {
+      if (stopLossOk && takeProfitOk && maxPosOk) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('风控参数已保存'), backgroundColor: Colors.green),
           );
         }
       } else {
-        throw Exception(result?['message'] ?? '保存失败');
+        throw Exception('部分参数保存失败');
       }
     } catch (e) {
       if (mounted) {
@@ -141,7 +148,7 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
       operation: 'modify_risk_params',
       operationDesc: '修改风控基准资金',
     );
-    
+
     if (!authenticated) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -218,26 +225,12 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
     }
   }
 
-  String _getFuseStatusText(String status) {
-    switch (status) {
-      case 'fuse':
-        return '已熔断';
-      case 'warning':
-        return '预警';
-      default:
-        return '正常';
-    }
+  String _getFuseStatusText() {
+    return _fuseTriggered ? '已熔断' : '正常';
   }
 
-  Color _getFuseStatusColor(String status) {
-    switch (status) {
-      case 'fuse':
-        return Colors.red;
-      case 'warning':
-        return Colors.orange;
-      default:
-        return Colors.green;
-    }
+  Color _getFuseStatusColor() {
+    return _fuseTriggered ? Colors.red : Colors.green;
   }
 
   void _showBaseFundDialog() {
@@ -392,13 +385,13 @@ class _RiskSettingsPageState extends State<RiskSettingsPage> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: _getFuseStatusColor(_fuseStatus).withOpacity(0.2),
+                                      color: _getFuseStatusColor().withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      _getFuseStatusText(_fuseStatus),
+                                      _getFuseStatusText(),
                                       style: TextStyle(
-                                        color: _getFuseStatusColor(_fuseStatus),
+                                        color: _getFuseStatusColor(),
                                         fontSize: 12,
                                       ),
                                     ),

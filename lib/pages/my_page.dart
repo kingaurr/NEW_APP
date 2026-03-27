@@ -50,15 +50,24 @@ class _MyPageState extends State<MyPage> {
         ApiService.getUnreadAlertCount(),
       ]);
 
-      if (results[0] != null) {
+      // 1. 系统版本
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        final versionMap = results[0] as Map<String, dynamic>;
         setState(() {
-          _currentVersion = results[0]['current_version'] ?? 'v1.0.0';
+          _currentVersion = versionMap['current_version'] ?? 'v1.0.0';
         });
       }
-      
-      if (results[1] != null) {
+
+      // 2. 未读告警数量
+      if (results[1] != null && results[1] is int) {
         setState(() {
-          _unreadAlerts = results[1]['count'] ?? 0;
+          _unreadAlerts = results[1] as int;
+        });
+      } else if (results[1] != null && results[1] is Map) {
+        // 兼容旧版返回 Map 的情况
+        final alertMap = results[1] as Map<String, dynamic>;
+        setState(() {
+          _unreadAlerts = alertMap['count'] ?? 0;
         });
       }
     } catch (e) {
@@ -225,7 +234,7 @@ class _MyPageState extends State<MyPage> {
                                       onTap: _showAuditLog,
                                     ),
                                     _buildGridItem(
-                                      icon: Icons.target,
+                                      icon: Icons.flag, // 原 Icons.target 改为 Icons.flag
                                       label: '实战目标',
                                       onTap: _showCombatTarget,
                                     ),

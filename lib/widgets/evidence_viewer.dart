@@ -1,5 +1,6 @@
 // lib/widgets/evidence_viewer.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';  // 添加此导入以使用 Clipboard
 import 'dart:convert';
 
 /// 证据查看器组件

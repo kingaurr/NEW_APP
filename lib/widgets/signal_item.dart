@@ -98,7 +98,8 @@ class _SignalItemState extends State<SignalItem> {
 
     try {
       final result = await ApiService.executeSignal(widget.signal['id']);
-      if (result?['success'] == true) {
+      // 安全类型检查：确保 result 是 Map 且 success 字段为 true
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

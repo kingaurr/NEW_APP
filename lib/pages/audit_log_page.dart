@@ -1,7 +1,8 @@
 // lib/pages/audit_log_page.dart
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 import '../api_service.dart';
 
 /// 审计日志页面
@@ -18,7 +19,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
   List<dynamic> _logs = [];
   String _filterOperation = '';
   String _filterUserId = '';
-  String _filterResult = '';
   int _currentPage = 0;
   final int _pageSize = 50;
   String _errorMessage = '';
@@ -35,13 +35,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
     'fingerprint_verify',
     'voice_verify',
     'permission_change',
-  ];
-
-  final List<String> _resultOptions = [
-    '',
-    'success',
-    'failed',
-    'denied',
   ];
 
   @override
@@ -61,7 +54,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
         limit: _pageSize,
         operation: _filterOperation.isEmpty ? null : _filterOperation,
         userId: _filterUserId.isEmpty ? null : _filterUserId,
-        result: _filterResult.isEmpty ? null : _filterResult,
       );
 
       if (result != null && result['logs'] != null) {
@@ -112,12 +104,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
         final timestamp = log['timestamp'] ?? '';
         final operation = log['operation'] ?? '';
         final userId = log['user_id'] ?? '';
-        final result = log['result'] ?? '';
+        final resultStatus = log['result'] ?? '';
         final details = _formatDetailsForCsv(log['details']);
         final ip = log['ip_address'] ?? '';
         final deviceId = log['device_id'] ?? '';
 
-        csvBuffer.writeln('"$timestamp","$operation","$userId","$result","$details","$ip","$deviceId"');
+        csvBuffer.writeln('"$timestamp","$operation","$userId","$resultStatus","$details","$ip","$deviceId"');
       }
 
       // 选择保存路径
@@ -217,7 +209,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
       body: Column(
         children: [
           // 筛选条件栏
-          if (_filterOperation.isNotEmpty || _filterUserId.isNotEmpty || _filterResult.isNotEmpty)
+          if (_filterOperation.isNotEmpty || _filterUserId.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: const Color(0xFF2A2A2A),
@@ -251,25 +243,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
                         backgroundColor: Colors.grey[800],
                         deleteIconColor: Colors.white,
                       ),
-                    if (_filterResult.isNotEmpty)
-                      Chip(
-                        label: Text(_getResultText(_filterResult)),
-                        onDeleted: () {
-                          setState(() {
-                            _filterResult = '';
-                          });
-                          _loadLogs();
-                        },
-                        backgroundColor: Colors.grey[800],
-                        deleteIconColor: Colors.white,
-                      ),
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: () {
                         setState(() {
                           _filterOperation = '';
                           _filterUserId = '';
-                          _filterResult = '';
                         });
                         _loadLogs();
                       },
@@ -482,28 +461,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _filterResult.isEmpty ? null : _filterResult,
-                dropdownColor: const Color(0xFF2A2A2A),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: '结果',
-                  labelStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(),
-                ),
-                items: _resultOptions.map((res) {
-                  return DropdownMenuItem(
-                    value: res.isEmpty ? null : res,
-                    child: Text(res.isEmpty ? '全部' : _getResultText(res)),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _filterResult = value ?? '';
-                  });
-                },
-              ),
             ],
           ),
         ),
@@ -588,5 +545,3 @@ class _AuditLogPageState extends State<AuditLogPage> {
     );
   }
 }
-
-import 'dart:convert';

@@ -31,9 +31,10 @@ class _CommandHistoryPageState extends State<CommandHistoryPage> {
 
     try {
       final result = await ApiService.getCommandHistory(limit: 200);
-      if (result != null && result['commands'] != null) {
+      // 后端返回格式: { "history": [...] }
+      if (result != null && result is Map && result['history'] != null) {
         setState(() {
-          _commands = result['commands'];
+          _commands = result['history'];
         });
       } else {
         setState(() {
@@ -213,12 +214,13 @@ class _CommandHistoryPageState extends State<CommandHistoryPage> {
     }
 
     try {
+      // 使用正确的 executeCommand 签名：command, userId
       final result = await ApiService.executeCommand(
-        command: command['command'],
-        operation: command['operation'],
+        command['command'],
+        'retry_user', // 可考虑从会话中获取真实用户ID
       );
 
-      if (result?['success'] == true) {
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message'] ?? '执行成功'), backgroundColor: Colors.green),

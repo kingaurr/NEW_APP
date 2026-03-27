@@ -42,13 +42,23 @@ class _PositionDetailPageState extends State<PositionDetailPage> {
     });
 
     try {
-      final result = await ApiService.getPositionDetail(widget.position['code']);
-      if (result != null) {
-        setState(() {
-          _detail = result;
-          _stopLossController.text = _detail['stop_loss']?.toStringAsFixed(2) ?? '';
-          _takeProfitController.text = _detail['take_profit']?.toStringAsFixed(2) ?? '';
-        });
+      // 获取所有持仓，然后筛选当前股票
+      final positions = await ApiService.getPositions();
+      if (positions != null && positions is Map<String, dynamic>) {
+        final code = widget.position['code'];
+        final positionData = positions[code];
+        if (positionData != null) {
+          setState(() {
+            _detail = positionData is Map ? Map<String, dynamic>.from(positionData) : {};
+            // 从详情中读取止损止盈（如果后端返回这些字段）
+            _stopLossController.text = _detail['stop_loss']?.toStringAsFixed(2) ?? '';
+            _takeProfitController.text = _detail['take_profit']?.toStringAsFixed(2) ?? '';
+          });
+        } else {
+          setState(() {
+            _errorMessage = '未找到持仓数据';
+          });
+        }
       } else {
         setState(() {
           _errorMessage = '获取持仓详情失败';

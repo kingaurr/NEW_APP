@@ -106,7 +106,8 @@ class _TradePoolItemState extends State<TradePoolItem> {
         price: widget.stock['current_price'],
       );
 
-      if (result?['success'] == true) {
+      // 安全类型检查
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('买入成功'), backgroundColor: Colors.green),

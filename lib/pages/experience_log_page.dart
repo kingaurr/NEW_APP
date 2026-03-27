@@ -39,14 +39,11 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
     });
 
     try {
-      final result = await ApiService.getExperienceLogs(
-        limit: _pageSize,
-        action: _filterAction.isEmpty ? null : _filterAction,
-      );
-
-      if (result != null && result['experiences'] != null) {
+      // API 不支持 action 筛选，获取全部后本地筛选
+      final result = await ApiService.getExperienceLogs(limit: _pageSize);
+      if (result != null && result is List) {
         setState(() {
-          _experiences = result['experiences'];
+          _experiences = result;
         });
       } else {
         setState(() {
@@ -67,6 +64,14 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
         });
       }
     }
+  }
+
+  List<dynamic> get _filteredExperiences {
+    if (_filterAction.isEmpty) return _experiences;
+    return _experiences.where((exp) {
+      final action = exp['action'] ?? '';
+      return action == _filterAction;
+    }).toList();
   }
 
   String _getActionName(String action) {
@@ -285,7 +290,8 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
                             setState(() {
                               _filterAction = '';
                             });
-                            _loadExperiences();
+                            // 无需重新加载，因为筛选是在内存中进行的
+                            setState(() {});
                           },
                           backgroundColor: Colors.grey[800],
                           deleteIconColor: Colors.white,
@@ -296,7 +302,6 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
                             setState(() {
                               _filterAction = '';
                             });
-                            _loadExperiences();
                           },
                           child: const Text('清除筛选'),
                         ),
@@ -306,7 +311,7 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
 
                 // 经验列表
                 Expanded(
-                  child: _experiences.isEmpty
+                  child: _filteredExperiences.isEmpty
                       ? const Center(
                           child: Text(
                             '暂无经验记录',
@@ -315,9 +320,9 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          itemCount: _experiences.length,
+                          itemCount: _filteredExperiences.length,
                           itemBuilder: (context, index) {
-                            final exp = _experiences[index];
+                            final exp = _filteredExperiences[index];
                             return _buildExperienceItem(exp);
                           },
                         ),
@@ -462,7 +467,6 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
               _filterAction = value ?? '';
             });
             Navigator.pop(context);
-            _loadExperiences();
           },
         ),
         actions: [

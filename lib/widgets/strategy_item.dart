@@ -59,7 +59,7 @@ class _StrategyItemState extends State<StrategyItem> {
         newEnabled,
       );
 
-      if (result?['success'] == true) {
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -146,7 +146,7 @@ class _StrategyItemState extends State<StrategyItem> {
         newWeight,
       );
 
-      if (result?['success'] == true) {
+      if (result != null && result is Map && result['success'] == true) {
         setState(() {
           _weight = newWeight;
         });
@@ -440,7 +440,7 @@ class _StrategyItemState extends State<StrategyItem> {
 
     try {
       final result = await ApiService.killStrategy(widget.strategy['id']);
-      if (result?['success'] == true) {
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('策略已淘汰'), backgroundColor: Colors.orange),

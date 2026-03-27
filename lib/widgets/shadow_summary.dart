@@ -33,7 +33,7 @@ class _ShadowSummaryState extends State<ShadowSummary> {
 
     try {
       final result = await ApiService.getShadowStatus();
-      if (result != null) {
+      if (result != null && result is Map<String, dynamic>) {
         setState(() {
           _shadowData = result;
         });
@@ -114,7 +114,8 @@ class _ShadowSummaryState extends State<ShadowSummary> {
 
     try {
       final result = await ApiService.applyShadowSuggestion();
-      if (result?['success'] == true) {
+      // 安全类型检查：result 是 Map 且 success 为 true
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),

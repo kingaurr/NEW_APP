@@ -32,9 +32,10 @@ class _CommandHistoryState extends State<CommandHistory> {
 
     try {
       final result = await ApiService.getCommandHistory(limit: widget.limit);
-      if (result != null && result['commands'] != null) {
+      // 后端返回格式: { "history": [...] }
+      if (result != null && result is Map && result['history'] != null) {
         setState(() {
-          _commands = result['commands'];
+          _commands = result['history'];
         });
       } else {
         setState(() {
@@ -205,12 +206,14 @@ class _CommandHistoryState extends State<CommandHistory> {
     }
 
     try {
-      final result = await ApiService.executeCommand(
-        command: command['command'],
-        operation: command['operation'],
+      // 使用 ApiService.commandExecute 获取完整结果
+      final result = await ApiService.commandExecute(
+        command['command'],
+        'retry_user', // 可考虑从上下文获取真实用户ID
+        skipAuth: true, // 重试时跳过认证（或需重新认证，根据业务决定）
       );
 
-      if (result?['success'] == true) {
+      if (result != null && result is Map && result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message'] ?? '执行成功'), backgroundColor: Colors.green),

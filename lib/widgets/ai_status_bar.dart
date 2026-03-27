@@ -38,15 +38,38 @@ class _AIStatusBarState extends State<AIStatusBar> {
       final results = await Future.wait([
         ApiService.getRightBrainStatus(),
         ApiService.getLeftBrainStatus(),
-        ApiService.getOuterBrainStatus(),
+        ApiService.getEvolutionReport(),       // 外脑状态，对应 /outer_brain/evolution_report
         ApiService.getPendingAdviceCount(),
       ]);
 
-      if (results[0] != null) _rightBrain = results[0];
-      if (results[1] != null) _leftBrain = results[1];
-      if (results[2] != null) _outerBrain = results[2];
+      // 1. 右脑状态
+      if (results[0] != null && results[0] is Map<String, dynamic>) {
+        _rightBrain = results[0];
+      }
+
+      // 2. 左脑状态
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
+        _leftBrain = results[1];
+      }
+
+      // 3. 外脑进化报告
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
+        final report = results[2];
+        // 根据后端返回的字段构建外脑状态
+        _outerBrain = {
+          'status': report['status'] ?? 'idle',
+          'last_run_time': report['last_run'],
+          'new_rules_count': (report['new_rules'] as List?)?.length ?? 0,
+        };
+      }
+
+      // 4. 待处理建议数量
       if (results[3] != null) {
-        _pendingSuggestions = results[3]['count'] ?? 0;
+        if (results[3] is int) {
+          _pendingSuggestions = results[3];
+        } else if (results[3] is Map && results[3]['count'] != null) {
+          _pendingSuggestions = results[3]['count'];
+        }
       }
 
       setState(() {
@@ -66,13 +89,15 @@ class _AIStatusBarState extends State<AIStatusBar> {
       case 'normal':
       case 'healthy':
       case 'running':
+      case 'completed':
         return Colors.green;
       case 'warning':
       case 'degraded':
         return Colors.orange;
       case 'error':
       case 'failed':
-        return Colors.red;
+      case 'idle': // idle 可以视为正常但未运行
+        return Colors.grey;
       default:
         return Colors.grey;
     }
@@ -89,6 +114,12 @@ class _AIStatusBarState extends State<AIStatusBar> {
       case 'error':
       case 'failed':
         return '异常';
+      case 'running':
+        return '运行中';
+      case 'completed':
+        return '已完成';
+      case 'idle':
+        return '待执行';
       default:
         return '未知';
     }
@@ -190,7 +221,7 @@ class _AIStatusBarState extends State<AIStatusBar> {
 
     final rightStatus = _rightBrain['status'] ?? 'unknown';
     final leftStatus = _leftBrain['status'] ?? 'unknown';
-    final outerStatus = _outerBrain['status'] ?? 'unknown';
+    final outerStatus = _outerBrain['status'] ?? 'idle';
     final outerLastRun = _outerBrain['last_run_time'];
     final outerNewRules = _outerBrain['new_rules_count'] ?? 0;
 
