@@ -23,8 +23,8 @@ dependencies:
   intl: ^0.18.1
 
   # 语音相关
-  speech_to_text: ^6.6.0
-  record: ^4.4.0
+  speech_to_text: ^8.0.0
+  record: ^5.0.0
   audioplayers: ^5.2.1
 
   # 状态管理
