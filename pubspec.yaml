@@ -1,4 +1,4 @@
-name: trading_app_final
+name: trading_app
 description: AI量化交易助手APP
 publish_to: 'none'
 version: 2.0.0+1
@@ -39,9 +39,6 @@ dev_dependencies:
 dependency_overrides:
   record: 5.0.0
   record_platform_interface: 1.5.0
-  record_linux: 0.7.2
-  record_macos: 1.0.1
-  record_windows: 1.0.1
 
 flutter:
   uses-material-design: true
