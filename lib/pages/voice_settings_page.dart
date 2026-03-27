@@ -105,20 +105,17 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
     });
 
     try {
-      // 修复：start 方法返回 Future<void>，不能直接获取路径
       await _recorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.aacLc, // 修复：原 aac 不存在，改为 aacLc
+          encoder: AudioEncoder.aacLc,
           bitRate: 128000,
           sampleRate: 16000,
         ),
         path: 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a',
       );
 
-      // 录音 5 秒
       await Future.delayed(const Duration(seconds: 5));
 
-      // 停止录音并获取文件路径
       final path = await _recorder.stop();
       if (path != null) {
         _recordedFilePath = path;
@@ -186,7 +183,7 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
         _extractedFeatures,
       );
 
-      if (result?['success'] == true) {
+      if (result != null && result['success'] == true) {
         _showSuccess('声纹注册成功');
         _extractedFeatures = [];
         _loadVoiceUsers();
@@ -219,8 +216,9 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
     try {
       final result = await ApiService.voiceIdentify(_extractedFeatures);
 
-      if (result?['verified'] == true) {
-        _showSuccess('声纹验证通过，匹配用户: ${result['user_id']}');
+      if (result != null && result['verified'] == true) {
+        final userId = result['user_id'] ?? '未知';
+        _showSuccess('声纹验证通过，匹配用户: $userId');
       } else {
         _showError('声纹验证失败，未匹配到用户');
       }
@@ -264,7 +262,7 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
 
     try {
       final result = await ApiService.voiceDelete(userId);
-      if (result?['success'] == true) {
+      if (result != null && result['success'] == true) {
         _showSuccess('声纹已删除');
         _loadVoiceUsers();
       } else {

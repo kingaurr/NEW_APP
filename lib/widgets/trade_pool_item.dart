@@ -100,14 +100,14 @@ class _TradePoolItemState extends State<TradePoolItem> {
     });
 
     try {
-      final result = await ApiService.buyStock(
-        code: widget.stock['code'],
-        shares: shares,
-        price: widget.stock['current_price'],
+      // 修复：buyStock 需要三个位置参数：code, shares, price，返回 bool
+      final success = await ApiService.buyStock(
+        widget.stock['code'],
+        shares,
+        widget.stock['current_price'],
       );
 
-      // 安全类型检查
-      if (result != null && result is Map && result['success'] == true) {
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('买入成功'), backgroundColor: Colors.green),
@@ -115,7 +115,7 @@ class _TradePoolItemState extends State<TradePoolItem> {
           widget.onTrade?.call();
         }
       } else {
-        throw Exception(result?['message'] ?? '买入失败');
+        throw Exception('买入失败');
       }
     } catch (e) {
       if (mounted) {

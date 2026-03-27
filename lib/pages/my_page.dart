@@ -5,7 +5,6 @@ import '../widgets/version_card.dart';
 import '../widgets/broker_card.dart';
 import '../widgets/risk_base_fund_setting.dart';
 import '../widgets/budget_setting.dart';
-import '../widgets/command_history.dart';
 import '../pages/security_center_page.dart';
 import '../pages/audit_log_page.dart';
 import '../pages/combat_target_page.dart';
@@ -234,7 +233,7 @@ class _MyPageState extends State<MyPage> {
                                       onTap: _showAuditLog,
                                     ),
                                     _buildGridItem(
-                                      icon: Icons.flag, // 原 Icons.target 改为 Icons.flag
+                                      icon: Icons.flag,
                                       label: '实战目标',
                                       onTap: _showCombatTarget,
                                     ),
@@ -309,6 +308,7 @@ class _MyPageState extends State<MyPage> {
           alignment: Alignment.center,
           children: [
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, color: const Color(0xFFD4AF37), size: 24),
                 const SizedBox(height: 6),

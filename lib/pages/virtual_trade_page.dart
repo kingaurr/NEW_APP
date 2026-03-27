@@ -531,11 +531,9 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     if (confirmed != true) return;
 
     try {
-      // 使用已有的 applyWarGameSuggestion 接口，传递报告ID（如果存在）
-      final reportId = deepReport['id'] ?? '';
-      final result = await ApiService.applyWarGameSuggestion(reportId);
-      // 安全类型检查：确保 result 是 Map 且 success 字段为 true
-      if (result != null && result is Map && result['success'] == true) {
+      // 修复：applyWarGameSuggestion 返回 bool
+      final success = await ApiService.applyWarGameSuggestion(deepReport['id'] ?? '');
+      if (success == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),
@@ -543,7 +541,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
           _loadData();
         }
       } else {
-        throw Exception(result?['message'] ?? '应用失败');
+        throw Exception('应用失败');
       }
     } catch (e) {
       if (mounted) {

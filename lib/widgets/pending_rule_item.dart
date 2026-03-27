@@ -39,8 +39,8 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
     });
 
     try {
-      // 修复：approvePendingRule 返回 bool
-      final success = await ApiService.approvePendingRule(
+      // 修复：使用 approveRule 方法，返回 bool
+      final success = await ApiService.approveRule(
         widget.rule['id'] ?? widget.rule['rule_id'],
       );
 
@@ -93,9 +93,8 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
     });
 
     try {
-      // 修复：rejectPendingRule 只接受 ruleId 参数，不支持 reason
-      // 保留 reason 变量（可用于日志或未来扩展），但调用时不传递
-      final success = await ApiService.rejectPendingRule(
+      // 修复：使用 rejectRule 方法，返回 bool
+      final success = await ApiService.rejectRule(
         widget.rule['id'] ?? widget.rule['rule_id'],
       );
 

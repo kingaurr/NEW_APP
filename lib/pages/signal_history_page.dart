@@ -36,27 +36,19 @@ class _SignalHistoryPageState extends State<SignalHistoryPage> {
 
     try {
       final result = await ApiService.getSignalHistory(limit: 200);
+      // 兼容后端返回 List 或 {signals: [...]} 两种格式
+      List<dynamic> signalsList = [];
       if (result != null) {
-        // 修复：兼容后端返回 List 或 {signals: [...]} 两种格式
         if (result is List) {
-          setState(() {
-            _signals = result;
-          });
+          signalsList = result;
         } else if (result is Map && result['signals'] is List) {
-          setState(() {
-            _signals = result['signals'];
-          });
-        } else {
-          setState(() {
-            _errorMessage = '获取信号历史失败：数据格式错误';
-          });
+          signalsList = result['signals'] as List<dynamic>;
         }
-        _applyFilters();
-      } else {
-        setState(() {
-          _errorMessage = '获取信号历史失败';
-        });
       }
+      setState(() {
+        _signals = signalsList;
+      });
+      _applyFilters();
     } catch (e) {
       debugPrint('加载信号历史失败: $e');
       setState(() {
@@ -127,7 +119,7 @@ class _SignalHistoryPageState extends State<SignalHistoryPage> {
     }
   }
 
-  // 新增：统一筛选对话框
+  // 统一筛选对话框入口
   void _showFilterDialog() {
     showModalBottomSheet(
       context: context,
@@ -265,7 +257,7 @@ class _SignalHistoryPageState extends State<SignalHistoryPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_alt),
-            onPressed: _showFilterDialog, // 修复：调用新增的筛选方法
+            onPressed: _showFilterDialog,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

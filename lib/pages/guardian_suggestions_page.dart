@@ -68,7 +68,7 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
         ApiService.getHistorySuggestions(),
       ]);
       
-      // 修复：兼容后端返回 List 或 {suggestions: [...]} 两种格式
+      // 兼容后端返回 List 或 {suggestions: [...]} 两种格式
       List<dynamic> pendingList = [];
       List<dynamic> historyList = [];
       

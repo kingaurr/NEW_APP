@@ -31,20 +31,22 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
 
     try {
       final result = await ApiService.getVersions();
-      // 修复：兼容后端返回 List 或 {versions: [...]} 两种格式
-      if (result is List) {
-        setState(() {
-          _versions = result;
-        });
-      } else if (result is Map && result['versions'] is List) {
-        setState(() {
-          _versions = result['versions'];
-        });
-      } else {
-        setState(() {
-          _errorMessage = '获取版本列表失败：数据格式错误';
-        });
+      // 兼容后端返回 List 或 {versions: [...]} 两种格式
+      List<dynamic> versionsList = [];
+      if (result != null) {
+        if (result is List) {
+          versionsList = result;
+        } else if (result is Map && result['versions'] is List) {
+          versionsList = result['versions'] as List<dynamic>;
+        } else {
+          setState(() {
+            _errorMessage = '获取版本列表失败：数据格式错误';
+          });
+        }
       }
+      setState(() {
+        _versions = versionsList;
+      });
     } catch (e) {
       debugPrint('加载版本列表失败: $e');
       setState(() {
@@ -110,7 +112,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     });
 
     try {
-      // 修复：ApiService.rollbackVersion 返回 bool，不是 Map
+      // 修复：rollbackVersion 返回 bool
       final success = await ApiService.rollbackVersion(version['id']);
       if (success == true) {
         if (mounted) {

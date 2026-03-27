@@ -44,11 +44,11 @@ class _TradePoolPageState extends State<TradePoolPage> {
 
     try {
       final result = await ApiService.getTradePool();
-      // 修复：兼容后端返回 List 或 {stocks: [...]} 两种格式
+      // 兼容后端返回 List 或 {stocks: [...]} 两种格式
       List<dynamic> stocksList = [];
       if (result != null) {
         if (result is List) {
-          stocksList = result as List<dynamic>;
+          stocksList = result;
         } else if (result is Map && result['stocks'] is List) {
           stocksList = result['stocks'] as List<dynamic>;
         } else {

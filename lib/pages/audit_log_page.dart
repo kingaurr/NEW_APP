@@ -56,8 +56,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
         userId: _filterUserId.isEmpty ? null : _filterUserId,
       );
 
-      // 增加类型安全判断
-      if (result is Map && result['logs'] != null) {
+      if (result is Map && result['logs'] is List) {
         setState(() {
           _logs = result['logs'] as List<dynamic>;
         });
