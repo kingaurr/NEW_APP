@@ -76,18 +76,11 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
 
       final strategies = await ApiService.getStrategies();
       if (strategies != null) {
-        List<dynamic> contributions = [];
-        if (strategies is List) {
-          contributions = strategies.where((s) =>
-            s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
-          ).toList();
-        } else if (strategies is Map<String, dynamic> && strategies.containsKey('strategies') && strategies['strategies'] is List) {
-          final list = strategies['strategies'] as List;
-          contributions = list.where((s) =>
-            s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
-          ).toList();
-        }
-        _strategyContributions = contributions;
+        // 使用 extractList 统一处理列表数据
+        final list = ApiService.extractList(strategies, key: 'strategies');
+        _strategyContributions = list.where((s) =>
+          s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
+        ).toList();
       }
     } catch (e) {
       debugPrint('加载目标数据失败: $e');

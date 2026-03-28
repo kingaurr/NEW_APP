@@ -68,26 +68,9 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
         ApiService.getHistorySuggestions(),
       ]);
 
-      List<dynamic> pendingList = [];
-      List<dynamic> historyList = [];
-
-      // 处理待处理建议
-      if (results[0] != null) {
-        if (results[0] is List) {
-          pendingList = results[0] as List<dynamic>;
-        } else if (results[0] is Map<String, dynamic> && results[0].containsKey('suggestions') && results[0]['suggestions'] is List) {
-          pendingList = results[0]['suggestions'] as List<dynamic>;
-        }
-      }
-
-      // 处理历史建议
-      if (results[1] != null) {
-        if (results[1] is List) {
-          historyList = results[1] as List<dynamic>;
-        } else if (results[1] is Map<String, dynamic> && results[1].containsKey('suggestions') && results[1]['suggestions'] is List) {
-          historyList = results[1]['suggestions'] as List<dynamic>;
-        }
-      }
+      // 使用统一提取函数，兼容 List 或 {suggestions: [...]} 格式
+      final pendingList = ApiService.extractList(results[0], key: 'suggestions');
+      final historyList = ApiService.extractList(results[1], key: 'suggestions');
 
       setState(() {
         _pendingCount = pendingList.length;

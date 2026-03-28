@@ -960,7 +960,18 @@ class ApiService {
     return sellPosition(code);
   }
 
-  // 守门员建议批准/拒绝
+  // ========== 通用数据提取函数 ==========
+  /// 从 API 返回值中提取列表，兼容直接返回 List 或 {key: [...]} 两种格式
+  static List<dynamic> extractList(dynamic result, {String key = 'items'}) {
+    if (result == null) return [];
+    if (result is List) return result;
+    if (result is Map && result.containsKey(key) && result[key] is List) {
+      return result[key] as List;
+    }
+    return [];
+  }
+
+  // ========== 守门员建议批准/拒绝（返回 Map，用于获取详细结果） ==========
   static Future<Map<String, dynamic>?> approveSuggestion(String suggestionId) async {
     final result = await httpPost('/guardian/approve', body: {'suggestion_id': suggestionId});
     return result;

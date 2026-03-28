@@ -36,15 +36,8 @@ class _SignalHistoryPageState extends State<SignalHistoryPage> {
 
     try {
       final result = await ApiService.getSignalHistory(limit: 200);
-      // 兼容后端返回 List 或 {signals: [...]} 两种格式
-      List<dynamic> signalsList = [];
-      if (result != null) {
-        if (result is List) {
-          signalsList = result;
-        } else if (result is Map && result['signals'] is List) {
-          signalsList = result['signals'] as List<dynamic>;
-        }
-      }
+      // 使用统一提取函数，兼容 List 或 {signals: [...]} 格式
+      final signalsList = ApiService.extractList(result, key: 'signals');
       setState(() {
         _signals = signalsList;
       });

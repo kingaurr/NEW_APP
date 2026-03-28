@@ -38,17 +38,8 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
 
     try {
       final result = await ApiService.getExperienceLogs(limit: _pageSize);
-      List<dynamic> logsList = [];
-      if (result != null) {
-        if (result is List) {
-          logsList = result;
-        } else if (result is Map<String, dynamic> && result.containsKey('logs') && result['logs'] is List) {
-          logsList = result['logs'] as List<dynamic>;
-        }
-      }
-      setState(() {
-        _experiences = logsList;
-      });
+      // 使用统一提取函数
+      _experiences = ApiService.extractList(result, key: 'logs');
     } catch (e) {
       debugPrint('加载经验日志失败: $e');
       if (mounted) {

@@ -29,21 +29,8 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
 
     try {
       final result = await ApiService.getVersions();
-      List<dynamic> versionsList = [];
-      if (result != null) {
-        if (result is List) {
-          versionsList = result;
-        } else if (result is Map<String, dynamic> && result.containsKey('versions') && result['versions'] is List) {
-          versionsList = result['versions'] as List<dynamic>;
-        } else {
-          setState(() {
-            _errorMessage = '获取版本列表失败：数据格式错误';
-          });
-        }
-      }
-      setState(() {
-        _versions = versionsList;
-      });
+      // 使用统一提取函数
+      _versions = ApiService.extractList(result, key: 'versions');
     } catch (e) {
       debugPrint('加载版本列表失败: $e');
       setState(() {
