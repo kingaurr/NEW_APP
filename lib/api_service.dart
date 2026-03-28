@@ -235,9 +235,7 @@ class ApiService {
     return approveAdvice(suggestionId);
   }
 
-  static Future<bool> rejectSuggestion(String suggestionId) async {
-    return rejectAdvice(suggestionId);
-  }
+  // 注意：rejectSuggestion 使用文件末尾返回 Map 的版本，此处不重复定义
 
   // ========== 红蓝军 ==========
   static Future<Map<String, dynamic>?> getLatestWarGame() async {
