@@ -26,7 +26,8 @@ import 'pages/command_history_page.dart';
 import 'pages/brain_detail_page.dart';
 import 'pages/risk_settings_page.dart';
 import 'pages/guardian_suggestions_page.dart';
-import 'pages/report_list_page.dart'; // 新增：修复 ReportListPage 未定义
+import 'pages/report_list_page.dart';
+import 'pages/settings_page.dart';          // 确保已导入
 import 'widgets/voice_floating_button.dart';
 
 void main() {
@@ -215,6 +216,10 @@ class _MyAppState extends State<MyApp> {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => ReportListPage(type: args['type']),
+          );
+        } else if (settings.name == '/settings') {
+          return MaterialPageRoute(
+            builder: (context) => const SettingsPage(),
           );
         }
         return null;

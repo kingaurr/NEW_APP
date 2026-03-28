@@ -8,7 +8,7 @@ import '../api_service.dart';
 import 'voice_drawer.dart';
 
 /// 语音悬浮球组件
-/// 支持点击/长按唤醒语音助手
+/// 支持点击/长按弹出菜单，选择语音对话或文字对话
 class VoiceFloatingButton extends StatefulWidget {
   const VoiceFloatingButton({super.key});
 
@@ -80,7 +80,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   /// 播放提示音
   Future<void> _playBeep() async {
     try {
-      // 使用系统声音或自定义音效
       await _audioPlayer.play(AssetSource('sounds/beep.mp3'));
     } catch (e) {
       debugPrint('播放提示音失败: $e');
@@ -99,7 +98,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
       return;
     }
 
-    // 播放提示音
     await _playBeep();
 
     setState(() {
@@ -142,14 +140,12 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
       return;
     }
 
-    // 移除唤醒词，提取指令
     String command = text.replaceAll(_wakeWord, '').trim();
     if (command.isEmpty) {
       _showMessage('请说出指令');
       return;
     }
 
-    // 显示语音对话框
     _showVoiceDialog(command);
   }
 
@@ -162,11 +158,84 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
       builder: (context) => VoiceDrawer(
         command: command,
         onResult: (result) {
-          // 指令处理结果回调
           _showMessage(result['message'] ?? '指令已处理');
         },
       ),
     );
+  }
+
+  /// 显示文字对话对话框
+  void _showTextDialog() {
+    final TextEditingController _controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('与千寻对话', style: TextStyle(color: Color(0xFFD4AF37))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _controller,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: '输入你的问题...',
+                hintStyle: TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFD4AF37)),
+                ),
+              ),
+              autofocus: true,
+              onSubmitted: (_) => _sendTextMessage(_controller.text, context),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _sendTextMessage(_controller.text, context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4AF37),
+                  foregroundColor: Colors.black,
+                ),
+                child: const Text('发送'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 发送文字消息
+  Future<void> _sendTextMessage(String text, BuildContext dialogContext) async {
+    if (text.trim().isEmpty) {
+      _showMessage('请输入问题');
+      return;
+    }
+
+    // 关闭对话框
+    Navigator.pop(dialogContext);
+
+    // 显示加载中
+    _showMessage('思考中...');
+
+    try {
+      final result = await ApiService.voiceAsk(text);
+      if (result != null && result['answer'] != null) {
+        // 显示回答
+        _showMessage(result['answer']);
+        // 同时通知监听器
+        for (var listener in _listeners) {
+          listener(result['answer']);
+        }
+      } else {
+        _showMessage('抱歉，我暂时无法回答这个问题');
+      }
+    } catch (e) {
+      _showMessage('请求失败: $e');
+    }
   }
 
   /// 显示提示消息
@@ -174,8 +243,53 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
         backgroundColor: Colors.black87,
+      ),
+    );
+  }
+
+  /// 显示悬浮球菜单
+  void _showMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF2A2A2A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.mic, color: Color(0xFFD4AF37)),
+              title: const Text('语音对话', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _startListening();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.message, color: Color(0xFFD4AF37)),
+              title: const Text('文字对话', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _showTextDialog();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -206,7 +320,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
           setState(() {
             _dx += details.delta.dx;
             _dy += details.delta.dy;
-            // 边界限制
             _dx = _dx.clamp(-MediaQuery.of(context).size.width + 60, MediaQuery.of(context).size.width - 60);
             _dy = _dy.clamp(0, MediaQuery.of(context).size.height - 100);
           });
@@ -216,12 +329,12 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
         },
         onTap: () {
           if (!_isDragging) {
-            _startListening();
+            _showMenu();
           }
         },
         onLongPress: () {
           if (!_isDragging) {
-            _startListening();
+            _showMenu();
           }
         },
         child: Container(
@@ -242,7 +355,7 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
             alignment: Alignment.center,
             children: [
               Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
+                _isListening ? Icons.mic : Icons.message,
                 color: Colors.black,
                 size: 28,
               ),
