@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../utils/biometrics_helper.dart';
 
-/// 版本历史页面
-/// 查看所有历史版本，支持回滚操作（需指纹验证）
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key});
 
@@ -61,12 +59,11 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   }
 
   Future<void> _rollbackToVersion(Map<String, dynamic> version) async {
-    // 指纹验证
     final authenticated = await BiometricsHelper.authenticateForOperation(
       operation: 'rollback_version',
       operationDesc: '回滚到版本 ${version['version']}',
     );
-    
+
     if (!authenticated) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

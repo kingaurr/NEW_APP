@@ -959,4 +959,15 @@ class ApiService {
   static Future<bool> sellPositionSimple(String code) async {
     return sellPosition(code);
   }
+
+  // 守门员建议批准/拒绝
+  static Future<Map<String, dynamic>?> approveSuggestion(String suggestionId) async {
+    final result = await httpPost('/guardian/approve', body: {'suggestion_id': suggestionId});
+    return result;
+  }
+
+  static Future<Map<String, dynamic>?> rejectSuggestion(String suggestionId) async {
+    final result = await httpPost('/guardian/reject', body: {'suggestion_id': suggestionId});
+    return result;
+  }
 }

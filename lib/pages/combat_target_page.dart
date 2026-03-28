@@ -2,8 +2,6 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 
-/// 实战目标设置页面
-/// 支持查看和修改实战目标（胜率、收益、回撤）
 class CombatTargetPage extends StatefulWidget {
   const CombatTargetPage({super.key});
 

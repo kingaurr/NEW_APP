@@ -2,8 +2,6 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 
-/// 实战经验日志页面
-/// 查看历史经验记录（批准/淘汰/调整等）
 class ExperienceLogPage extends StatefulWidget {
   const ExperienceLogPage({super.key});
 
@@ -43,7 +41,7 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
       List<dynamic> logsList = [];
       if (result != null) {
         if (result is List) {
-          logsList = result as List<dynamic>;
+          logsList = result;
         } else if (result is Map<String, dynamic> && result.containsKey('logs') && result['logs'] is List) {
           logsList = result['logs'] as List<dynamic>;
         }
