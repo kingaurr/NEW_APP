@@ -10,24 +10,17 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # 网络与存储
   http: ^1.1.0
   shared_preferences: ^2.2.0
-
-  # UI 组件
   fl_chart: ^0.65.0
   package_info_plus: ^4.0.0
   local_auth: ^2.1.7
   flutter_markdown: ^0.6.18
   file_picker: ^5.5.0
   intl: ^0.18.1
-
-  # 语音相关
   speech_to_text: ^6.6.0
-  record: ^4.4.0
+  record: 4.4.0          # 锁定版本
   audioplayers: ^5.2.1
-
-  # 状态管理
   provider: ^6.1.1
 
 dev_dependencies:
@@ -37,6 +30,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  platforms:             # 新增，仅构建 Android 和 iOS
+    android:
+    ios:
   assets:
     - assets/
     - assets/voices/
