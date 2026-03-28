@@ -19,7 +19,7 @@ dependencies:
   file_picker: ^5.5.0
   intl: ^0.18.1
   speech_to_text: ^6.6.0
-  record: 4.4.0          # 锁定版本
+  record: 4.4.0
   audioplayers: ^5.2.1
   provider: ^6.1.1
 
@@ -30,9 +30,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  platforms:             # 新增，仅构建 Android 和 iOS
-    android:
-    ios:
   assets:
     - assets/
     - assets/voices/
