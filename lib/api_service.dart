@@ -944,6 +944,16 @@ class ApiService {
     });
   }
 
+  // --- 批量更新风控参数（供设置页面使用）---
+  static Future<bool> updateRiskParams(double stopLossRatio, double takeProfitRatio, double maxPositionRatio) async {
+    final result = await httpPost('/settings/risk_params', body: {
+      'stop_loss_ratio': stopLossRatio,
+      'take_profit_ratio': takeProfitRatio,
+      'max_position_ratio': maxPositionRatio,
+    });
+    return result?['success'] ?? false;
+  }
+
   // --- 止损止盈快捷方法（别名）---
   static Future<bool> updateStopLoss(String code, double stopLoss) async {
     return updatePositionStopLoss(code, stopLoss);

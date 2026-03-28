@@ -86,13 +86,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveRiskParams() async {
     try {
-      final result = await ApiService.updateRiskParams(
+      final success = await ApiService.updateRiskParams(
         _stopLossRatio,
         _takeProfitRatio,
         _maxPositionRatio,
       );
-     
-      if (result?['success'] == true) {
+      
+      if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('风控参数已保存'), backgroundColor: Colors.green),
@@ -110,12 +110,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveBudget() async {
     try {
-      final result = await ApiService.updateBudgetConfig({
+      final success = await ApiService.updateBudgetConfig({
         'daily_budget': _dailyBudget,
         'monthly_budget': _monthlyBudget,
       });
-     
-      if (result?['success'] == true) {
+      
+      if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('预算已保存'), backgroundColor: Colors.green),
