@@ -16,10 +16,10 @@ dependencies:
   package_info_plus: ^4.0.0
   local_auth: ^2.1.7
   flutter_markdown: ^0.6.18
-  file_picker: ^8.0.0       # 升级到 8.0.0
+  file_picker: ^8.0.0
   intl: ^0.18.1
-  speech_to_text: ^6.6.0
-  # record: ^5.0.0          # 暂时禁用录音功能
+  speech_to_text: ^7.3.0       # 升级到 7.3.0
+  # record: ^5.0.0             # 暂时禁用录音功能
   audioplayers: ^5.2.1
   provider: ^6.1.1
 
