@@ -46,20 +46,20 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final config = await ApiService.getPublicConfig();
-      
+     
       setState(() {
         _biometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
         _voiceEnabled = prefs.getBool('voice_enabled') ?? true;
         _wakeWord = prefs.getString('wake_word') ?? '千寻';
         _voiceProvider = prefs.getString('voice_provider') ?? 'mock';
       });
-      
+     
       if (config != null) {
         final risk = config['risk'] ?? {};
         final cost = config['cost_control'] ?? {};
         final report = config['report'] ?? {};
         final security = config['security'] ?? {};
-        
+       
         setState(() {
           _stopLossRatio = risk['stop_loss_ratio'] ?? 0.03;
           _takeProfitRatio = risk['take_profit_ratio'] ?? 0.05;
@@ -86,12 +86,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveRiskParams() async {
     try {
-      final result = await ApiService.updateRiskParams({
-        'stop_loss_ratio': _stopLossRatio,
-        'take_profit_ratio': _takeProfitRatio,
-        'max_position_ratio': _maxPositionRatio,
-      });
-      
+      final result = await ApiService.updateRiskParams(
+        _stopLossRatio,
+        _takeProfitRatio,
+        _maxPositionRatio,
+      );
+     
       if (result?['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -110,11 +110,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveBudget() async {
     try {
-      final result = await ApiService.updateBudgetConfig(
-        dailyBudget: _dailyBudget,
-        monthlyBudget: _monthlyBudget,
-      );
-      
+      final result = await ApiService.updateBudgetConfig({
+        'daily_budget': _dailyBudget,
+        'monthly_budget': _monthlyBudget,
+      });
+     
       if (result?['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +136,7 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.setBool('voice_enabled', _voiceEnabled);
     await prefs.setString('wake_word', _wakeWord);
     await prefs.setString('voice_provider', _voiceProvider);
-    
+   
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('语音设置已保存'), backgroundColor: Colors.green),
@@ -156,7 +156,7 @@ class _SettingsPageState extends State<SettingsPage> {
         return;
       }
     }
-    
+   
     setState(() {
       _biometricsEnabled = !_biometricsEnabled;
     });

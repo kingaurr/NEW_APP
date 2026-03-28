@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:record/record.dart'; // 恢复录音功能
+// import 'package:record/record.dart'; // 录音功能禁用
 import '../api_service.dart';
 
 /// 声纹设置页面
@@ -18,7 +18,7 @@ class VoiceSettingsPage extends StatefulWidget {
 
 class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
   final stt.SpeechToText _speech = stt.SpeechToText();
-  final Record _recorder = Record(); // 恢复
+  // final Record _recorder = Record(); // 录音功能禁用
 
   bool _isLoading = true;
   bool _voiceEnabled = false;
@@ -42,7 +42,7 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
 
   @override
   void dispose() {
-    _recorder.dispose(); // 恢复
+    // _recorder.dispose(); // 录音功能禁用
     super.dispose();
   }
 
@@ -93,6 +93,11 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
   }
 
   Future<void> _startRecording() async {
+    // 录音功能暂时禁用，提示用户
+    _showError('录音功能暂时不可用，请等待后续版本恢复');
+    return;
+
+    /* 原录音逻辑已注释
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
       _showError('请授予录音权限');
@@ -133,6 +138,7 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
         });
       }
     }
+    */
   }
 
   Future<void> _extractFeatures(String filePath) async {
