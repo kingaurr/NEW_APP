@@ -1,7 +1,7 @@
 // lib/pages/guardian_suggestions_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
-import '../widgets/guardian_suggestion_item.dart'; // 导入的是 suggestion (单数)
+import '../widgets/guardian_suggestion_item.dart';
 
 /// 守门员建议列表页面
 /// 显示守门员生成的所有优化建议，支持采纳/拒绝/筛选
@@ -68,7 +68,6 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
         ApiService.getHistorySuggestions(),
       ]);
 
-      // 兼容后端返回 List 或 {suggestions: [...]} 两种格式
       List<dynamic> pendingList = [];
       List<dynamic> historyList = [];
 
@@ -76,7 +75,7 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
       if (results[0] != null) {
         if (results[0] is List) {
           pendingList = results[0] as List<dynamic>;
-        } else if (results[0] is Map && results[0]['suggestions'] is List) {
+        } else if (results[0] is Map<String, dynamic> && results[0].containsKey('suggestions') && results[0]['suggestions'] is List) {
           pendingList = results[0]['suggestions'] as List<dynamic>;
         }
       }
@@ -85,9 +84,8 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
       if (results[1] != null) {
         if (results[1] is List) {
           historyList = results[1] as List<dynamic>;
-        } else if (results[1] is Map && results[1]['suggestions'] is List) {
-          // 修复点：这里 results[1] 可能为 null，使用 ?.
-          historyList = results[1]?['suggestions'] as List<dynamic>? ?? [];
+        } else if (results[1] is Map<String, dynamic> && results[1].containsKey('suggestions') && results[1]['suggestions'] is List) {
+          historyList = results[1]['suggestions'] as List<dynamic>;
         }
       }
 
@@ -255,7 +253,6 @@ class _GuardianSuggestionsPageState extends State<GuardianSuggestionsPage> with 
                       itemCount: _filteredSuggestions.length,
                       itemBuilder: (context, index) {
                         final suggestion = _filteredSuggestions[index];
-                        // 修复点：类名从 GuardianSuggestionItem 改为 GuardianSuggestionItem
                         return GuardianSuggestionItem(
                           suggestion: suggestion,
                           onStatusChanged: _loadSuggestions,

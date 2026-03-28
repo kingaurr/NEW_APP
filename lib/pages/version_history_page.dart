@@ -31,12 +31,11 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
 
     try {
       final result = await ApiService.getVersions();
-      // 兼容后端返回 List 或 {versions: [...]} 两种格式
       List<dynamic> versionsList = [];
       if (result != null) {
         if (result is List) {
           versionsList = result;
-        } else if (result is Map && result['versions'] is List) {
+        } else if (result is Map<String, dynamic> && result.containsKey('versions') && result['versions'] is List) {
           versionsList = result['versions'] as List<dynamic>;
         } else {
           setState(() {
@@ -112,7 +111,6 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     });
 
     try {
-      // 修复：rollbackVersion 返回 bool
       final success = await ApiService.rollbackVersion(version['id']);
       if (success == true) {
         if (mounted) {

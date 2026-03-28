@@ -49,7 +49,6 @@ class _MyPageState extends State<MyPage> {
         ApiService.getUnreadAlertCount(),
       ]);
 
-      // 1. 系统版本
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final versionMap = results[0] as Map<String, dynamic>;
         setState(() {
@@ -57,17 +56,13 @@ class _MyPageState extends State<MyPage> {
         });
       }
 
-      // 2. 未读告警数量
       if (results[1] != null && results[1] is int) {
         setState(() {
           _unreadAlerts = results[1] as int;
         });
       } else if (results[1] != null && results[1] is Map) {
-        // 兼容旧版返回 Map 的情况
-        // --- 修改点：增加了 as Map<String, dynamic> ---
         final alertMap = results[1] as Map<String, dynamic>;
         setState(() {
-          // --- 修改点：删除了多余的 ); ---
           _unreadAlerts = alertMap['count'] ?? 0;
         });
       }
@@ -178,31 +173,22 @@ class _MyPageState extends State<MyPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // AI系统版本
                         VersionCard(
                           onVersionChanged: _loadData,
                         ),
                         const SizedBox(height: 16),
-
-                        // 券商管理
                         BrokerCard(
                           onRefresh: _loadData,
                         ),
                         const SizedBox(height: 16),
-
-                        // 风控基准资金
                         RiskBaseFundSetting(
                           onChanged: _loadData,
                         ),
                         const SizedBox(height: 16),
-
-                        // 成本预算
                         BudgetSetting(
                           onChanged: _loadData,
                         ),
                         const SizedBox(height: 16),
-
-                        // 功能入口网格
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -284,7 +270,6 @@ class _MyPageState extends State<MyPage> {
                       ],
                     ),
                   ),
-        ),
       ),
     );
   }

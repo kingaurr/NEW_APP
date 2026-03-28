@@ -19,7 +19,6 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
   Map<String, dynamic> _prediction = {};
   List<dynamic> _strategyContributions = [];
 
-  // 目标编辑控制器
   final TextEditingController _winRateController = TextEditingController();
   final TextEditingController _profitController = TextEditingController();
   final TextEditingController _drawdownController = TextEditingController();
@@ -46,47 +45,37 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
     });
 
     try {
-      // 获取目标配置
       final config = await ApiService.getPublicConfig();
-      if (config != null) {
-        // 兼容不同字段结构
+      if (config != null && config is Map<String, dynamic>) {
         Map<String, dynamic> targetData = {};
-        if (config is Map && config['combat_target'] is Map) {
+        if (config.containsKey('combat_target') && config['combat_target'] is Map) {
           targetData = config['combat_target'] as Map<String, dynamic>;
           _target = targetData['target'] ?? {};
           _priority = targetData['priority'] ?? 'balanced';
-        } else if (config is Map && config['target'] is Map) {
+        } else if (config.containsKey('target') && config['target'] is Map) {
           _target = config['target'] ?? {};
           _priority = config['priority'] ?? 'balanced';
         }
 
-        // 填充控制器
         _winRateController.text = ((_target['win_rate'] ?? 0.55) * 100).toStringAsFixed(0);
         _profitController.text = ((_target['profit'] ?? 0.05) * 100).toStringAsFixed(1);
         _drawdownController.text = ((_target['max_drawdown'] ?? 0.10) * 100).toStringAsFixed(0);
       }
 
-      // 获取进度
       final heartSummary = await ApiService.getHeartSummary();
-      if (heartSummary != null && heartSummary is Map) {
-        setState(() {
-          _progress = heartSummary['combat_progress'] is Map
-              ? heartSummary['combat_progress'] as Map<String, dynamic>
-              : {};
-        });
+      if (heartSummary != null && heartSummary is Map<String, dynamic>) {
+        if (heartSummary.containsKey('combat_progress') && heartSummary['combat_progress'] is Map) {
+          _progress = heartSummary['combat_progress'] as Map<String, dynamic>;
+        }
       }
 
-      // 获取预测
       final learningProgress = await ApiService.getLearningProgress();
-      if (learningProgress != null && learningProgress is Map) {
-        setState(() {
-          _prediction = learningProgress['target_prediction'] is Map
-              ? learningProgress['target_prediction'] as Map<String, dynamic>
-              : {};
-        });
+      if (learningProgress != null && learningProgress is Map<String, dynamic>) {
+        if (learningProgress.containsKey('target_prediction') && learningProgress['target_prediction'] is Map) {
+          _prediction = learningProgress['target_prediction'] as Map<String, dynamic>;
+        }
       }
 
-      // 获取策略贡献分析
       final strategies = await ApiService.getStrategies();
       if (strategies != null) {
         List<dynamic> contributions = [];
@@ -94,15 +83,13 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
           contributions = strategies.where((s) =>
             s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
           ).toList();
-        } else if (strategies is Map && strategies['strategies'] is List) {
+        } else if (strategies is Map<String, dynamic> && strategies.containsKey('strategies') && strategies['strategies'] is List) {
           final list = strategies['strategies'] as List;
           contributions = list.where((s) =>
             s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
           ).toList();
         }
-        setState(() {
-          _strategyContributions = contributions;
-        });
+        _strategyContributions = contributions;
       }
     } catch (e) {
       debugPrint('加载目标数据失败: $e');
@@ -149,7 +136,6 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
         'max_drawdown': drawdown / 100,
       };
 
-      // 修复：updateCombatTarget 返回 bool
       final success = await ApiService.updateCombatTarget(newTarget);
       if (success == true) {
         setState(() {
@@ -178,7 +164,6 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
     });
 
     try {
-      // 修复：updateCombatPriority 返回 bool
       final success = await ApiService.updateCombatPriority(priority);
       if (success == true) {
         _showSuccess('优先级已切换为${_getPriorityName(priority)}');
@@ -254,23 +239,14 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 当前进度卡片
                   _buildProgressCard(),
                   const SizedBox(height: 16),
-
-                  // 目标设置卡片
                   _buildTargetCard(),
                   const SizedBox(height: 16),
-
-                  // 优先级设置
                   _buildPriorityCard(),
                   const SizedBox(height: 16),
-
-                  // 预测分析
                   _buildPredictionCard(),
                   const SizedBox(height: 16),
-
-                  // 策略贡献分析
                   _buildStrategyContributions(),
                 ],
               ),
@@ -320,7 +296,6 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
           children: [
             Row(
               children: [
-                // 修复：Icons.target 不存在，改为 Icons.flag
                 const Icon(Icons.flag, color: Color(0xFFD4AF37), size: 20),
                 const SizedBox(width: 8),
                 const Text(

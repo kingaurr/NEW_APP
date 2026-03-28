@@ -56,7 +56,8 @@ class _AuditLogPageState extends State<AuditLogPage> {
         userId: _filterUserId.isEmpty ? null : _filterUserId,
       );
 
-      if (result is Map && result['logs'] is List) {
+      // 安全访问 result['logs']
+      if (result != null && result is Map<String, dynamic> && result.containsKey('logs') && result['logs'] is List) {
         setState(() {
           _logs = result['logs'] as List<dynamic>;
         });
@@ -82,7 +83,8 @@ class _AuditLogPageState extends State<AuditLogPage> {
   Future<void> _exportLogs() async {
     try {
       final result = await ApiService.auditLogs(limit: 1000);
-      if (result is! Map || result['logs'] is! List) {
+      // 安全访问
+      if (result == null || result is! Map<String, dynamic> || !result.containsKey('logs') || result['logs'] is! List) {
         throw Exception('获取日志失败');
       }
 

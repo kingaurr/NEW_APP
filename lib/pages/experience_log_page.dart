@@ -40,12 +40,11 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
 
     try {
       final result = await ApiService.getExperienceLogs(limit: _pageSize);
-      // 兼容后端返回 List 或 {logs: [...]} 两种格式
       List<dynamic> logsList = [];
       if (result != null) {
         if (result is List) {
           logsList = result as List<dynamic>;
-        } else if (result is Map && result['logs'] is List) {
+        } else if (result is Map<String, dynamic> && result.containsKey('logs') && result['logs'] is List) {
           logsList = result['logs'] as List<dynamic>;
         }
       }
@@ -277,7 +276,6 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // 筛选条件栏
                 if (_filterAction.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -292,7 +290,6 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
                             setState(() {
                               _filterAction = '';
                             });
-                            // 无需重新加载，因为筛选是在内存中进行的
                             setState(() {});
                           },
                           backgroundColor: Colors.grey[800],
@@ -310,8 +307,6 @@ class _ExperienceLogPageState extends State<ExperienceLogPage> {
                       ],
                     ),
                   ),
-
-                // 经验列表
                 Expanded(
                   child: _filteredExperiences.isEmpty
                       ? const Center(
