@@ -30,9 +30,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  platforms:                   # record 5.0.0 需要指定平台
-    android:
-    ios:
   assets:
     - assets/
     - assets/voices/
