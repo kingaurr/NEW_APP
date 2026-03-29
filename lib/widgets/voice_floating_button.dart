@@ -8,7 +8,7 @@ import '../api_service.dart';
 import 'voice_drawer.dart';
 
 /// 语音悬浮球组件
-/// 支持点击/长按弹出菜单，选择语音对话或文字对话
+/// 支持全屏拖动，点击弹出菜单，选择语音对话或文字对话
 class VoiceFloatingButton extends StatefulWidget {
   const VoiceFloatingButton({super.key});
 
@@ -17,24 +17,20 @@ class VoiceFloatingButton extends StatefulWidget {
 }
 
 class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
-  // 语音识别
   final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _isListening = false;
-  String _lastRecognizedText = '';
-
-  // 音频播放
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  // 悬浮球位置
-  double _dx = 0;
-  double _dy = 0;
+  // 悬浮球位置（屏幕百分比，方便适配不同屏幕）
+  double _positionX = 0.9;  // 右侧 90% 位置
+  double _positionY = 0.85; // 底部 85% 位置
+  
   bool _isDragging = false;
-
-  // 配置
+  double _dragStartX = 0;
+  double _dragStartY = 0;
+  bool _isListening = false;
   bool _enabled = true;
   String _wakeWord = '千寻';
 
-  // 回调
   final List<Function(String)> _listeners = [];
 
   @override
@@ -42,6 +38,7 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     super.initState();
     _loadConfig();
     _initSpeech();
+    _loadPosition();
   }
 
   @override
@@ -50,7 +47,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     super.dispose();
   }
 
-  /// 加载配置
   Future<void> _loadConfig() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -59,97 +55,74 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     });
   }
 
-  /// 初始化语音识别
-  Future<void> _initSpeech() async {
-    bool available = await _speech.initialize(
-      onStatus: (status) {
-        debugPrint('语音状态: $status');
-      },
-      onError: (error) {
-        debugPrint('语音错误: $error');
-        setState(() {
-          _isListening = false;
-        });
-      },
-    );
-    if (!available) {
-      debugPrint('语音识别不可用');
-    }
+  Future<void> _loadPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _positionX = prefs.getDouble('voice_x') ?? 0.9;
+      _positionY = prefs.getDouble('voice_y') ?? 0.85;
+    });
   }
 
-  /// 播放提示音
+  Future<void> _savePosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('voice_x', _positionX);
+    await prefs.setDouble('voice_y', _positionY);
+  }
+
+  Future<void> _initSpeech() async {
+    await _speech.initialize(
+      onStatus: (status) {},
+      onError: (error) {},
+    );
+  }
+
   Future<void> _playBeep() async {
     try {
       await _audioPlayer.play(AssetSource('sounds/beep.mp3'));
-    } catch (e) {
-      debugPrint('播放提示音失败: $e');
-    }
+    } catch (e) {}
   }
 
-  /// 开始语音识别
   Future<void> _startListening() async {
     if (!_enabled) {
       _showMessage('语音助手已禁用');
       return;
     }
-
     if (!_speech.isAvailable) {
       _showMessage('语音识别不可用');
       return;
     }
-
     await _playBeep();
-
-    setState(() {
-      _isListening = true;
-    });
-
+    setState(() => _isListening = true);
     _speech.listen(
       onResult: (result) {
-        setState(() {
-          _lastRecognizedText = result.recognizedWords;
-        });
         if (result.finalResult) {
           _onSpeechResult(result.recognizedWords);
         }
       },
-      listenFor: const Duration(seconds: 10),
-      pauseFor: const Duration(seconds: 2),
-      partialResults: true,
       localeId: 'zh_CN',
     );
   }
 
-  /// 停止语音识别
   Future<void> _stopListening() async {
     await _speech.stop();
-    setState(() {
-      _isListening = false;
-    });
+    setState(() => _isListening = false);
   }
 
-  /// 语音识别结果处理
   Future<void> _onSpeechResult(String text) async {
     _stopListening();
-
     if (text.isEmpty) return;
-
-    // 检查是否包含唤醒词
     if (!text.contains(_wakeWord)) {
       _showMessage('请说"$_wakeWord"唤醒我');
       return;
     }
-
     String command = text.replaceAll(_wakeWord, '').trim();
     if (command.isEmpty) {
       _showMessage('请说出指令');
       return;
     }
-
     _showVoiceDialog(command);
   }
 
-  /// 显示语音对话框
   void _showVoiceDialog(String command) {
     showModalBottomSheet(
       context: context,
@@ -164,69 +137,52 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     );
   }
 
-  /// 显示文字对话对话框
   void _showTextDialog() {
-    final TextEditingController _controller = TextEditingController();
-
+    final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF2A2A2A),
         title: const Text('与千寻对话', style: TextStyle(color: Color(0xFFD4AF37))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: '输入你的问题...',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFD4AF37)),
-                ),
-              ),
-              autofocus: true,
-              onSubmitted: (_) => _sendTextMessage(_controller.text, context),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: '输入你的问题...',
+            hintStyle: TextStyle(color: Colors.grey),
+            border: OutlineInputBorder(),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Color(0xFFD4AF37)),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _sendTextMessage(_controller.text, context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4AF37),
-                  foregroundColor: Colors.black,
-                ),
-                child: const Text('发送'),
-              ),
-            ),
-          ],
+          ),
+          autofocus: true,
+          onSubmitted: (_) => _sendTextMessage(controller.text, context),
         ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => _sendTextMessage(controller.text, context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('发送'),
+          ),
+        ],
       ),
     );
   }
 
-  /// 发送文字消息
   Future<void> _sendTextMessage(String text, BuildContext dialogContext) async {
     if (text.trim().isEmpty) {
       _showMessage('请输入问题');
       return;
     }
-
-    // 关闭对话框
     Navigator.pop(dialogContext);
-
-    // 显示加载中
     _showMessage('思考中...');
-
     try {
       final result = await ApiService.voiceAsk(text);
       if (result != null && result['answer'] != null) {
-        // 显示回答
         _showMessage(result['answer']);
-        // 同时通知监听器
         for (var listener in _listeners) {
           listener(result['answer']);
         }
@@ -238,7 +194,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     }
   }
 
-  /// 显示提示消息
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -249,7 +204,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     );
   }
 
-  /// 显示悬浮球菜单
   void _showMenu() {
     showModalBottomSheet(
       context: context,
@@ -294,12 +248,10 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     );
   }
 
-  /// 注册监听器
   void addListener(Function(String) listener) {
     _listeners.add(listener);
   }
 
-  /// 移除监听器
   void removeListener(Function(String) listener) {
     _listeners.remove(listener);
   }
@@ -308,38 +260,47 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   Widget build(BuildContext context) {
     if (!_enabled) return const SizedBox.shrink();
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final buttonSize = 56.0;
+    final left = screenWidth * _positionX - buttonSize / 2;
+    final top = screenHeight * _positionY - buttonSize / 2;
+
     return Positioned(
-      right: _dx == 0 ? 16 : null,
-      left: _dx < 0 ? _dx.abs() : null,
-      bottom: _dy == 0 ? 80 : _dy,
+      left: left.clamp(0, screenWidth - buttonSize),
+      top: top.clamp(0, screenHeight - buttonSize - 100),
       child: GestureDetector(
         onPanStart: (details) {
-          _isDragging = true;
-        },
-        onPanUpdate: (details) {
-          setState(() {
-            _dx += details.delta.dx;
-            _dy += details.delta.dy;
-            _dx = _dx.clamp(-MediaQuery.of(context).size.width + 60, MediaQuery.of(context).size.width - 60);
-            _dy = _dy.clamp(0, MediaQuery.of(context).size.height - 100);
-          });
-        },
-        onPanEnd: (details) {
+          _dragStartX = details.localPosition.dx;
+          _dragStartY = details.localPosition.dy;
           _isDragging = false;
         },
-        onTap: () {
-          if (!_isDragging) {
-            _showMenu();
+        onPanUpdate: (details) {
+          final deltaX = details.localPosition.dx - _dragStartX;
+          final deltaY = details.localPosition.dy - _dragStartY;
+          if (deltaX.abs() > 5 || deltaY.abs() > 5) {
+            _isDragging = true;
+          }
+          if (_isDragging) {
+            setState(() {
+              _positionX += details.delta.dx / screenWidth;
+              _positionY += details.delta.dy / screenHeight;
+              _positionX = _positionX.clamp(0.05, 0.95);
+              _positionY = _positionY.clamp(0.05, 0.85);
+            });
           }
         },
-        onLongPress: () {
+        onPanEnd: (details) {
           if (!_isDragging) {
             _showMenu();
+          } else {
+            _savePosition();
           }
+          _isDragging = false;
         },
         child: Container(
-          width: 56,
-          height: 56,
+          width: buttonSize,
+          height: buttonSize,
           decoration: BoxDecoration(
             color: _isListening ? Colors.red : const Color(0xFFD4AF37),
             shape: BoxShape.circle,
@@ -365,8 +326,8 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
                   duration: const Duration(milliseconds: 500),
                   builder: (context, value, child) {
                     return Container(
-                      width: 56 + value * 20,
-                      height: 56 + value * 20,
+                      width: buttonSize + value * 20,
+                      height: buttonSize + value * 20,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.red.withOpacity(0.3 - value * 0.2),

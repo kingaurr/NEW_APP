@@ -39,6 +39,15 @@ class _HomePageState extends State<HomePage> {
     return {};
   }
 
+  /// 安全解析数字
+  int _safeParseInt(dynamic data, {int defaultValue = 0}) {
+    if (data == null) return defaultValue;
+    if (data is int) return data;
+    if (data is double) return data.toInt();
+    if (data is String) return int.tryParse(data) ?? defaultValue;
+    return defaultValue;
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -57,13 +66,15 @@ class _HomePageState extends State<HomePage> {
       // 1. 仪表盘数据
       _dashboard = _safeParseMap(results[0]);
 
-      // 2. 守门员建议数量
+      // 2. 守门员建议数量（增强安全解析）
       if (results[1] != null) {
         if (results[1] is int) {
           _pendingSuggestions = results[1] as int;
         } else if (results[1] is Map) {
           final map = results[1] as Map;
-          _pendingSuggestions = (map['count'] as int?) ?? 0;
+          _pendingSuggestions = _safeParseInt(map['count']);
+        } else if (results[1] is List) {
+          _pendingSuggestions = (results[1] as List).length;
         } else {
           _pendingSuggestions = 0;
         }
@@ -71,15 +82,15 @@ class _HomePageState extends State<HomePage> {
 
       // 3. 市场状态
       final marketData = _safeParseMap(results[2]);
-      _marketStatus = marketData['status'] ?? '震荡';
+      _marketStatus = marketData['status']?.toString() ?? '震荡';
 
       // 4. 风控状态
       final riskData = _safeParseMap(results[3]);
-      _riskStatus = riskData['status'] ?? 'normal';
+      _riskStatus = riskData['status']?.toString() ?? 'normal';
 
       // 5. 熔断状态
       final fuseData = _safeParseMap(results[4]);
-      _alertLevel = fuseData['alert_level'] ?? 'none';
+      _alertLevel = fuseData['alert_level']?.toString() ?? 'none';
 
     } catch (e) {
       debugPrint('加载首页数据失败: $e');

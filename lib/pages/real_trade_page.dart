@@ -19,6 +19,7 @@ class RealTradePage extends StatefulWidget {
 class _RealTradePageState extends State<RealTradePage> {
   bool _isLoading = true;
   bool _isCollapsed = false;
+  String _currentMode = 'sim'; // 当前模式：real 或 sim
   Map<String, dynamic> _summary = {};
   List<dynamic> _positions = [];
   List<dynamic> _tradePool = [];
@@ -30,6 +31,86 @@ class _RealTradePageState extends State<RealTradePage> {
   void initState() {
     super.initState();
     _loadData();
+    _loadMode();
+  }
+
+  Future<void> _loadMode() async {
+    try {
+      final result = await ApiService.getMode();
+      if (result != null && result['mode'] != null) {
+        setState(() {
+          _currentMode = result['mode'];
+        });
+      }
+    } catch (e) {
+      debugPrint('加载模式失败: $e');
+    }
+  }
+
+  Future<void> _switchMode() async {
+    final newMode = _currentMode == 'real' ? 'sim' : 'real';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('切换模式', style: TextStyle(color: Colors.white)),
+        content: Text(
+          '确定要切换到${newMode == 'real' ? '实盘' : '模拟'}模式吗？',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('确认切换'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await ApiService.setMode(newMode);
+      if (result != null && result['success'] == true) {
+        setState(() {
+          _currentMode = newMode;
+        });
+        _showMessage('已切换到${newMode == 'real' ? '实盘' : '模拟'}模式');
+        _loadData();
+      } else {
+        throw Exception('切换失败');
+      }
+    } catch (e) {
+      _showMessage('切换失败: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -40,28 +121,30 @@ class _RealTradePageState extends State<RealTradePage> {
 
     try {
       final results = await Future.wait([
-        ApiService.getStatus(), // 原 getRealSummary → 用 getStatus
-        ApiService.getPositions(), // 持仓
-        ApiService.getTradePool(), // 交易池
-        ApiService.getSignalHistory(), // 原 getSignals → getSignalHistory
-        ApiService.getShadowRealtimeCompare(), // 原 getShadowCompare → getShadowRealtimeCompare
+        ApiService.getStatus(),
+        ApiService.getPositions(),
+        ApiService.getTradePool(),
+        ApiService.getSignalHistory(),
+        ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 1. 摘要数据（来自 getStatus）
+      // 1. 摘要数据
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final status = results[0] as Map<String, dynamic>;
+        final fund = (status['fund'] ?? 0.0).toDouble();
+        final positionValue = (status['position_value'] ?? 0.0).toDouble();
         setState(() {
           _summary = {
-            'total_assets': (status['fund'] ?? 0.0) + (status['position_value'] ?? 0.0),
+            'total_assets': fund + positionValue,
             'today_pnl': status['today_pnl'] ?? 0.0,
-            'position_ratio': (status['position_value'] ?? 0.0) / (status['fund'] ?? 1.0).clamp(1.0, double.infinity),
+            'position_ratio': positionValue / (fund > 0 ? fund : 1.0),
             'risk_status': status['status'] == 'healthy' ? 'normal' : (status['status'] == 'degraded' ? 'warning' : 'fuse'),
             'today_trades': status['trade_count'] ?? 0,
           };
         });
       }
 
-      // 2. 持仓数据（getPositions 返回 Map<String, dynamic>，需转为 List）
+      // 2. 持仓数据
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final positionsMap = results[1] as Map<String, dynamic>;
         final positionsList = positionsMap.entries.map((entry) {
@@ -79,7 +162,7 @@ class _RealTradePageState extends State<RealTradePage> {
         });
       }
 
-      // 3. 交易池数据（getTradePool 返回 Map，有 stocks 字段）
+      // 3. 交易池数据
       if (results[2] != null && results[2] is Map<String, dynamic>) {
         final tradePoolMap = results[2] as Map<String, dynamic>;
         setState(() {
@@ -87,14 +170,14 @@ class _RealTradePageState extends State<RealTradePage> {
         });
       }
 
-      // 4. 信号历史数据（getSignalHistory 直接返回 List）
+      // 4. 信号历史
       if (results[3] != null && results[3] is List) {
         setState(() {
           _signals = results[3] as List<dynamic>;
         });
       }
 
-      // 5. 影子账户实时对比（getShadowRealtimeCompare 返回 Map）
+      // 5. 影子账户对比
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         setState(() {
           _shadowCompare = results[4] as Map<String, dynamic>;
@@ -182,7 +265,7 @@ class _RealTradePageState extends State<RealTradePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 资金与风控摘要
+                        // 资金与风控摘要（带模式切换）
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -190,6 +273,43 @@ class _RealTradePageState extends State<RealTradePage> {
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: _currentMode == 'real' ? Colors.red : Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _currentMode == 'real' ? '实盘账户' : '模拟账户',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    TextButton(
+                                      onPressed: _switchMode,
+                                      child: Text(
+                                        _currentMode == 'real' ? '切换模拟' : '切换实盘',
+                                        style: const TextStyle(
+                                          color: Color(0xFFD4AF37),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [

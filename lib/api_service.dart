@@ -182,6 +182,10 @@ class ApiService {
     return await httpGet('/outer_brain/evolution_report');
   }
 
+  static Future<Map<String, dynamic>?> getOuterBrainStatus() async {
+    return await httpGet('/outer_brain/status');
+  }
+
   // ========== 建议管理 ==========
   static Future<List<dynamic>?> getPendingSuggestions() async {
     return await httpGet('/advice/pending');
@@ -406,7 +410,7 @@ class ApiService {
 
   // ========== 告警 ==========
   static Future<Map<String, dynamic>?> getAlerts() async {
-    return await httpGet('/alerts/unread_count');
+    return await httpGet('/alerts');
   }
 
   static Future<int> getUnreadAlertCount() async {

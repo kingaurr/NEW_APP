@@ -7,7 +7,7 @@ import '../widgets/guardian_suggestion_item.dart';
 import '../pages/brain_detail_page.dart';
 
 /// AI页面
-/// 决策层+进化层：左右脑状态、策略库（已认证）、外脑（待验证）
+/// 决策层+进化层：左右脑状态、策略库（已认证）、外脑（待验证）、守门员建议
 class AiPage extends StatefulWidget {
   const AiPage({super.key});
 
@@ -25,6 +25,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
   Map<String, dynamic> _leftBrain = {};
   List<dynamic> _strategies = [];
   List<dynamic> _pendingRules = [];
+  List<dynamic> _guardianSuggestions = [];
   Map<String, dynamic> _evolutionReport = {};
   String _errorMessage = '';
   
@@ -33,7 +34,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this); // 改为 3 个 Tab
     _loadData();
   }
 
@@ -56,6 +57,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
         ApiService.getStrategies(),
         ApiService.getPendingRules(),
         ApiService.getEvolutionReport(),
+        ApiService.getPendingSuggestions(), // 新增：获取守门员建议
       ]);
 
       // 1. 右脑状态
@@ -74,17 +76,34 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
       }
 
       // 4. 待审核规则
-      if (results[3] != null && results[3] is Map<String, dynamic>) {
-        final pendingMap = results[3] as Map<String, dynamic>;
-        final rules = pendingMap['rules'];
-        if (rules != null && rules is List) {
-          _pendingRules = rules;
+      if (results[3] != null) {
+        if (results[3] is Map<String, dynamic>) {
+          final pendingMap = results[3] as Map<String, dynamic>;
+          final rules = pendingMap['rules'];
+          if (rules != null && rules is List) {
+            _pendingRules = rules;
+          }
+        } else if (results[3] is List) {
+          _pendingRules = results[3] as List<dynamic>;
         }
       }
 
       // 5. 进化报告
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         _evolutionReport = results[4] as Map<String, dynamic>;
+      }
+
+      // 6. 守门员建议
+      if (results[5] != null) {
+        if (results[5] is List) {
+          _guardianSuggestions = results[5] as List<dynamic>;
+        } else if (results[5] is Map<String, dynamic>) {
+          final suggestionMap = results[5] as Map<String, dynamic>;
+          final suggestions = suggestionMap['suggestions'];
+          if (suggestions != null && suggestions is List) {
+            _guardianSuggestions = suggestions;
+          }
+        }
       }
 
       setState(() {});
@@ -153,6 +172,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
           tabs: const [
             Tab(text: '策略库'),
             Tab(text: '外脑'),
+            Tab(text: '守门员建议'),
           ],
           labelColor: const Color(0xFFD4AF37),
           unselectedLabelColor: Colors.grey,
@@ -209,6 +229,8 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                             _buildStrategiesList(),
                             // 外脑（待验证规则）
                             _buildPendingRulesList(),
+                            // 守门员建议
+                            _buildGuardianSuggestionsList(),
                           ],
                         ),
                       ),
@@ -492,6 +514,28 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
         final rule = _pendingRules[index];
         return PendingRuleItem(
           rule: rule,
+          onStatusChanged: _loadData,
+        );
+      },
+    );
+  }
+
+  Widget _buildGuardianSuggestionsList() {
+    if (_guardianSuggestions.isEmpty) {
+      return const Center(
+        child: Text(
+          '暂无守门员建议',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _guardianSuggestions.length,
+      itemBuilder: (context, index) {
+        final suggestion = _guardianSuggestions[index];
+        return GuardianSuggestionItem(
+          suggestion: suggestion,
           onStatusChanged: _loadData,
         );
       },
