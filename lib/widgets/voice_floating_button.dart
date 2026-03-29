@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api_service.dart';
 import 'voice_drawer.dart';
+import '../pages/chat_page.dart';  // 导入聊天页面
 
 /// 语音悬浮球组件
 /// 支持全屏拖动，点击弹出菜单
@@ -135,61 +136,12 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
     );
   }
 
+  // 文字对话：跳转到完整的聊天页面
   void _showTextDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2A2A2A),
-        title: const Text('与千寻对话', style: TextStyle(color: Color(0xFFD4AF37))),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: '输入你的问题...',
-            hintStyle: TextStyle(color: Colors.grey),
-            border: OutlineInputBorder(),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFD4AF37)),
-            ),
-          ),
-          autofocus: true,
-          onSubmitted: (_) => _sendTextMessage(controller.text, context),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => _sendTextMessage(controller.text, context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('发送'),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChatPage()),
     );
-  }
-
-  Future<void> _sendTextMessage(String text, BuildContext dialogContext) async {
-    if (text.trim().isEmpty) {
-      _showMessage('请输入问题');
-      return;
-    }
-    Navigator.pop(dialogContext);
-    _showMessage('思考中...');
-    try {
-      final result = await ApiService.voiceAsk(text);
-      if (result != null && result['answer'] != null) {
-        _showMessage(result['answer']);
-        for (var listener in _listeners) {
-          listener(result['answer']);
-        }
-      } else {
-        _showMessage('抱歉，我暂时无法回答这个问题');
-      }
-    } catch (e) {
-      _showMessage('请求失败: $e');
-    }
   }
 
   void _showMessage(String message) {
@@ -203,7 +155,7 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   }
 
   void _showMenu() {
-    debugPrint('悬浮球菜单被调用'); // 调试日志
+    debugPrint('悬浮球菜单被调用');
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF2A2A2A),
@@ -290,7 +242,6 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
         },
         onPanEnd: (details) {
           if (!_isDragging) {
-            // 只有点击（未拖动）时才弹出菜单
             _showMenu();
           } else {
             _savePosition();

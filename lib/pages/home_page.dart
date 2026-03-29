@@ -339,7 +339,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // 快捷入口
+                        // 快捷入口（使用 GridView 使按钮均匀分布并对齐）
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -357,9 +357,12 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 12,
-                                  runSpacing: 12,
+                                GridView.count(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
                                   children: [
                                     _buildQuickAction(
                                       icon: Icons.security,
@@ -486,13 +489,13 @@ class _HomePageState extends State<HomePage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: (MediaQuery.of(context).size.width - 56) / 4,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: Colors.grey[800],
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: const Color(0xFFD4AF37), size: 24),
             const SizedBox(height: 4),

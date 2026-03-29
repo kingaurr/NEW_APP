@@ -12,6 +12,7 @@ import '../pages/experience_log_page.dart';
 import '../pages/command_history_page.dart';
 import '../pages/version_history_page.dart';
 import '../pages/risk_settings_page.dart';
+import 'chat_page.dart';
 
 class MyPage extends StatefulWidget {
   final bool biometricsEnabled;
@@ -139,83 +140,10 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  // ========== 千寻助手 ==========
-  void _showQianxunDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2A2A2A),
-        title: const Text('与千寻对话', style: TextStyle(color: Color(0xFFD4AF37))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: '输入你的问题...',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFD4AF37)),
-                ),
-              ),
-              autofocus: true,
-              onSubmitted: (_) => _sendQianxunMessage(controller.text),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _sendQianxunMessage(controller.text),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4AF37),
-                  foregroundColor: Colors.black,
-                ),
-                child: const Text('发送'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendQianxunMessage(String text) async {
-    if (text.trim().isEmpty) return;
-    Navigator.pop(context);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('思考中...'), duration: Duration(seconds: 1)),
-    );
-    
-    try {
-      final result = await ApiService.voiceAsk(text);
-      if (result != null && result['answer'] != null) {
-        _showAnswer(result['answer']);
-      } else {
-        _showAnswer('抱歉，我暂时无法回答这个问题');
-      }
-    } catch (e) {
-      _showAnswer('请求失败: $e');
-    }
-  }
-
-  void _showAnswer(String answer) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2A2A2A),
-        title: const Text('千寻', style: TextStyle(color: Color(0xFFD4AF37))),
-        content: Text(answer, style: const TextStyle(color: Colors.white)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
+  void _openQianxunChat() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChatPage()),
     );
   }
 
@@ -284,9 +212,12 @@ class _MyPageState extends State<MyPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 12,
-                                  runSpacing: 12,
+                                GridView.count(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
                                   children: [
                                     _buildGridItem(
                                       icon: Icons.security,
@@ -339,11 +270,10 @@ class _MyPageState extends State<MyPage> {
                                       label: '风控设置',
                                       onTap: _showRiskSettings,
                                     ),
-                                    // 新增：千寻助手
                                     _buildGridItem(
                                       icon: Icons.chat,
                                       label: '千寻助手',
-                                      onTap: _showQianxunDialog,
+                                      onTap: _openQianxunChat,
                                     ),
                                   ],
                                 ),
@@ -368,7 +298,6 @@ class _MyPageState extends State<MyPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: (MediaQuery.of(context).size.width - 56) / 4,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: Colors.grey[800],

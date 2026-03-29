@@ -619,8 +619,8 @@ class ApiService {
     return await httpGet('/voice/verify/$command');
   }
 
-  static Future<Map<String, dynamic>?> voiceAsk(String text) async {
-    return await httpPost('/voice/ask', body: {'text': text});
+  static Future<Map<String, dynamic>> voiceAsk(String text, {String mode = 'auto'}) async {
+    return await httpPost('/voice/ask', body: {'text': text, 'mode': mode});
   }
 
   // ========== 实战经验 ==========
