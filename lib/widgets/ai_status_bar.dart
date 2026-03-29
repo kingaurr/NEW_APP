@@ -27,6 +27,28 @@ class _AIStatusBarState extends State<AIStatusBar> {
     _loadStatus();
   }
 
+  /// 安全解析 Map
+  Map<String, dynamic> _safeParseMap(dynamic data) {
+    if (data == null) return {};
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) {
+      try {
+        return Map<String, dynamic>.from(data);
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
+  }
+
+  /// 安全获取列表长度
+  int _safeListLength(dynamic data) {
+    if (data == null) return 0;
+    if (data is List) return data.length;
+    if (data is Map) return data.keys.length;
+    return 0;
+  }
+
   Future<void> _loadStatus() async {
     setState(() {
       _isLoading = true;
@@ -34,43 +56,53 @@ class _AIStatusBarState extends State<AIStatusBar> {
     });
 
     try {
-      // 并行获取所有状态
       final results = await Future.wait([
-        ApiService.getRightBrainStatus(),
-        ApiService.getLeftBrainStatus(),
-        ApiService.getEvolutionReport(),       // 外脑状态，对应 /outer_brain/evolution_report
-        ApiService.getPendingAdviceCount(),
+        ApiService.getRightBrainStatus().catchError((e) {
+          debugPrint('getRightBrainStatus 错误: $e');
+          return {'status': 'unknown'};
+        }),
+        ApiService.getLeftBrainStatus().catchError((e) {
+          debugPrint('getLeftBrainStatus 错误: $e');
+          return {'status': 'unknown'};
+        }),
+        ApiService.getEvolutionReport().catchError((e) {
+          debugPrint('getEvolutionReport 错误: $e');
+          return {'status': 'idle'};
+        }),
+        ApiService.getPendingAdviceCount().catchError((e) {
+          debugPrint('getPendingAdviceCount 错误: $e');
+          return 0;
+        }),
       ]);
 
-      // 1. 右脑状态：确保是 Map 类型
-      if (results[0] is Map<String, dynamic>) {
-        _rightBrain = results[0] as Map<String, dynamic>;
-      }
+      // 1. 右脑状态
+      _rightBrain = _safeParseMap(results[0]);
 
       // 2. 左脑状态
-      if (results[1] is Map<String, dynamic>) {
-        _leftBrain = results[1] as Map<String, dynamic>;
-      }
+      _leftBrain = _safeParseMap(results[1]);
 
       // 3. 外脑进化报告
-      if (results[2] is Map<String, dynamic>) {
-        final report = results[2] as Map<String, dynamic>;
-        // 根据后端返回的字段构建外脑状态
-        _outerBrain = {
-          'status': report['status'] ?? 'idle',
-          'last_run_time': report['last_run'],
-          'new_rules_count': (report['new_rules'] as List?)?.length ?? 0,
-        };
-      }
+      final report = _safeParseMap(results[2]);
+      _outerBrain = {
+        'status': report['status'] ?? 'idle',
+        'last_run_time': report['last_run'],
+        'new_rules_count': _safeListLength(report['new_rules']),
+      };
 
       // 4. 待处理建议数量
-      if (results[3] != null) {
-        if (results[3] is int) {
-          _pendingSuggestions = results[3] as int;
-        } else if (results[3] is Map) {
-          final map = results[3] as Map;
-          _pendingSuggestions = (map['count'] as int?) ?? 0;
+      final pendingData = results[3];
+      if (pendingData != null) {
+        if (pendingData is int) {
+          _pendingSuggestions = pendingData;
+        } else if (pendingData is Map) {
+          _pendingSuggestions = (pendingData['count'] as int?) ?? 0;
+        } else if (pendingData is List) {
+          _pendingSuggestions = pendingData.length;
+        } else {
+          _pendingSuggestions = 0;
         }
+      } else {
+        _pendingSuggestions = 0;
       }
 
       setState(() {
@@ -97,7 +129,7 @@ class _AIStatusBarState extends State<AIStatusBar> {
         return Colors.orange;
       case 'error':
       case 'failed':
-      case 'idle': // idle 可以视为正常但未运行
+      case 'idle':
         return Colors.grey;
       default:
         return Colors.grey;
@@ -181,6 +213,29 @@ class _AIStatusBarState extends State<AIStatusBar> {
     Navigator.pushNamed(context, '/guardian_suggestions');
   }
 
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+
+      if (diff.inDays == 0) {
+        if (diff.inHours == 0) {
+          if (diff.inMinutes == 0) return '刚刚';
+          return '${diff.inMinutes}分钟前';
+        }
+        return '${diff.inHours}小时前';
+      } else if (diff.inDays == 1) {
+        return '昨天';
+      } else if (diff.inDays < 7) {
+        return '${diff.inDays}天前';
+      }
+      return '${date.month}/${date.day}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -220,9 +275,9 @@ class _AIStatusBarState extends State<AIStatusBar> {
       );
     }
 
-    final rightStatus = _rightBrain['status'] ?? 'unknown';
-    final leftStatus = _leftBrain['status'] ?? 'unknown';
-    final outerStatus = _outerBrain['status'] ?? 'idle';
+    final rightStatus = _rightBrain['status']?.toString() ?? 'unknown';
+    final leftStatus = _leftBrain['status']?.toString() ?? 'unknown';
+    final outerStatus = _outerBrain['status']?.toString() ?? 'idle';
     final outerLastRun = _outerBrain['last_run_time'];
     final outerNewRules = _outerBrain['new_rules_count'] ?? 0;
 
@@ -275,12 +330,11 @@ class _AIStatusBarState extends State<AIStatusBar> {
           if (outerLastRun != null) ...[
             const SizedBox(height: 8),
             Text(
-              '外脑上次运行: ${_formatDate(outerLastRun)}',
+              '外脑上次运行: ${_formatDate(outerLastRun.toString())}',
               style: const TextStyle(color: Colors.grey, fontSize: 10),
             ),
           ],
           const SizedBox(height: 8),
-          // 守门员建议红点
           GestureDetector(
             onTap: _navigateToGuardianSuggestions,
             child: Container(
@@ -328,28 +382,5 @@ class _AIStatusBarState extends State<AIStatusBar> {
         ],
       ),
     );
-  }
-
-  String _formatDate(String dateStr) {
-    try {
-      final date = DateTime.parse(dateStr);
-      final now = DateTime.now();
-      final diff = now.difference(date);
-
-      if (diff.inDays == 0) {
-        if (diff.inHours == 0) {
-          if (diff.inMinutes == 0) return '刚刚';
-          return '${diff.inMinutes}分钟前';
-        }
-        return '${diff.inHours}小时前';
-      } else if (diff.inDays == 1) {
-        return '昨天';
-      } else if (diff.inDays < 7) {
-        return '${diff.inDays}天前';
-      }
-      return '${date.month}/${date.day}';
-    } catch (e) {
-      return dateStr;
-    }
   }
 }

@@ -7,7 +7,7 @@ import '../api_service.dart';
 import 'voice_drawer.dart';
 
 /// 语音悬浮球组件
-/// 支持全屏拖动，点击弹出菜单，选择语音对话或文字对话
+/// 支持全屏拖动，点击弹出菜单
 class VoiceFloatingButton extends StatefulWidget {
   const VoiceFloatingButton({super.key});
 
@@ -24,8 +24,7 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   double _positionY = 0.85;
   
   bool _isDragging = false;
-  double _dragStartX = 0;
-  double _dragStartY = 0;
+  Offset _dragStart = Offset.zero;
   bool _isListening = false;
   bool _enabled = true;
   String _wakeWord = '千寻';
@@ -271,14 +270,12 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
       top: top.clamp(0, screenHeight - buttonSize - 100),
       child: GestureDetector(
         onPanStart: (details) {
-          _dragStartX = details.localPosition.dx;
-          _dragStartY = details.localPosition.dy;
+          _dragStart = details.localPosition;
           _isDragging = false;
         },
         onPanUpdate: (details) {
-          final deltaX = details.localPosition.dx - _dragStartX;
-          final deltaY = details.localPosition.dy - _dragStartY;
-          if (deltaX.abs() > 5 || deltaY.abs() > 5) {
+          final delta = details.localPosition - _dragStart;
+          if (delta.distance > 5) {
             _isDragging = true;
           }
           if (_isDragging) {
@@ -288,10 +285,12 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
               _positionX = _positionX.clamp(0.05, 0.95);
               _positionY = _positionY.clamp(0.05, 0.85);
             });
+            _dragStart = details.localPosition;
           }
         },
         onPanEnd: (details) {
           if (!_isDragging) {
+            // 只有点击（未拖动）时才弹出菜单
             _showMenu();
           } else {
             _savePosition();
