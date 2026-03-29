@@ -35,7 +35,14 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic> _safeParseMap(dynamic data) {
     if (data == null) return {};
     if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data);
+    if (data is Map) {
+      try {
+        return Map<String, dynamic>.from(data);
+      } catch (e) {
+        debugPrint('Map 转换失败: $e');
+        return {};
+      }
+    }
     return {};
   }
 
@@ -48,6 +55,13 @@ class _HomePageState extends State<HomePage> {
     return defaultValue;
   }
 
+  /// 安全解析字符串
+  String _safeParseString(dynamic data, {String defaultValue = ''}) {
+    if (data == null) return defaultValue;
+    if (data is String) return data;
+    return data.toString();
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -56,41 +70,58 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final results = await Future.wait([
-        ApiService.getDashboard(),
-        ApiService.getPendingAdviceCount(),
-        ApiService.getMarketStatus(),
-        ApiService.getRiskStatus(),
-        ApiService.getFuseStatus(),
+        ApiService.getDashboard().catchError((e) {
+          debugPrint('getDashboard 错误: $e');
+          return null;
+        }),
+        ApiService.getPendingAdviceCount().catchError((e) {
+          debugPrint('getPendingAdviceCount 错误: $e');
+          return 0;
+        }),
+        ApiService.getMarketStatus().catchError((e) {
+          debugPrint('getMarketStatus 错误: $e');
+          return {'status': '震荡'};
+        }),
+        ApiService.getRiskStatus().catchError((e) {
+          debugPrint('getRiskStatus 错误: $e');
+          return {'status': 'normal'};
+        }),
+        ApiService.getFuseStatus().catchError((e) {
+          debugPrint('getFuseStatus 错误: $e');
+          return {'alert_level': 'none'};
+        }),
       ]);
 
       // 1. 仪表盘数据
       _dashboard = _safeParseMap(results[0]);
 
-      // 2. 守门员建议数量（增强安全解析）
-      if (results[1] != null) {
-        if (results[1] is int) {
-          _pendingSuggestions = results[1] as int;
-        } else if (results[1] is Map) {
-          final map = results[1] as Map;
-          _pendingSuggestions = _safeParseInt(map['count']);
-        } else if (results[1] is List) {
-          _pendingSuggestions = (results[1] as List).length;
+      // 2. 守门员建议数量（兼容多种格式）
+      final pendingData = results[1];
+      if (pendingData != null) {
+        if (pendingData is int) {
+          _pendingSuggestions = pendingData;
+        } else if (pendingData is Map) {
+          _pendingSuggestions = _safeParseInt(pendingData['count']);
+        } else if (pendingData is List) {
+          _pendingSuggestions = pendingData.length;
         } else {
           _pendingSuggestions = 0;
         }
+      } else {
+        _pendingSuggestions = 0;
       }
 
       // 3. 市场状态
       final marketData = _safeParseMap(results[2]);
-      _marketStatus = marketData['status']?.toString() ?? '震荡';
+      _marketStatus = _safeParseString(marketData['status'], defaultValue: '震荡');
 
       // 4. 风控状态
       final riskData = _safeParseMap(results[3]);
-      _riskStatus = riskData['status']?.toString() ?? 'normal';
+      _riskStatus = _safeParseString(riskData['status'], defaultValue: 'normal');
 
       // 5. 熔断状态
       final fuseData = _safeParseMap(results[4]);
-      _alertLevel = fuseData['alert_level']?.toString() ?? 'none';
+      _alertLevel = _safeParseString(fuseData['alert_level'], defaultValue: 'none');
 
     } catch (e) {
       debugPrint('加载首页数据失败: $e');

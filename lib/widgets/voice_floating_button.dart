@@ -1,6 +1,5 @@
 // lib/widgets/voice_floating_button.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,9 +19,9 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  // 悬浮球位置（屏幕百分比，方便适配不同屏幕）
-  double _positionX = 0.9;  // 右侧 90% 位置
-  double _positionY = 0.85; // 底部 85% 位置
+  // 悬浮球位置（屏幕百分比）
+  double _positionX = 0.9;
+  double _positionY = 0.85;
   
   bool _isDragging = false;
   double _dragStartX = 0;
@@ -205,6 +204,7 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   }
 
   void _showMenu() {
+    debugPrint('悬浮球菜单被调用'); // 调试日志
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF2A2A2A),
