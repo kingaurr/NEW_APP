@@ -19,8 +19,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   bool _isRightBrainExpanded = false;
   bool _isLeftBrainExpanded = false;
-  bool _isEvolutionExpanded = false;
-  
+ 
   Map<String, dynamic> _rightBrain = {};
   Map<String, dynamic> _leftBrain = {};
   List<dynamic> _strategies = [];
@@ -28,13 +27,13 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
   List<dynamic> _guardianSuggestions = [];
   Map<String, dynamic> _evolutionReport = {};
   String _errorMessage = '';
-  
+ 
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // 改为 3 个 Tab
+    _tabController = TabController(length: 3, vsync: this);
     _loadData();
   }
 
@@ -57,43 +56,30 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
         ApiService.getStrategies(),
         ApiService.getPendingRules(),
         ApiService.getEvolutionReport(),
-        ApiService.getPendingSuggestions(), // 新增：获取守门员建议
+        ApiService.getPendingSuggestions(),
       ]);
 
-      // 1. 右脑状态
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         _rightBrain = results[0] as Map<String, dynamic>;
       }
-
-      // 2. 左脑状态
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         _leftBrain = results[1] as Map<String, dynamic>;
       }
-
-      // 3. 策略列表
       if (results[2] != null && results[2] is List) {
         _strategies = results[2] as List<dynamic>;
       }
-
-      // 4. 待审核规则
       if (results[3] != null) {
         if (results[3] is Map<String, dynamic>) {
           final pendingMap = results[3] as Map<String, dynamic>;
           final rules = pendingMap['rules'];
-          if (rules != null && rules is List) {
-            _pendingRules = rules;
-          }
+          if (rules != null && rules is List) _pendingRules = rules;
         } else if (results[3] is List) {
           _pendingRules = results[3] as List<dynamic>;
         }
       }
-
-      // 5. 进化报告
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         _evolutionReport = results[4] as Map<String, dynamic>;
       }
-
-      // 6. 守门员建议
       if (results[5] != null) {
         if (results[5] is List) {
           _guardianSuggestions = results[5] as List<dynamic>;
@@ -215,7 +201,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                       _buildBrainStatusCard(),
                       const SizedBox(height: 16),
 
-                      // 进化报告卡片
+                      // 外脑进化报告卡片（点击跳转到外脑详情）
                       _buildEvolutionReportCard(),
                       const SizedBox(height: 16),
 
@@ -225,11 +211,8 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                         child: TabBarView(
                           controller: _tabController,
                           children: [
-                            // 策略库
                             _buildStrategiesList(),
-                            // 外脑（待验证规则）
                             _buildPendingRulesList(),
-                            // 守门员建议
                             _buildGuardianSuggestionsList(),
                           ],
                         ),
@@ -247,6 +230,8 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
     final leftDecisions = _leftBrain['today_decisions'] ?? 0;
     final rightConfidence = _rightBrain['avg_confidence'] ?? 0.5;
     final leftConfidence = _leftBrain['avg_confidence'] ?? 0.5;
+    final rightModel = _rightBrain['model'] ?? _rightBrain['model_name'] ?? '未配置';
+    final leftModel = _leftBrain['model'] ?? _leftBrain['model_name'] ?? '未配置';
 
     return Card(
       color: const Color(0xFF2A2A2A),
@@ -255,7 +240,6 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // 右脑卡片
             GestureDetector(
               onTap: () => _navigateToBrainDetail('right'),
               child: Container(
@@ -290,6 +274,11 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                           ),
                           const SizedBox(height: 4),
                           Text(
+                            '模型: $rightModel',
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
                             '今日信号: $rightSignals | 平均置信度: ${(rightConfidence * 100).toInt()}%',
                             style: const TextStyle(color: Colors.grey, fontSize: 12),
                           ),
@@ -316,7 +305,6 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 12),
-            // 左脑卡片
             GestureDetector(
               onTap: () => _navigateToBrainDetail('left'),
               child: Container(
@@ -350,6 +338,11 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                           ),
                           const SizedBox(height: 4),
+                          Text(
+                            '模型: $leftModel',
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          const SizedBox(height: 2),
                           Text(
                             '今日决策: $leftDecisions | 平均置信度: ${(leftConfidence * 100).toInt()}%',
                             style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -390,9 +383,8 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _isEvolutionExpanded = !_isEvolutionExpanded;
-        });
+        // 点击跳转到外脑详情页
+        _navigateToBrainDetail('outer');
       },
       child: Card(
         color: const Color(0xFF2A2A2A),
@@ -420,31 +412,26 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  Icon(
-                    _isEvolutionExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: Colors.grey,
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMetricItem('新规则', '$newRules', Colors.orange),
+                  ),
+                  Expanded(
+                    child: _buildMetricItem('成功率', '${(successRate * 100).toInt()}%', successRate >= 0.6 ? Colors.green : Colors.red),
                   ),
                 ],
               ),
-              if (_isEvolutionExpanded) ...[
+              if (summary.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildMetricItem('新规则', '$newRules', Colors.orange),
-                    ),
-                    Expanded(
-                      child: _buildMetricItem('成功率', '${(successRate * 100).toInt()}%', successRate >= 0.6 ? Colors.green : Colors.red),
-                    ),
-                  ],
+                Text(
+                  summary,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
-                if (summary.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    summary,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
               ],
             ],
           ),

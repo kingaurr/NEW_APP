@@ -2,10 +2,10 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 
-/// 左右脑详情页面
-/// 显示右脑/左脑的详细状态、信号列表、决策记录
+/// 左右脑详情页面（也支持外脑）
+/// 显示右脑/左脑/外脑的详细状态、信号列表、决策记录或规则列表
 class BrainDetailPage extends StatefulWidget {
-  final String brainType; // 'right' 或 'left'
+  final String brainType; // 'right', 'left', 或 'outer'
 
   const BrainDetailPage({super.key, required this.brainType});
 
@@ -38,14 +38,19 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
         final signals = await ApiService.getRightBrainSignals();
         if (status != null) _status = status;
         if (signals != null) _records = signals;
-      } else {
+      } else if (widget.brainType == 'left') {
         final status = await ApiService.getLeftBrainStatus();
         final decisions = await ApiService.getLeftBrainDecisions();
         if (status != null) _status = status;
         if (decisions != null) _records = decisions;
+      } else if (widget.brainType == 'outer') {
+        final status = await ApiService.getOuterBrainStatus();
+        final pendingRules = await ApiService.getPendingRules();
+        if (status != null) _status = status;
+        if (pendingRules != null) _records = pendingRules;
       }
     } catch (e) {
-      debugPrint('加载${widget.brainType == 'right' ? '右脑' : '左脑'}数据失败: $e');
+      debugPrint('加载${_getBrainName()}数据失败: $e');
       setState(() {
         _errorMessage = '加载失败: $e';
       });
@@ -55,6 +60,15 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  String _getBrainName() {
+    switch (widget.brainType) {
+      case 'right': return '右脑';
+      case 'left': return '左脑';
+      case 'outer': return '外脑';
+      default: return '未知';
     }
   }
 
@@ -74,6 +88,7 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
     switch (status) {
       case 'normal':
       case 'healthy':
+      case 'completed':
         return '正常';
       case 'warning':
       case 'degraded':
@@ -90,6 +105,7 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
     switch (status) {
       case 'normal':
       case 'healthy':
+      case 'completed':
         return Colors.green;
       case 'warning':
       case 'degraded':
@@ -115,14 +131,22 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
   @override
   Widget build(BuildContext context) {
     final isRight = widget.brainType == 'right';
-    final title = isRight ? '右脑详情' : '左脑详情';
-    final mode = _status['mode'] ?? (isRight ? 'deepseek-chat' : 'qwen-plus');
-    final model = _status['model'] ?? (isRight ? 'DeepSeek' : '千问');
+    final isLeft = widget.brainType == 'left';
+    final isOuter = widget.brainType == 'outer';
+    final title = isRight ? '右脑详情' : (isLeft ? '左脑详情' : '外脑详情');
+    
+    final mode = _status['mode'] ?? (isRight ? 'deepseek-chat' : (isLeft ? 'qwen-plus' : 'auto'));
+    final model = _status['model'] ?? (isRight ? 'DeepSeek' : (isLeft ? '千问' : '外脑知识引擎'));
     final status = _status['status'] ?? 'unknown';
+    
     final todayCount = _status['today_signals'] ?? _status['today_decisions'] ?? 0;
     final avgConfidence = _status['avg_confidence'] ?? 0.5;
     final apiCalls = _status['api_calls'] ?? 0;
     final cost = _status['cost'] ?? 0.0;
+    
+    final lastRun = _status['last_run'];
+    final newRulesCount = _status['new_rules_count'] ?? _records.length;
+    final message = _status['message'] ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -213,85 +237,154 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            '$todayCount',
-                                            style: const TextStyle(
-                                              color: Color(0xFFD4AF37),
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
+                                if (isRight || isLeft) ...[
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              '$todayCount',
+                                              style: const TextStyle(
+                                                color: Color(0xFFD4AF37),
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            isRight ? '今日信号' : '今日决策',
-                                            style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            '${(avgConfidence * 100).toInt()}%',
-                                            style: const TextStyle(
-                                              color: Color(0xFFD4AF37),
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              isRight ? '今日信号' : '今日决策',
+                                              style: const TextStyle(color: Colors.grey, fontSize: 11),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          const Text(
-                                            '平均置信度',
-                                            style: TextStyle(color: Colors.grey, fontSize: 11),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            apiCalls.toString(),
-                                            style: const TextStyle(
-                                              color: Color(0xFFD4AF37),
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              '${(avgConfidence * 100).toInt()}%',
+                                              style: const TextStyle(
+                                                color: Color(0xFFD4AF37),
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          const Text(
-                                            'API调用',
-                                            style: TextStyle(color: Colors.grey, fontSize: 11),
-                                          ),
-                                        ],
+                                            const SizedBox(height: 4),
+                                            const Text(
+                                              '平均置信度',
+                                              style: TextStyle(color: Colors.grey, fontSize: 11),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              apiCalls.toString(),
+                                              style: const TextStyle(
+                                                color: Color(0xFFD4AF37),
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            const Text(
+                                              'API调用',
+                                              style: TextStyle(color: Colors.grey, fontSize: 11),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        '预估成本',
+                                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                      Text(
+                                        '¥${cost.toStringAsFixed(4)}',
+                                        style: const TextStyle(
+                                          color: Color(0xFFD4AF37),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                if (isOuter) ...[
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              '$newRulesCount',
+                                              style: const TextStyle(
+                                                color: Color(0xFFD4AF37),
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            const Text(
+                                              '新规则数',
+                                              style: TextStyle(color: Colors.grey, fontSize: 11),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              model,
+                                              style: const TextStyle(
+                                                color: Color(0xFFD4AF37),
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            const Text(
+                                              '知识引擎',
+                                              style: TextStyle(color: Colors.grey, fontSize: 11),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (lastRun != null) ...[
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          '上次运行',
+                                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                                        ),
+                                        Text(
+                                          _formatDate(lastRun),
+                                          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
+                                        ),
+                                      ],
                                     ),
                                   ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      '预估成本',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
+                                  if (message.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
                                     Text(
-                                      '¥${cost.toStringAsFixed(4)}',
-                                      style: const TextStyle(
-                                        color: Color(0xFFD4AF37),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      message,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
                                     ),
                                   ],
-                                ),
+                                ],
                               ],
                             ),
                           ),
@@ -301,9 +394,8 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
 
                         // 记录列表
                         if (_records.isNotEmpty) ...[
-                          // 修复：将 const Text 改为普通 Text，因为 isRight 不是编译时常量
                           Text(
-                            isRight ? '最近信号' : '最近决策',
+                            isRight ? '最近信号' : (isLeft ? '最近决策' : '待审核规则'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -316,7 +408,7 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
                           const SizedBox(height: 32),
                           Center(
                             child: Text(
-                              isRight ? '暂无信号记录' : '暂无决策记录',
+                              isRight ? '暂无信号记录' : (isLeft ? '暂无决策记录' : '暂无待审核规则'),
                               style: const TextStyle(color: Colors.grey),
                             ),
                           ),
@@ -330,14 +422,16 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
 
   Widget _buildRecordItem(Map<String, dynamic> record) {
     final isRight = widget.brainType == 'right';
-    final timestamp = record['timestamp'];
-    final confidence = record['confidence'] ?? 0.5;
+    final isLeft = widget.brainType == 'left';
+    final isOuter = widget.brainType == 'outer';
 
     if (isRight) {
       final action = record['action'] ?? 'hold';
       final code = record['code'] ?? '';
       final name = record['name'] ?? '';
       final price = record['price'] ?? 0.0;
+      final timestamp = record['timestamp'];
+      final confidence = record['confidence'] ?? 0.5;
 
       return Card(
         color: const Color(0xFF2A2A2A),
@@ -421,10 +515,12 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
           ),
         ),
       );
-    } else {
+    } else if (isLeft) {
       final decision = record['decision'] ?? '';
       final reason = record['reason'] ?? '';
       final approved = record['approved'] ?? false;
+      final timestamp = record['timestamp'];
+      final confidence = record['confidence'] ?? 0.5;
 
       return Card(
         color: const Color(0xFF2A2A2A),
@@ -497,6 +593,76 @@ class _BrainDetailPageState extends State<BrainDetailPage> {
           ),
         ),
       );
+    } else if (isOuter) {
+      final ruleId = record['id'] ?? record['rule_id'] ?? '';
+      final name = record['name'] ?? '未命名规则';
+      final source = record['source'] ?? '外脑生成';
+      final backtestResult = record['backtest_result'] ?? '';
+      final winRate = record['win_rate'] ?? 0.0;
+
+      return Card(
+        color: const Color(0xFF2A2A2A),
+        margin: const EdgeInsets.only(bottom: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.rule, color: Color(0xFFD4AF37), size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '来源: $source',
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+              if (backtestResult.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  backtestResult,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[800],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '胜率: ${(winRate * 100).toInt()}%',
+                      style: const TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'ID: $ruleId',
+                    style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
     }
+    return const SizedBox.shrink();
   }
 }

@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 
 /// API 服务类，封装所有后端接口调用
 class ApiService {
+  // ✅ 使用同一个 Client 实例，自动管理 Cookie
+  static final http.Client _client = http.Client();
+  
   static String _baseUrl = 'http://47.108.206.221:8080/api';
 
   static void setBaseUrl(String url) {
@@ -14,7 +17,7 @@ class ApiService {
   // 通用 GET 请求
   static Future<dynamic> httpGet(String endpoint) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl$endpoint'));
+      final response = await _client.get(Uri.parse('$_baseUrl$endpoint'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -34,7 +37,7 @@ class ApiService {
         'Content-Type': 'application/json',
         ...?headers,
       };
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$_baseUrl$endpoint'),
         headers: requestHeaders,
         body: body != null ? jsonEncode(body) : null,

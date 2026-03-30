@@ -27,11 +27,24 @@ import 'pages/brain_detail_page.dart';
 import 'pages/risk_settings_page.dart';
 import 'pages/guardian_suggestions_page.dart';
 import 'pages/report_list_page.dart';
-import 'pages/settings_page.dart';          // 确保已导入
-import 'widgets/voice_floating_button.dart';
+import 'pages/settings_page.dart';
+import 'api_service.dart';  // ✅ 新增导入
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // ✅ 启动时自动登录（密码与后端 .env 中 APP_PASSWORD 一致）
+  try {
+    final success = await ApiService.login('080306');
+    if (!success) {
+      debugPrint('自动登录失败，请检查后端服务或密码配置');
+    } else {
+      debugPrint('自动登录成功');
+    }
+  } catch (e) {
+    debugPrint('自动登录异常: $e');
+  }
+  
   runApp(const MyApp());
 }
 
@@ -224,15 +237,7 @@ class _MyAppState extends State<MyApp> {
         }
         return null;
       },
-      builder: (context, child) {
-        // 全局语音悬浮球
-        return Stack(
-          children: [
-            if (child != null) child,
-            const VoiceFloatingButton(),
-          ],
-        );
-      },
+      // ✅ 已移除全局语音悬浮球（VoiceFloatingButton）
     );
   }
 }
