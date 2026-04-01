@@ -10,10 +10,10 @@ class RealTradePage extends StatefulWidget {
   const RealTradePage({super.key});
 
   @override
-  State<RealTradePage> createState() => _RealTradePageState();
+  RealTradePageState createState() => RealTradePageState();
 }
 
-class _RealTradePageState extends State<RealTradePage> {
+class RealTradePageState extends State<RealTradePage> {
   bool _isLoading = true;
   bool _isCollapsed = false;
   String _currentMode = 'sim';
@@ -32,7 +32,6 @@ class _RealTradePageState extends State<RealTradePage> {
     _loadMode();
   }
 
-  // 公开方法供外部调用刷新数据
   void refresh() {
     _loadData();
   }
@@ -153,9 +152,6 @@ class _RealTradePageState extends State<RealTradePage> {
         _fund = fund;
         _positionValue = positionValue;
       });
-
-      // 调试弹窗（可选，测试后可删除）
-      // _showMessage('资金: ¥$fund, 持仓市值: ¥$positionValue, 总资产: ¥${fund + positionValue}', isError: false);
 
       // 持仓列表
       if (results[1] != null && results[1] is Map<String, dynamic>) {

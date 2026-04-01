@@ -6,8 +6,6 @@ import 'virtual_trade_page.dart';
 import 'ai_advice_center_page.dart';
 import 'my_page.dart';
 
-/// 主导航页面
-/// 底部导航栏包含5个标签：首页、实盘、虚拟、AI、我的
 class MainNavigationPage extends StatefulWidget {
   final bool biometricsEnabled;
 
@@ -23,8 +21,8 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
 
-  // 用于实盘页面刷新的 Key
-  final GlobalKey<_RealTradePageState> _realTradeKey = GlobalKey<_RealTradePageState>();
+  // 使用公开的 RealTradePageState 类型
+  final GlobalKey<RealTradePageState> _realTradeKey = GlobalKey<RealTradePageState>();
 
   late final List<Widget> _pages;
 
@@ -33,7 +31,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     super.initState();
     _pages = [
       const HomePage(),
-      RealTradePage(key: _realTradeKey), // 传入 key
+      RealTradePage(key: _realTradeKey),
       const VirtualTradePage(),
       const AiAdviceCenterPage(),
       MyPage(biometricsEnabled: widget.biometricsEnabled),
@@ -59,7 +57,6 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             setState(() {
               _currentIndex = index;
             });
-            // 当切换到实盘页面（索引1）时，刷新数据
             if (index == 1) {
               _realTradeKey.currentState?.refresh();
             }
