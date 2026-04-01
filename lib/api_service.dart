@@ -345,16 +345,12 @@ class ApiService {
   }
 
   // ========== 选股池 ==========
-  static Future<Map<String, dynamic>?> getCandidates() async {
-    return await httpGet('/candidates');
-  }
-
-  static Future<List<dynamic>?> getTradePool() async {
+  static Future<Map<String, dynamic>?> getTradePool() async {
     return await httpGet('/trade/pool');
   }
 
   // ========== 信号历史 ==========
-  static Future<List<dynamic>?> getSignalHistory({int limit = 50}) async {
+  static Future<Map<String, dynamic>?> getSignalHistory({int limit = 50}) async {
     String url = '/signals/history';
     if (limit != 50) url += '?limit=$limit';
     return await httpGet(url);
@@ -1082,10 +1078,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> getRealPositions() => getPositions();
 
   /// 获取实盘交易池（实际调用 /trade/pool）
-  static Future<List<dynamic>?> getRealTradePool() => getTradePool();
+  static Future<Map<String, dynamic>?> getRealTradePool() => getTradePool();
 
   /// 获取实盘信号记录（实际调用 /signals/history）
-  static Future<List<dynamic>?> getRealSignals() => getSignalHistory();
+  static Future<Map<String, dynamic>?> getRealSignals() => getSignalHistory();
 
   /// 获取实盘资金（实际调用 /fund）
   static Future<Map<String, dynamic>?> getRealFund() => getFund();

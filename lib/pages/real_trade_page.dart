@@ -7,8 +7,6 @@ import '../widgets/trade_pool_item.dart';
 import '../widgets/signal_item.dart';
 import '../widgets/shadow_summary.dart';
 
-/// 实盘交易页面
-/// 真实交易中心：持仓、AI交易池、信号记录
 class RealTradePage extends StatefulWidget {
   const RealTradePage({super.key});
 
@@ -19,7 +17,7 @@ class RealTradePage extends StatefulWidget {
 class _RealTradePageState extends State<RealTradePage> {
   bool _isLoading = true;
   bool _isCollapsed = false;
-  String _currentMode = 'sim'; // 当前模式：real 或 sim
+  String _currentMode = 'sim';
   Map<String, dynamic> _summary = {};
   List<dynamic> _positions = [];
   List<dynamic> _tradePool = [];
@@ -162,7 +160,7 @@ class _RealTradePageState extends State<RealTradePage> {
         });
       }
 
-      // 3. 交易池数据
+      // 3. 交易池数据（修改：从 Map 中取 stocks）
       if (results[2] != null && results[2] is Map<String, dynamic>) {
         final tradePoolMap = results[2] as Map<String, dynamic>;
         setState(() {
@@ -170,10 +168,11 @@ class _RealTradePageState extends State<RealTradePage> {
         });
       }
 
-      // 4. 信号历史
-      if (results[3] != null && results[3] is List) {
+      // 4. 信号历史（修改：从 Map 中取 signals）
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
+        final signalsMap = results[3] as Map<String, dynamic>;
         setState(() {
-          _signals = results[3] as List<dynamic>;
+          _signals = signalsMap['signals'] ?? [];
         });
       }
 
