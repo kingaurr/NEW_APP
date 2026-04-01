@@ -33,11 +33,17 @@ import 'api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 强制清除旧的 server_url，避免旧配置干扰（仅首次运行）
+  final prefs = await SharedPreferences.getInstance();
+  final oldUrl = prefs.getString('server_url');
+  if (oldUrl != null && !oldUrl.contains('/api')) {
+    await prefs.remove('server_url');
+  }
+
   // 强制设置正确的 baseUrl（确保包含 /api）
   ApiService.setBaseUrl('http://47.108.206.221:8080/api');
 
   // 尝试从 SharedPreferences 获取 token 并验证
-  final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
   bool isAuthenticated = false;
   if (token != null && token.isNotEmpty) {
