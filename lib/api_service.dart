@@ -5,19 +5,20 @@ import 'package:flutter/foundation.dart';
 
 /// API 服务类，封装所有后端接口调用
 class ApiService {
-  // ✅ 使用同一个 Client 实例，自动管理 Cookie
+  // 使用同一个 Client 实例，自动管理 Cookie
   static final http.Client _client = http.Client();
-  
-  static String _baseUrl = 'http://47.108.206.221:8080/api';
 
-  static void setBaseUrl(String url) {
-    _baseUrl = url;
-  }
+  // 固定基础 URL，不可修改
+  static const String _baseUrl = 'http://47.108.206.221:8080/api';
+
+  // 移除 setBaseUrl 方法，避免被错误修改
 
   // 通用 GET 请求
   static Future<dynamic> httpGet(String endpoint) async {
+    final url = '$_baseUrl$endpoint';
+    debugPrint('GET请求: $url'); // 调试日志，发布前可删除
     try {
-      final response = await _client.get(Uri.parse('$_baseUrl$endpoint'));
+      final response = await _client.get(Uri.parse(url));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -32,13 +33,15 @@ class ApiService {
 
   // 通用 POST 请求
   static Future<dynamic> httpPost(String endpoint, {Map<String, dynamic>? body, Map<String, String>? headers}) async {
+    final url = '$_baseUrl$endpoint';
+    debugPrint('POST请求: $url'); // 调试日志，发布前可删除
     try {
       final requestHeaders = {
         'Content-Type': 'application/json',
         ...?headers,
       };
       final response = await _client.post(
-        Uri.parse('$_baseUrl$endpoint'),
+        Uri.parse(url),
         headers: requestHeaders,
         body: body != null ? jsonEncode(body) : null,
       );
