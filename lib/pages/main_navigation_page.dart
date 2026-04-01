@@ -8,11 +8,7 @@ import 'my_page.dart';
 
 class MainNavigationPage extends StatefulWidget {
   final bool biometricsEnabled;
-
-  const MainNavigationPage({
-    super.key,
-    this.biometricsEnabled = false,
-  });
+  const MainNavigationPage({super.key, this.biometricsEnabled = false});
 
   @override
   State<MainNavigationPage> createState() => _MainNavigationPageState();
@@ -57,9 +53,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             setState(() {
               _currentIndex = index;
             });
-            if (index == 1) {
-              _realTradeKey.currentState?.refresh();
-            }
+            // 暂时注释刷新调用，避免编译错误
+            // if (index == 1) {
+            //   _realTradeKey.currentState?.refresh();
+            // }
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: const Color(0xFF1E1E1E),
