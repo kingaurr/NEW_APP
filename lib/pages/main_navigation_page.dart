@@ -22,7 +22,10 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
-  
+
+  // 用于实盘页面刷新的 Key
+  final GlobalKey<_RealTradePageState> _realTradeKey = GlobalKey<_RealTradePageState>();
+
   late final List<Widget> _pages;
 
   @override
@@ -30,7 +33,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     super.initState();
     _pages = [
       const HomePage(),
-      const RealTradePage(),
+      RealTradePage(key: _realTradeKey), // 传入 key
       const VirtualTradePage(),
       const AiAdviceCenterPage(),
       MyPage(biometricsEnabled: widget.biometricsEnabled),
@@ -56,6 +59,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             setState(() {
               _currentIndex = index;
             });
+            // 当切换到实盘页面（索引1）时，刷新数据
+            if (index == 1) {
+              _realTradeKey.currentState?.refresh();
+            }
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: const Color(0xFF1E1E1E),

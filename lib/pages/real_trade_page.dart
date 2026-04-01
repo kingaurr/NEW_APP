@@ -17,7 +17,8 @@ class _RealTradePageState extends State<RealTradePage> {
   bool _isLoading = true;
   bool _isCollapsed = false;
   String _currentMode = 'sim';
-  Map<String, dynamic> _summary = {};
+  double _fund = 0.0;
+  double _positionValue = 0.0;
   List<dynamic> _positions = [];
   List<dynamic> _tradePool = [];
   List<dynamic> _signals = [];
@@ -29,6 +30,11 @@ class _RealTradePageState extends State<RealTradePage> {
     super.initState();
     _loadData();
     _loadMode();
+  }
+
+  // 公开方法供外部调用刷新数据
+  void refresh() {
+    _loadData();
   }
 
   Future<void> _loadMode() async {
@@ -130,9 +136,6 @@ class _RealTradePageState extends State<RealTradePage> {
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final fundData = results[0] as Map<String, dynamic>;
         fund = (fundData['available_fund'] ?? fundData['current_fund'] ?? 0.0).toDouble();
-        _showMessage('💰 资金: ¥$fund', isError: false);
-      } else {
-        _showMessage('❌ getFund 返回空', isError: true);
       }
 
       // 持仓市值
@@ -146,19 +149,13 @@ class _RealTradePageState extends State<RealTradePage> {
         }
       }
 
-      // 更新摘要
       setState(() {
-        _summary = {
-          'total_assets': fund + positionValue,
-          'today_pnl': 0.0,
-          'position_ratio': positionValue / (fund > 0 ? fund : 1.0),
-          'risk_status': 'normal',
-          'today_trades': 0,
-        };
+        _fund = fund;
+        _positionValue = positionValue;
       });
 
-      // 调试：显示总资产
-      _showMessage('总资产: ¥${_summary['total_assets']}', isError: false);
+      // 调试弹窗（可选，测试后可删除）
+      // _showMessage('资金: ¥$fund, 持仓市值: ¥$positionValue, 总资产: ¥${fund + positionValue}', isError: false);
 
       // 持仓列表
       if (results[1] != null && results[1] is Map<String, dynamic>) {
@@ -213,32 +210,6 @@ class _RealTradePageState extends State<RealTradePage> {
       return '${(value / 10000).toStringAsFixed(2)}万';
     } else {
       return value.toStringAsFixed(2);
-    }
-  }
-
-  Color _getRiskColor(String status) {
-    switch (status) {
-      case 'normal':
-        return Colors.green;
-      case 'warning':
-        return Colors.orange;
-      case 'fuse':
-        return Colors.red;
-      default:
-        return Colors.green;
-    }
-  }
-
-  String _getRiskText(String status) {
-    switch (status) {
-      case 'normal':
-        return '正常';
-      case 'warning':
-        return '警告';
-      case 'fuse':
-        return '熔断';
-      default:
-        return '正常';
     }
   }
 
@@ -324,7 +295,7 @@ class _RealTradePageState extends State<RealTradePage> {
                                   children: [
                                     const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Text(
-                                      '¥${_formatNumber(_summary['total_assets'] ?? 0)}',
+                                      '¥${_formatNumber(_fund + _positionValue)}',
                                       style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -334,13 +305,9 @@ class _RealTradePageState extends State<RealTradePage> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Text(
-                                      '${(_summary['today_pnl'] ?? 0) >= 0 ? '+' : ''}¥${_formatNumber((_summary['today_pnl'] ?? 0).abs())}',
-                                      style: TextStyle(
-                                        color: (_summary['today_pnl'] ?? 0) >= 0 ? Colors.green : Colors.red,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                    const Text(
+                                      '¥0.00',
+                                      style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -352,16 +319,16 @@ class _RealTradePageState extends State<RealTradePage> {
                                     Row(
                                       children: [
                                         Text(
-                                          '${((_summary['position_ratio'] ?? 0) * 100).toInt()}%',
+                                          '${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
                                           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                                         ),
                                         const SizedBox(width: 8),
                                         SizedBox(
                                           width: 80,
                                           child: LinearProgressIndicator(
-                                            value: _summary['position_ratio'] ?? 0,
+                                            value: _positionValue / (_fund > 0 ? _fund : 1),
                                             backgroundColor: Colors.grey[800],
-                                            color: (_summary['position_ratio'] ?? 0) > 0.8 ? Colors.orange : Colors.green,
+                                            color: (_positionValue / (_fund > 0 ? _fund : 1)) > 0.8 ? Colors.orange : Colors.green,
                                             borderRadius: BorderRadius.circular(2),
                                           ),
                                         ),
@@ -377,12 +344,12 @@ class _RealTradePageState extends State<RealTradePage> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: _getRiskColor(_summary['risk_status'] ?? 'normal').withOpacity(0.2),
+                                        color: Colors.green.withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: Text(
-                                        _getRiskText(_summary['risk_status'] ?? 'normal'),
-                                        style: TextStyle(color: _getRiskColor(_summary['risk_status'] ?? 'normal'), fontSize: 12),
+                                      child: const Text(
+                                        '正常',
+                                        style: TextStyle(color: Colors.green, fontSize: 12),
                                       ),
                                     ),
                                   ],
@@ -392,7 +359,7 @@ class _RealTradePageState extends State<RealTradePage> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('今日交易次数', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Text('${_summary['today_trades'] ?? 0}', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                                    const Text('0', style: TextStyle(color: Colors.white, fontSize: 14)),
                                   ],
                                 ),
                               ],
