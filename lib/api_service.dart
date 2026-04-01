@@ -2,12 +2,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// API 服务类，封装所有后端接口调用
 class ApiService {
-  // ✅ 使用同一个 Client 实例，自动管理 Cookie
+  // 使用同一个 Client 实例（用于自动管理 cookie，但 token 认证不依赖它）
   static final http.Client _client = http.Client();
-  
+
   static String _baseUrl = 'http://47.108.206.221:8080/api';
 
   static void setBaseUrl(String url) {
@@ -22,10 +23,33 @@ class ApiService {
     _baseUrl = url;
   }
 
-  // 通用 GET 请求
+  // ---------- Token 管理 ----------
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
+  static Future<void> _saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+  }
+
+  static Future<void> clearToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+  }
+
+  // ---------- 通用请求方法（自动携带 token） ----------
   static Future<dynamic> httpGet(String endpoint) async {
+    final url = '$_baseUrl$endpoint';
+    debugPrint('GET请求: $url');
     try {
-      final response = await _client.get(Uri.parse('$_baseUrl$endpoint'));
+      final token = await _getToken();
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await _client.get(Uri.parse(url), headers: headers);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -38,15 +62,21 @@ class ApiService {
     }
   }
 
-  // 通用 POST 请求
-  static Future<dynamic> httpPost(String endpoint, {Map<String, dynamic>? body, Map<String, String>? headers}) async {
+  static Future<dynamic> httpPost(String endpoint,
+      {Map<String, dynamic>? body, Map<String, String>? headers}) async {
+    final url = '$_baseUrl$endpoint';
+    debugPrint('POST请求: $url');
     try {
+      final token = await _getToken();
       final requestHeaders = {
         'Content-Type': 'application/json',
         ...?headers,
       };
+      if (token != null) {
+        requestHeaders['Authorization'] = 'Bearer $token';
+      }
       final response = await _client.post(
-        Uri.parse('$_baseUrl$endpoint'),
+        Uri.parse(url),
         headers: requestHeaders,
         body: body != null ? jsonEncode(body) : null,
       );
@@ -72,7 +102,8 @@ class ApiService {
     return await httpGet('/fund');
   }
 
-  static Future<Map<String, dynamic>?> modifyFund(double amount, {String reason = ''}) async {
+  static Future<Map<String, dynamic>?> modifyFund(double amount,
+      {String reason = ''}) async {
     return await httpPost('/fund', body: {'amount': amount, 'reason': reason});
   }
 
@@ -82,7 +113,8 @@ class ApiService {
   }
 
   static Future<bool> cancelOrder(String orderId) async {
-    final result = await httpPost('/orders/cancel', body: {'order_id': orderId});
+    final result =
+        await httpPost('/orders/cancel', body: {'order_id': orderId});
     return result?['success'] ?? false;
   }
 
@@ -92,12 +124,15 @@ class ApiService {
   }
 
   static Future<bool> updatePositionStopLoss(String code, double stopLoss) async {
-    final result = await httpPost('/positions/stop_loss', body: {'code': code, 'stop_loss': stopLoss});
+    final result = await httpPost('/positions/stop_loss',
+        body: {'code': code, 'stop_loss': stopLoss});
     return result?['success'] ?? false;
   }
 
-  static Future<bool> updatePositionTakeProfit(String code, double takeProfit) async {
-    final result = await httpPost('/positions/take_profit', body: {'code': code, 'take_profit': takeProfit});
+  static Future<bool> updatePositionTakeProfit(
+      String code, double takeProfit) async {
+    final result = await httpPost('/positions/take_profit',
+        body: {'code': code, 'take_profit': takeProfit});
     return result?['success'] ?? false;
   }
 
@@ -144,15 +179,18 @@ class ApiService {
     return await httpGet('/strategies');
   }
 
-  static Future<Map<String, dynamic>?> getStrategyDetail(String strategyId) async {
+  static Future<Map<String, dynamic>?> getStrategyDetail(
+      String strategyId) async {
     return await httpGet('/strategies/detail?id=$strategyId');
   }
 
-  static Future<Map<String, dynamic>?> getStrategyDecisionTree(String strategyId) async {
+  static Future<Map<String, dynamic>?> getStrategyDecisionTree(
+      String strategyId) async {
     return await httpGet('/strategies/decision_tree?id=$strategyId');
   }
 
-  static Future<Map<String, dynamic>?> getStrategyComparison(String strategyId) async {
+  static Future<Map<String, dynamic>?> getStrategyComparison(
+      String strategyId) async {
     return await httpGet('/strategies/comparison?id=$strategyId');
   }
 
@@ -170,7 +208,8 @@ class ApiService {
   }
 
   static Future<bool> disableRule(String ruleId, {String reason = ''}) async {
-    final result = await httpPost('/rules/disable', body: {'rule_id': ruleId, 'reason': reason});
+    final result = await httpPost('/rules/disable',
+        body: {'rule_id': ruleId, 'reason': reason});
     return result?['success'] ?? false;
   }
 
@@ -180,12 +219,14 @@ class ApiService {
   }
 
   static Future<bool> approveRule(String ruleId) async {
-    final result = await httpPost('/outer_brain/approve_rule', body: {'rule_id': ruleId});
+    final result = await httpPost('/outer_brain/approve_rule',
+        body: {'rule_id': ruleId});
     return result?['success'] ?? false;
   }
 
   static Future<bool> rejectRule(String ruleId) async {
-    final result = await httpPost('/outer_brain/reject_rule', body: {'rule_id': ruleId});
+    final result = await httpPost('/outer_brain/reject_rule',
+        body: {'rule_id': ruleId});
     return result?['success'] ?? false;
   }
 
@@ -208,7 +249,8 @@ class ApiService {
   }
 
   static Future<bool> approveAdvice(String adviceId) async {
-    final result = await httpPost('/advice/approve', body: {'advice_id': adviceId});
+    final result =
+        await httpPost('/advice/approve', body: {'advice_id': adviceId});
     return result?['success'] ?? false;
   }
 
@@ -218,7 +260,8 @@ class ApiService {
   }
 
   static Future<bool> rejectAdvice(String adviceId, {String reason = ''}) async {
-    final result = await httpPost('/advice/reject', body: {'advice_id': adviceId, 'reason': reason});
+    final result = await httpPost('/advice/reject',
+        body: {'advice_id': adviceId, 'reason': reason});
     return result?['success'] ?? false;
   }
 
@@ -250,8 +293,6 @@ class ApiService {
     return approveAdvice(suggestionId);
   }
 
-  // 注意：rejectSuggestion 使用文件末尾返回 Map 的版本，此处不重复定义
-
   // ========== 红蓝军 ==========
   static Future<Map<String, dynamic>?> getLatestWarGame() async {
     return await httpGet('/wargame/latest');
@@ -266,7 +307,8 @@ class ApiService {
   }
 
   static Future<bool> applyWarGameSuggestion(String reportId) async {
-    final result = await httpPost('/war_game/apply', body: {'report_id': reportId});
+    final result = await httpPost('/war_game/apply',
+        body: {'report_id': reportId});
     return result?['success'] ?? false;
   }
 
@@ -323,7 +365,8 @@ class ApiService {
     return await httpGet('/reports/list?type=$type');
   }
 
-  static Future<String?> getReportContent(String filename, {String type = 'daily'}) async {
+  static Future<String?> getReportContent(String filename,
+      {String type = 'daily'}) async {
     final data = await httpGet('/reports/content?type=$type&file=$filename');
     return data?['content'];
   }
@@ -337,7 +380,8 @@ class ApiService {
   }
 
   static Future<bool> markReportRead(String filename, String reportType) async {
-    final result = await httpPost('/reports/mark_read', body: {'filename': filename, 'type': reportType});
+    final result = await httpPost('/reports/mark_read',
+        body: {'filename': filename, 'type': reportType});
     return result?['success'] ?? false;
   }
 
@@ -346,11 +390,13 @@ class ApiService {
     return await httpGet('/knowledge/stats');
   }
 
-  static Future<Map<String, dynamic>?> getKnowledgeStatsById(String knowledgeId) async {
+  static Future<Map<String, dynamic>?> getKnowledgeStatsById(
+      String knowledgeId) async {
     return await httpGet('/knowledge/stats/$knowledgeId');
   }
 
-  static Future<List<dynamic>?> getKnowledgeRanking({String? type, int days = 30, int limit = 20}) async {
+  static Future<List<dynamic>?> getKnowledgeRanking(
+      {String? type, int days = 30, int limit = 20}) async {
     String url = '/knowledge/ranking?days=$days&limit=$limit';
     if (type != null) url += '&type=$type';
     return await httpGet(url);
@@ -400,7 +446,8 @@ class ApiService {
   }
 
   static Future<bool> rollbackVersion(String versionId) async {
-    final result = await httpPost('/version/rollback', body: {'version_id': versionId});
+    final result =
+        await httpPost('/version/rollback', body: {'version_id': versionId});
     return result?['success'] ?? false;
   }
 
@@ -415,7 +462,8 @@ class ApiService {
   }
 
   static Future<bool> restoreBackup(String backupId) async {
-    final result = await httpPost('/backup/restore', body: {'backup_id': backupId});
+    final result = await httpPost('/backup/restore',
+        body: {'backup_id': backupId});
     return result?['success'] ?? false;
   }
 
@@ -440,7 +488,8 @@ class ApiService {
   }
 
   // ========== 日志 ==========
-  static Future<Map<String, dynamic>?> getRecentLogs({int limit = 100, String level = ''}) async {
+  static Future<Map<String, dynamic>?> getRecentLogs(
+      {int limit = 100, String level = ''}) async {
     String url = '/logs/recent?limit=$limit';
     if (level.isNotEmpty) url += '&level=$level';
     return await httpGet(url);
@@ -479,11 +528,17 @@ class ApiService {
 
   // ========== 认证 ==========
   static Future<Map<String, dynamic>?> authPassword(String password) async {
-    return await httpPost('/auth/password', body: {'password': password});
+    final result = await httpPost('/auth/password', body: {'password': password});
+    if (result != null && result['success'] == true && result['token'] != null) {
+      await _saveToken(result['token']);
+    }
+    return result;
   }
 
   static Future<Map<String, dynamic>?> authLogout() async {
-    return await httpPost('/auth/logout');
+    final result = await httpPost('/auth/logout');
+    await clearToken();
+    return result;
   }
 
   static Future<Map<String, dynamic>?> verifyToken() async {
@@ -496,7 +551,11 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>?> smsVerify(String code) async {
-    return await httpPost('/sms/verify', body: {'code': code});
+    final result = await httpPost('/sms/verify', body: {'code': code});
+    if (result != null && result['success'] == true && result['token'] != null) {
+      await _saveToken(result['token']);
+    }
+    return result;
   }
 
   static Future<Map<String, dynamic>?> smsLogout() async {
@@ -508,7 +567,8 @@ class ApiService {
     return await httpGet('/degrade/pending');
   }
 
-  static Future<bool> postDegradeResolve(String requestId, String decision, {String reason = ''}) async {
+  static Future<bool> postDegradeResolve(String requestId, String decision,
+      {String reason = ''}) async {
     final result = await httpPost('/degrade/resolve', body: {
       'request_id': requestId,
       'decision': decision,
@@ -573,7 +633,8 @@ class ApiService {
   }
 
   static Future<bool> updateRiskBaseFund(double amount) async {
-    final result = await httpPost('/settings/risk_base_fund', body: {'risk_base_fund': amount});
+    final result = await httpPost('/settings/risk_base_fund',
+        body: {'risk_base_fund': amount});
     return result?['success'] ?? false;
   }
 
@@ -618,7 +679,8 @@ class ApiService {
     return await httpGet('/voice/history?limit=$limit');
   }
 
-  static Future<Map<String, dynamic>?> voiceExtractFeatures(List<int> audioBytes) async {
+  static Future<Map<String, dynamic>?> voiceExtractFeatures(
+      List<int> audioBytes) async {
     return await httpPost('/voice/extract_features', body: {'audio': audioBytes});
   }
 
@@ -630,7 +692,8 @@ class ApiService {
     return await httpGet('/voice/verify/$command');
   }
 
-  static Future<Map<String, dynamic>> voiceAsk(String text, {String mode = 'auto'}) async {
+  static Future<Map<String, dynamic>> voiceAsk(String text,
+      {String mode = 'auto'}) async {
     return await httpPost('/voice/ask', body: {'text': text, 'mode': mode});
   }
 
@@ -646,7 +709,8 @@ class ApiService {
   }
 
   // ========== 声纹验证 ==========
-  static Future<Map<String, dynamic>?> voiceRegister(String userId, String userName, List<double> features) async {
+  static Future<Map<String, dynamic>?> voiceRegister(
+      String userId, String userName, List<double> features) async {
     return await httpPost('/voice/register', body: {
       'user_id': userId,
       'user_name': userName,
@@ -654,7 +718,8 @@ class ApiService {
     });
   }
 
-  static Future<Map<String, dynamic>?> voiceVerify(String userId, List<double> features) async {
+  static Future<Map<String, dynamic>?> voiceVerify(
+      String userId, List<double> features) async {
     return await httpPost('/voice/verify', body: {
       'user_id': userId,
       'features': features,
@@ -691,14 +756,16 @@ class ApiService {
   }
 
   // ========== 权限管理 ==========
-  static Future<Map<String, dynamic>?> permissionCheck(String userId, String operation) async {
+  static Future<Map<String, dynamic>?> permissionCheck(
+      String userId, String operation) async {
     return await httpPost('/permission/check', body: {
       'user_id': userId,
       'operation': operation,
     });
   }
 
-  static Future<Map<String, dynamic>?> permissionAuthorize(String userId, String operation, List<String> authMethods) async {
+  static Future<Map<String, dynamic>?> permissionAuthorize(
+      String userId, String operation, List<String> authMethods) async {
     return await httpPost('/permission/authorize', body: {
       'user_id': userId,
       'operation': operation,
@@ -710,7 +777,8 @@ class ApiService {
     return await httpGet('/permission/users');
   }
 
-  static Future<Map<String, dynamic>?> permissionUpdate(String userId, String level) async {
+  static Future<Map<String, dynamic>?> permissionUpdate(
+      String userId, String level) async {
     return await httpPost('/permission/update', body: {
       'user_id': userId,
       'level': level,
@@ -718,7 +786,9 @@ class ApiService {
   }
 
   // ========== 指令守卫 ==========
-  static Future<Map<String, dynamic>?> commandExecute(String command, String userId, {String? bypassToken, bool skipAuth = false}) async {
+  static Future<Map<String, dynamic>?> commandExecute(String command,
+      String userId,
+      {String? bypassToken, bool skipAuth = false}) async {
     return await httpPost('/command/execute', body: {
       'command': command,
       'user_id': userId,
@@ -732,14 +802,16 @@ class ApiService {
   }
 
   // ========== 频率限制 ==========
-  static Future<Map<String, dynamic>?> rateLimitCheck(String userId, String operation) async {
+  static Future<Map<String, dynamic>?> rateLimitCheck(
+      String userId, String operation) async {
     return await httpPost('/rate_limit/check', body: {
       'user_id': userId,
       'operation': operation,
     });
   }
 
-  static Future<Map<String, dynamic>?> rateLimitStatus(String userId, String operation) async {
+  static Future<Map<String, dynamic>?> rateLimitStatus(
+      String userId, String operation) async {
     return await httpPost('/rate_limit/status', body: {
       'user_id': userId,
       'operation': operation,
@@ -751,7 +823,8 @@ class ApiService {
     return await httpPost('/ip_whitelist/check', body: {'ip': ip});
   }
 
-  static Future<Map<String, dynamic>?> ipWhitelistAdd(String pattern, {String? reason}) async {
+  static Future<Map<String, dynamic>?> ipWhitelistAdd(String pattern,
+      {String? reason}) async {
     return await httpPost('/ip_whitelist/add', body: {
       'pattern': pattern,
       'reason': reason,
@@ -772,12 +845,14 @@ class ApiService {
   }
 
   static Future<bool> ipWhitelistSetStrictMode(bool strict) async {
-    final result = await httpPost('/ip_whitelist/strict_mode', body: {'strict_mode': strict});
+    final result = await httpPost('/ip_whitelist/strict_mode',
+        body: {'strict_mode': strict});
     return result?['success'] ?? false;
   }
 
   static Future<bool> ipWhitelistSetEnabled(bool enabled) async {
-    final result = await httpPost('/ip_whitelist/enabled', body: {'enabled': enabled});
+    final result = await httpPost('/ip_whitelist/enabled',
+        body: {'enabled': enabled});
     return result?['success'] ?? false;
   }
 
@@ -786,11 +861,13 @@ class ApiService {
     return await httpPost('/emergency/stop', body: {'reason': reason});
   }
 
-  static Future<Map<String, dynamic>?> emergencyRecover({String? reason}) async {
+  static Future<Map<String, dynamic>?> emergencyRecover(
+      {String? reason}) async {
     return await httpPost('/emergency/recover', body: {'reason': reason});
   }
 
-  static Future<Map<String, dynamic>?> emergencyPause(String reason, int duration) async {
+  static Future<Map<String, dynamic>?> emergencyPause(
+      String reason, int duration) async {
     return await httpPost('/emergency/pause', body: {
       'reason': reason,
       'duration': duration,
@@ -802,7 +879,8 @@ class ApiService {
   }
 
   // ========== 审计日志 ==========
-  static Future<Map<String, dynamic>?> auditLogs({int limit = 100, String? operation, String? userId}) async {
+  static Future<Map<String, dynamic>?> auditLogs(
+      {int limit = 100, String? operation, String? userId}) async {
     String url = '/audit/logs?limit=$limit';
     if (operation != null) url += '&operation=$operation';
     if (userId != null) url += '&user_id=$userId';
@@ -830,7 +908,8 @@ class ApiService {
     return await httpGet('/security/health');
   }
 
-  static Future<Map<String, dynamic>?> securityBypassToken({int duration = 300, String? ip}) async {
+  static Future<Map<String, dynamic>?> securityBypassToken(
+      {int duration = 300, String? ip}) async {
     return await httpPost('/security/bypass_token', body: {
       'duration': duration,
       'ip': ip,
@@ -872,44 +951,39 @@ class ApiService {
   }
 
   // ========== 补充缺失方法（供组件调用） ==========
-  // 注：以下方法若后端未实现，将返回模拟成功（仅用于编译通过）
-
-  /// 执行指令（已有 commandExecute 更通用）
   static Future<bool> executeCommand(String command, String userId) async {
     final result = await commandExecute(command, userId);
     return result?['success'] ?? false;
   }
 
-  /// 获取压力测试报告（已有 getStressTestLatest）
   static Future<Map<String, dynamic>?> getStressTestReport() async {
     return await getStressTestLatest();
   }
 
-  /// 买入股票
   static Future<bool> buyStock(String code, int shares, double price) async {
-    final result = await httpPost('/positions/buy', body: {'code': code, 'shares': shares, 'price': price});
+    final result = await httpPost('/positions/buy',
+        body: {'code': code, 'shares': shares, 'price': price});
     return result?['success'] ?? false;
   }
 
-  /// 执行信号
   static Future<bool> executeSignal(String signalId) async {
-    final result = await httpPost('/signals/execute', body: {'signal_id': signalId});
+    final result = await httpPost('/signals/execute',
+        body: {'signal_id': signalId});
     return result?['success'] ?? false;
   }
 
-  /// 更新策略状态（启用/禁用）
-  static Future<bool> updateStrategyStatus(String strategyId, bool enable) async {
-    final result = await httpPost('/strategies/update_status', body: {'strategy_id': strategyId, 'enabled': enable});
+  static Future<bool> updateStrategyStatus(
+      String strategyId, bool enable) async {
+    final result = await httpPost('/strategies/update_status',
+        body: {'strategy_id': strategyId, 'enabled': enable});
     return result?['success'] ?? false;
   }
 
-  /// 更新实战目标优先级（参数为字符串）
   static Future<bool> updateCombatPriority(String priority) async {
     final result = await httpPost('/combat/priority', body: {'priority': priority});
     return result?['success'] ?? false;
   }
 
-  /// 获取风控设置（组合多个接口数据）
   static Future<Map<String, dynamic>?> getRiskSettings() async {
     final fuse = await getFuseStatus();
     final params = await getPublicConfig();
@@ -926,41 +1000,40 @@ class ApiService {
     };
   }
 
-  /// 更新止损比例（调用 /settings/risk_params）
   static Future<bool> updateStopLossRatio(double ratio) async {
-    final result = await httpPost('/settings/risk_params', body: {'stop_loss_ratio': ratio});
+    final result = await httpPost('/settings/risk_params',
+        body: {'stop_loss_ratio': ratio});
     return result?['success'] ?? false;
   }
 
-  /// 更新止盈比例
   static Future<bool> updateTakeProfitRatio(double ratio) async {
-    final result = await httpPost('/settings/risk_params', body: {'take_profit_ratio': ratio});
+    final result = await httpPost('/settings/risk_params',
+        body: {'take_profit_ratio': ratio});
     return result?['success'] ?? false;
   }
 
-  /// 更新最大仓位比例
   static Future<bool> updateMaxPositionRatio(double ratio) async {
-    final result = await httpPost('/settings/risk_params', body: {'max_position_ratio': ratio});
+    final result = await httpPost('/settings/risk_params',
+        body: {'max_position_ratio': ratio});
     return result?['success'] ?? false;
   }
 
-  // --- 策略权重管理 ---
-  static Future<Map<String, dynamic>?> updateStrategyWeight(String strategyId, double weight) async {
+  static Future<Map<String, dynamic>?> updateStrategyWeight(
+      String strategyId, double weight) async {
     return await httpPost('/strategies/update_weight', body: {
       'strategy_id': strategyId,
       'weight': weight,
     });
   }
 
-  // --- 策略淘汰 ---
   static Future<Map<String, dynamic>?> killStrategy(String strategyId) async {
     return await httpPost('/strategies/kill', body: {
       'strategy_id': strategyId,
     });
   }
 
-  // --- 批量更新风控参数（供设置页面使用）---
-  static Future<bool> updateRiskParams(double stopLossRatio, double takeProfitRatio, double maxPositionRatio) async {
+  static Future<bool> updateRiskParams(
+      double stopLossRatio, double takeProfitRatio, double maxPositionRatio) async {
     final result = await httpPost('/settings/risk_params', body: {
       'stop_loss_ratio': stopLossRatio,
       'take_profit_ratio': takeProfitRatio,
@@ -969,7 +1042,6 @@ class ApiService {
     return result?['success'] ?? false;
   }
 
-  // --- 止损止盈快捷方法（别名）---
   static Future<bool> updateStopLoss(String code, double stopLoss) async {
     return updatePositionStopLoss(code, stopLoss);
   }
@@ -978,13 +1050,10 @@ class ApiService {
     return updatePositionTakeProfit(code, takeProfit);
   }
 
-  // --- 卖出（别名，兼容无参数调用）---
   static Future<bool> sellPositionSimple(String code) async {
     return sellPosition(code);
   }
 
-  // ========== 通用数据提取函数 ==========
-  /// 从 API 返回值中提取列表，兼容直接返回 List 或 {key: [...]} 两种格式
   static List<dynamic> extractList(dynamic result, {String key = 'items'}) {
     if (result == null) return [];
     if (result is List) return result;
@@ -994,14 +1063,17 @@ class ApiService {
     return [];
   }
 
-  // ========== 守门员建议批准/拒绝（返回 Map，用于获取详细结果） ==========
-  static Future<Map<String, dynamic>?> approveSuggestion(String suggestionId) async {
-    final result = await httpPost('/guardian/approve', body: {'suggestion_id': suggestionId});
+  static Future<Map<String, dynamic>?> approveSuggestion(
+      String suggestionId) async {
+    final result = await httpPost('/guardian/approve',
+        body: {'suggestion_id': suggestionId});
     return result;
   }
 
-  static Future<Map<String, dynamic>?> rejectSuggestion(String suggestionId) async {
-    final result = await httpPost('/guardian/reject', body: {'suggestion_id': suggestionId});
+  static Future<Map<String, dynamic>?> rejectSuggestion(
+      String suggestionId) async {
+    final result = await httpPost('/guardian/reject',
+        body: {'suggestion_id': suggestionId});
     return result;
   }
 }

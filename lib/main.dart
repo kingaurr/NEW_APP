@@ -32,24 +32,31 @@ import 'api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 启动时自动登录（密码与后端 .env 中 APP_PASSWORD 一致）
-  try {
-    final loginResult = await ApiService.login('1111111');
-    if (loginResult != null && loginResult['success'] == true) {
-      debugPrint('自动登录成功');
-    } else {
-      debugPrint('自动登录失败，请检查后端服务或密码配置');
+
+  // 强制设置正确的 baseUrl（确保包含 /api）
+  ApiService.setBaseUrl('http://47.108.206.221:8080/api');
+
+  // 尝试从 SharedPreferences 获取 token 并验证
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+  bool isAuthenticated = false;
+  if (token != null && token.isNotEmpty) {
+    try {
+      final result = await ApiService.verifyToken();
+      if (result != null && result['valid'] == true) {
+        isAuthenticated = true;
+      }
+    } catch (e) {
+      debugPrint('token 验证失败: $e');
     }
-  } catch (e) {
-    debugPrint('自动登录异常: $e');
   }
-  
-  runApp(const MyApp());
+
+  runApp(MyApp(isAuthenticated: isAuthenticated));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final bool isAuthenticated;
+  const MyApp({super.key, required this.isAuthenticated});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -118,7 +125,7 @@ class _MyAppState extends State<MyApp> {
         ),
         fontFamily: 'Georgia',
       ),
-      initialRoute: '/',
+      initialRoute: widget.isAuthenticated ? '/home' : '/',
       routes: {
         '/': (context) => const AuthPage(),
         '/home': (context) => MainNavigationPage(
