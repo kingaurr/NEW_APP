@@ -241,6 +241,16 @@ class RealTradePageState extends State<RealTradePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // 调试横幅
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(8),
+                          color: Colors.red,
+                          child: Text(
+                            '调试: 资金 = ¥$_fund, 持仓市值 = ¥$_positionValue, 总资产 = ¥${_fund + _positionValue}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
                         // 资金卡片
                         Card(
                           color: const Color(0xFF2A2A2A),
