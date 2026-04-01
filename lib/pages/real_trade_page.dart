@@ -185,8 +185,25 @@ class RealTradePageState extends State<RealTradePage> {
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         _shadowCompare = results[4] as Map<String, dynamic>;
       }
-    } catch (e) {
-      debugPrint('加载实盘数据失败: $e');
+    } catch (e, stack) {
+      debugPrint('加载实盘数据失败: $e\n$stack');
+      // 弹窗显示错误
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('加载失败'),
+            content: Text('错误: $e\n\n请将截图发给开发者'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('确定'),
+              ),
+            ],
+          ),
+        );
+      }
       setState(() {
         _errorMessage = '加载失败: $e';
       });
@@ -241,16 +258,6 @@ class RealTradePageState extends State<RealTradePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 调试横幅
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(8),
-                          color: Colors.red,
-                          child: Text(
-                            '调试: 资金 = ¥$_fund, 持仓市值 = ¥$_positionValue, 总资产 = ¥${_fund + _positionValue}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
                         // 资金卡片
                         Card(
                           color: const Color(0xFF2A2A2A),
