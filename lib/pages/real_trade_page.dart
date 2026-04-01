@@ -118,18 +118,22 @@ class _RealTradePageState extends State<RealTradePage> {
 
     try {
       final results = await Future.wait([
-        ApiService.getFund(), // 资金
-        ApiService.getPositions(), // 持仓
-        ApiService.getTradePool(), // 交易池
-        ApiService.getSignalHistory(), // 信号
+        ApiService.getFund(),
+        ApiService.getPositions(),
+        ApiService.getTradePool(),
+        ApiService.getSignalHistory(),
         ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 1. 资金
+      // 1. 资金（调试弹窗）
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final fundData = results[0] as Map<String, dynamic>;
         fund = (fundData['available_fund'] ?? fundData['current_fund'] ?? 0.0).toDouble();
+        // 显示资金数值
+        _showMessage('💰 资金: ¥$fund', isError: false);
+      } else {
+        _showMessage('❌ getFund 返回空', isError: true);
       }
 
       // 2. 持仓市值
