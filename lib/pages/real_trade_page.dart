@@ -1,7 +1,6 @@
 // lib/pages/real_trade_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
-import '../widgets/fund_card.dart';
 import '../widgets/position_item.dart';
 import '../widgets/trade_pool_item.dart';
 import '../widgets/signal_item.dart';
@@ -126,23 +125,37 @@ class _RealTradePageState extends State<RealTradePage> {
         ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 1. 摘要数据
+      // 1. 资金数据（从 status 中获取 available_fund）
+      double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final status = results[0] as Map<String, dynamic>;
-        final fund = (status['fund'] ?? 0.0).toDouble();
-        final positionValue = (status['position_value'] ?? 0.0).toDouble();
-        setState(() {
-          _summary = {
-            'total_assets': fund + positionValue,
-            'today_pnl': status['today_pnl'] ?? 0.0,
-            'position_ratio': positionValue / (fund > 0 ? fund : 1.0),
-            'risk_status': status['status'] == 'healthy' ? 'normal' : (status['status'] == 'degraded' ? 'warning' : 'fuse'),
-            'today_trades': status['trade_count'] ?? 0,
-          };
-        });
+        // 优先使用 available_fund，兼容 current_fund
+        fund = (status['available_fund'] ?? status['current_fund'] ?? 0.0).toDouble();
       }
 
-      // 2. 持仓数据
+      // 2. 计算持仓总市值
+      double positionValue = 0.0;
+      if (results[1] != null && results[1] is Map<String, dynamic>) {
+        final positionsMap = results[1] as Map<String, dynamic>;
+        for (var pos in positionsMap.values) {
+          if (pos is Map && pos.containsKey('value')) {
+            positionValue += (pos['value'] as num).toDouble();
+          }
+        }
+      }
+
+      // 3. 构建摘要数据
+      setState(() {
+        _summary = {
+          'total_assets': fund + positionValue,
+          'today_pnl': 0.0, // 暂未实现
+          'position_ratio': positionValue / (fund > 0 ? fund : 1.0),
+          'risk_status': 'normal',
+          'today_trades': 0,
+        };
+      });
+
+      // 4. 持仓数据（用于列表展示）
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final positionsMap = results[1] as Map<String, dynamic>;
         final positionsList = positionsMap.entries.map((entry) {
@@ -155,32 +168,24 @@ class _RealTradePageState extends State<RealTradePage> {
           }
           return {'code': entry.key, 'value': value};
         }).toList();
-        setState(() {
-          _positions = positionsList;
-        });
+        _positions = positionsList;
       }
 
-      // 3. 交易池数据（修改：从 Map 中取 stocks）
+      // 5. 交易池数据
       if (results[2] != null && results[2] is Map<String, dynamic>) {
         final tradePoolMap = results[2] as Map<String, dynamic>;
-        setState(() {
-          _tradePool = tradePoolMap['stocks'] ?? [];
-        });
+        _tradePool = tradePoolMap['stocks'] ?? [];
       }
 
-      // 4. 信号历史（修改：从 Map 中取 signals）
+      // 6. 信号历史
       if (results[3] != null && results[3] is Map<String, dynamic>) {
         final signalsMap = results[3] as Map<String, dynamic>;
-        setState(() {
-          _signals = signalsMap['signals'] ?? [];
-        });
+        _signals = signalsMap['signals'] ?? [];
       }
 
-      // 5. 影子账户对比
+      // 7. 影子账户对比
       if (results[4] != null && results[4] is Map<String, dynamic>) {
-        setState(() {
-          _shadowCompare = results[4] as Map<String, dynamic>;
-        });
+        _shadowCompare = results[4] as Map<String, dynamic>;
       }
     } catch (e) {
       debugPrint('加载实盘数据失败: $e');
