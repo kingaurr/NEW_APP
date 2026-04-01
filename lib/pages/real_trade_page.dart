@@ -125,18 +125,17 @@ class _RealTradePageState extends State<RealTradePage> {
         ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 1. 资金（调试弹窗）
+      // 资金
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final fundData = results[0] as Map<String, dynamic>;
         fund = (fundData['available_fund'] ?? fundData['current_fund'] ?? 0.0).toDouble();
-        // 显示资金数值
         _showMessage('💰 资金: ¥$fund', isError: false);
       } else {
         _showMessage('❌ getFund 返回空', isError: true);
       }
 
-      // 2. 持仓市值
+      // 持仓市值
       double positionValue = 0.0;
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final positionsMap = results[1] as Map<String, dynamic>;
@@ -147,7 +146,7 @@ class _RealTradePageState extends State<RealTradePage> {
         }
       }
 
-      // 3. 摘要
+      // 更新摘要
       setState(() {
         _summary = {
           'total_assets': fund + positionValue,
@@ -158,7 +157,10 @@ class _RealTradePageState extends State<RealTradePage> {
         };
       });
 
-      // 4. 持仓列表
+      // 调试：显示总资产
+      _showMessage('总资产: ¥${_summary['total_assets']}', isError: false);
+
+      // 持仓列表
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final positionsMap = results[1] as Map<String, dynamic>;
         final positionsList = positionsMap.entries.map((entry) {
@@ -174,19 +176,19 @@ class _RealTradePageState extends State<RealTradePage> {
         _positions = positionsList;
       }
 
-      // 5. 交易池
+      // 交易池
       if (results[2] != null && results[2] is Map<String, dynamic>) {
         final tradePoolMap = results[2] as Map<String, dynamic>;
         _tradePool = tradePoolMap['stocks'] ?? [];
       }
 
-      // 6. 信号历史
+      // 信号历史
       if (results[3] != null && results[3] is Map<String, dynamic>) {
         final signalsMap = results[3] as Map<String, dynamic>;
         _signals = signalsMap['signals'] ?? [];
       }
 
-      // 7. 影子对比
+      // 影子对比
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         _shadowCompare = results[4] as Map<String, dynamic>;
       }
