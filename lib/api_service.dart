@@ -1076,4 +1076,17 @@ class ApiService {
         body: {'suggestion_id': suggestionId});
     return result;
   }
+
+  // ========== 实盘页面兼容方法（解决 /api/real/* 404） ==========
+  /// 获取实盘持仓（实际调用 /positions）
+  static Future<Map<String, dynamic>?> getRealPositions() => getPositions();
+
+  /// 获取实盘交易池（实际调用 /trade/pool）
+  static Future<List<dynamic>?> getRealTradePool() => getTradePool();
+
+  /// 获取实盘信号记录（实际调用 /signals/history）
+  static Future<List<dynamic>?> getRealSignals() => getSignalHistory();
+
+  /// 获取实盘资金（实际调用 /fund）
+  static Future<Map<String, dynamic>?> getRealFund() => getFund();
 }
