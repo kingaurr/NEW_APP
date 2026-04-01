@@ -118,21 +118,21 @@ class _RealTradePageState extends State<RealTradePage> {
 
     try {
       final results = await Future.wait([
-        ApiService.getStatus(),
-        ApiService.getPositions(),
-        ApiService.getTradePool(),
-        ApiService.getSignalHistory(),
+        ApiService.getFund(), // 资金
+        ApiService.getPositions(), // 持仓
+        ApiService.getTradePool(), // 交易池
+        ApiService.getSignalHistory(), // 信号
         ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 1. 资金数据（从 status 中获取）
+      // 1. 资金
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
-        final status = results[0] as Map<String, dynamic>;
-        fund = (status['available_fund'] ?? status['fund'] ?? 0.0).toDouble();
+        final fundData = results[0] as Map<String, dynamic>;
+        fund = (fundData['available_fund'] ?? fundData['current_fund'] ?? 0.0).toDouble();
       }
 
-      // 2. 计算持仓总市值
+      // 2. 持仓市值
       double positionValue = 0.0;
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final positionsMap = results[1] as Map<String, dynamic>;
@@ -143,7 +143,7 @@ class _RealTradePageState extends State<RealTradePage> {
         }
       }
 
-      // 3. 构建摘要数据
+      // 3. 摘要
       setState(() {
         _summary = {
           'total_assets': fund + positionValue,
