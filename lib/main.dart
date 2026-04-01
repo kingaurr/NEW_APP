@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:path_provider/path_provider.dart';
 import 'pages/auth_page.dart';
 import 'pages/main_navigation_page.dart';
 import 'pages/ai_advice_center_page.dart';
@@ -35,24 +36,19 @@ import 'api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ===== 在 Release 模式下捕获错误并写入文件 =====
+  // 在 Release 模式下捕获错误并写入文件
   if (kReleaseMode) {
-    // 获取应用文档目录路径
     final Directory appDocDir = await getApplicationDocumentsDirectory();
     final File errorLogFile = File('${appDocDir.path}/flutter_error.log');
 
-    // 捕获 Flutter 框架错误
     FlutterError.onError = (FlutterErrorDetails details) {
-      // 控制台输出（Release 模式下看不到，但保留）
       FlutterError.dumpErrorToConsole(details);
-      // 写入文件
       errorLogFile.writeAsStringSync(
         '${DateTime.now()}: ${details.toString()}\n',
         mode: FileMode.append,
       );
     };
 
-    // 捕获 Dart 层未捕获的异步错误
     PlatformDispatcher.instance.onError = (error, stack) {
       errorLogFile.writeAsStringSync(
         '${DateTime.now()}: AsyncError: $error\n$stack\n',
@@ -61,7 +57,6 @@ void main() async {
       return true;
     };
   }
-  // ===== 错误捕获逻辑结束 =====
 
   // 强制清除旧的 server_url，避免旧配置干扰（仅首次运行）
   final prefs = await SharedPreferences.getInstance();
