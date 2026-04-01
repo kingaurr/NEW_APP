@@ -125,12 +125,11 @@ class _RealTradePageState extends State<RealTradePage> {
         ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 1. 资金数据（从 status 中获取 available_fund）
+      // 1. 资金数据（从 status 中获取）
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final status = results[0] as Map<String, dynamic>;
-        // 优先使用 available_fund，兼容 current_fund
-        fund = (status['available_fund'] ?? status['current_fund'] ?? 0.0).toDouble();
+        fund = (status['available_fund'] ?? status['fund'] ?? 0.0).toDouble();
       }
 
       // 2. 计算持仓总市值
@@ -148,14 +147,14 @@ class _RealTradePageState extends State<RealTradePage> {
       setState(() {
         _summary = {
           'total_assets': fund + positionValue,
-          'today_pnl': 0.0, // 暂未实现
+          'today_pnl': 0.0,
           'position_ratio': positionValue / (fund > 0 ? fund : 1.0),
           'risk_status': 'normal',
           'today_trades': 0,
         };
       });
 
-      // 4. 持仓数据（用于列表展示）
+      // 4. 持仓列表
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final positionsMap = results[1] as Map<String, dynamic>;
         final positionsList = positionsMap.entries.map((entry) {
@@ -171,7 +170,7 @@ class _RealTradePageState extends State<RealTradePage> {
         _positions = positionsList;
       }
 
-      // 5. 交易池数据
+      // 5. 交易池
       if (results[2] != null && results[2] is Map<String, dynamic>) {
         final tradePoolMap = results[2] as Map<String, dynamic>;
         _tradePool = tradePoolMap['stocks'] ?? [];
@@ -183,7 +182,7 @@ class _RealTradePageState extends State<RealTradePage> {
         _signals = signalsMap['signals'] ?? [];
       }
 
-      // 7. 影子账户对比
+      // 7. 影子对比
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         _shadowCompare = results[4] as Map<String, dynamic>;
       }
@@ -269,7 +268,7 @@ class _RealTradePageState extends State<RealTradePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 资金与风控摘要（带模式切换）
+                        // 资金卡片
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -317,17 +316,10 @@ class _RealTradePageState extends State<RealTradePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      '总资产',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
+                                    const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Text(
                                       '¥${_formatNumber(_summary['total_assets'] ?? 0)}',
-                                      style: const TextStyle(
-                                        color: Color(0xFFD4AF37),
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ),
@@ -335,10 +327,7 @@ class _RealTradePageState extends State<RealTradePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      '今日盈亏',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
+                                    const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Text(
                                       '${(_summary['today_pnl'] ?? 0) >= 0 ? '+' : ''}¥${_formatNumber((_summary['today_pnl'] ?? 0).abs())}',
                                       style: TextStyle(
@@ -353,19 +342,12 @@ class _RealTradePageState extends State<RealTradePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      '仓位比例',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
+                                    const Text('仓位比例', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Row(
                                       children: [
                                         Text(
                                           '${((_summary['position_ratio'] ?? 0) * 100).toInt()}%',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                                         ),
                                         const SizedBox(width: 8),
                                         SizedBox(
@@ -385,10 +367,7 @@ class _RealTradePageState extends State<RealTradePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      '风控状态',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
+                                    const Text('风控状态', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
@@ -397,10 +376,7 @@ class _RealTradePageState extends State<RealTradePage> {
                                       ),
                                       child: Text(
                                         _getRiskText(_summary['risk_status'] ?? 'normal'),
-                                        style: TextStyle(
-                                          color: _getRiskColor(_summary['risk_status'] ?? 'normal'),
-                                          fontSize: 12,
-                                        ),
+                                        style: TextStyle(color: _getRiskColor(_summary['risk_status'] ?? 'normal'), fontSize: 12),
                                       ),
                                     ),
                                   ],
@@ -409,14 +385,8 @@ class _RealTradePageState extends State<RealTradePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      '今日交易次数',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
-                                    Text(
-                                      '${_summary['today_trades'] ?? 0}',
-                                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                                    ),
+                                    const Text('今日交易次数', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    Text('${_summary['today_trades'] ?? 0}', style: const TextStyle(color: Colors.white, fontSize: 14)),
                                   ],
                                 ),
                               ],
@@ -427,14 +397,7 @@ class _RealTradePageState extends State<RealTradePage> {
 
                         // 当前持仓
                         if (_positions.isNotEmpty) ...[
-                          const Text(
-                            '当前持仓',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          const Text('当前持仓', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
                           ..._positions.map((position) => PositionItem(
                                 position: position,
@@ -449,30 +412,15 @@ class _RealTradePageState extends State<RealTradePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'AI交易池',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              const Text('AI交易池', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                               TextButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/trade_pool');
-                                },
-                                child: const Text(
-                                  '查看更多',
-                                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
-                                ),
+                                onPressed: () => Navigator.pushNamed(context, '/trade_pool'),
+                                child: const Text('查看更多', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
-                          ..._tradePool.take(5).map((stock) => TradePoolItem(
-                                stock: stock,
-                                onTrade: _loadData,
-                              )),
+                          ..._tradePool.take(5).map((stock) => TradePoolItem(stock: stock, onTrade: _loadData)),
                         ],
 
                         const SizedBox(height: 16),
@@ -482,41 +430,22 @@ class _RealTradePageState extends State<RealTradePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                '最近信号',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              const Text('最近信号', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                               TextButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/signal_history');
-                                },
-                                child: const Text(
-                                  '查看更多',
-                                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
-                                ),
+                                onPressed: () => Navigator.pushNamed(context, '/signal_history'),
+                                child: const Text('查看更多', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
-                          ..._signals.take(5).map((signal) => SignalItem(
-                                signal: signal,
-                                onExecuted: _loadData,
-                              )),
+                          ..._signals.take(5).map((signal) => SignalItem(signal: signal, onExecuted: _loadData)),
                         ],
 
                         const SizedBox(height: 16),
 
                         // 虚拟对比栏
                         GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isCollapsed = !_isCollapsed;
-                            });
-                          },
+                          onTap: () => setState(() => _isCollapsed = !_isCollapsed),
                           child: Card(
                             color: const Color(0xFF2A2A2A),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -524,35 +453,16 @@ class _RealTradePageState extends State<RealTradePage> {
                               padding: const EdgeInsets.all(12),
                               child: Row(
                                 children: [
-                                  const Icon(
-                                    Icons.compare_arrows,
-                                    color: Color(0xFFD4AF37),
-                                    size: 20,
-                                  ),
+                                  const Icon(Icons.compare_arrows, color: Color(0xFFD4AF37), size: 20),
                                   const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      '影子账户对比',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    _isCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                                    color: Colors.grey,
-                                  ),
+                                  Expanded(child: Text('影子账户对比', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500))),
+                                  Icon(_isCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.grey),
                                 ],
                               ),
                             ),
                           ),
                         ),
-                        if (!_isCollapsed)
-                          ShadowSummary(
-                            onApplySuggestion: _loadData,
-                          ),
+                        if (!_isCollapsed) ShadowSummary(onApplySuggestion: _loadData),
                       ],
                     ),
                   ),
