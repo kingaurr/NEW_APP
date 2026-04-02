@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../api_service.dart';
 
-/// 审计日志页面
-/// 查看所有安全操作记录，支持筛选和导出
 class AuditLogPage extends StatefulWidget {
   const AuditLogPage({super.key});
 
@@ -59,16 +57,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
       List<dynamic> logsList = [];
       if (result != null) {
         if (result is List) {
-          // 后端直接返回数组
           logsList = result;
-        } else if (result is Map && result.containsKey('logs') && result['logs'] is List) {
-          // 后端返回 {"logs": [...]}
-          logsList = result['logs'] as List;
-        } else if (result is Map && result.containsKey('data') && result['data'] is List) {
-          // 兼容其他可能的字段名
-          logsList = result['data'] as List;
-        } else {
-          throw Exception('数据格式错误：期望数组或包含logs字段的对象');
+        } else if (result is Map<String, dynamic>) {
+          if (result['logs'] is List) {
+            logsList = result['logs'] as List;
+          } else if (result['data'] is List) {
+            logsList = result['data'] as List;
+          }
         }
       }
       setState(() {
@@ -96,12 +91,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
       if (result != null) {
         if (result is List) {
           logsList = result;
-        } else if (result is Map && result.containsKey('logs') && result['logs'] is List) {
-          logsList = result['logs'] as List;
-        } else if (result is Map && result.containsKey('data') && result['data'] is List) {
-          logsList = result['data'] as List;
-        } else {
-          throw Exception('获取日志失败：数据格式错误');
+        } else if (result is Map<String, dynamic>) {
+          if (result['logs'] is List) {
+            logsList = result['logs'] as List;
+          } else if (result['data'] is List) {
+            logsList = result['data'] as List;
+          }
         }
       }
 
@@ -114,7 +109,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
         return;
       }
 
-      // 构建CSV内容
       final csvBuffer = StringBuffer();
       csvBuffer.writeln('时间,操作,用户,结果,详情,IP地址,设备ID');
 
@@ -130,7 +124,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
         csvBuffer.writeln('"$timestamp","$operation","$userId","$resultStatus","$details","$ip","$deviceId"');
       }
 
-      // 选择保存路径
       final directory = await FilePicker.platform.getDirectoryPath();
       if (directory == null) return;
 
@@ -226,7 +219,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
       ),
       body: Column(
         children: [
-          // 筛选条件栏
           if (_filterOperation.isNotEmpty || _filterUserId.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -276,8 +268,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
                 ),
               ),
             ),
-
-          // 日志列表
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -288,25 +278,14 @@ class _AuditLogPageState extends State<AuditLogPage> {
                           children: [
                             const Icon(Icons.error_outline, color: Colors.red, size: 48),
                             const SizedBox(height: 16),
-                            Text(
-                              _errorMessage,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
+                            Text(_errorMessage, style: const TextStyle(color: Colors.grey)),
                             const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadLogs,
-                              child: const Text('重试'),
-                            ),
+                            ElevatedButton(onPressed: _loadLogs, child: const Text('重试')),
                           ],
                         ),
                       )
                     : _logs.isEmpty
-                        ? const Center(
-                            child: Text(
-                              '暂无审计日志',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          )
+                        ? const Center(child: Text('暂无审计日志', style: TextStyle(color: Colors.grey)))
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: _logs.length,
@@ -333,9 +312,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
-        onTap: () {
-          _showDetailDialog(log);
-        },
+        onTap: () => _showDetailDialog(log),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -347,25 +324,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(
-                      color: _getResultColor(result),
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: _getResultColor(result), shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      _getOperationName(operation),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    child: Text(_getOperationName(operation), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
                   ),
-                  Text(
-                    timestamp.length > 19 ? timestamp.substring(0, 19) : timestamp,
-                    style: const TextStyle(color: Colors.grey, fontSize: 11),
-                  ),
+                  Text(timestamp.length > 19 ? timestamp.substring(0, 19) : timestamp, style: const TextStyle(color: Colors.grey, fontSize: 11)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -373,36 +338,19 @@ class _AuditLogPageState extends State<AuditLogPage> {
                 children: [
                   const Icon(Icons.person_outline, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
-                  Text(
-                    userId,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
+                  Text(userId, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getResultColor(result).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _getResultText(result),
-                      style: TextStyle(
-                        color: _getResultColor(result),
-                        fontSize: 11,
-                      ),
-                    ),
+                    decoration: BoxDecoration(color: _getResultColor(result).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                    child: Text(_getResultText(result), style: TextStyle(color: _getResultColor(result), fontSize: 11)),
                   ),
                 ],
               ),
               if (details.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    _formatDetails(details),
-                    style: const TextStyle(color: Colors.grey, fontSize: 11),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: Text(_formatDetails(details), style: const TextStyle(color: Colors.grey, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
             ],
           ),
@@ -413,21 +361,11 @@ class _AuditLogPageState extends State<AuditLogPage> {
 
   String _formatDetails(Map<String, dynamic> details) {
     final parts = <String>[];
-    if (details['rule_name'] != null) {
-      parts.add('规则: ${details['rule_name']}');
-    }
-    if (details['rule_id'] != null) {
-      parts.add('ID: ${details['rule_id']}');
-    }
-    if (details['position_value'] != null) {
-      parts.add('金额: ${details['position_value']}');
-    }
-    if (details['score'] != null) {
-      parts.add('相似度: ${(details['score'] * 100).toInt()}%');
-    }
-    if (details['message'] != null) {
-      parts.add(details['message']);
-    }
+    if (details['rule_name'] != null) parts.add('规则: ${details['rule_name']}');
+    if (details['rule_id'] != null) parts.add('ID: ${details['rule_id']}');
+    if (details['position_value'] != null) parts.add('金额: ${details['position_value']}');
+    if (details['score'] != null) parts.add('相似度: ${(details['score'] * 100).toInt()}%');
+    if (details['message'] != null) parts.add(details['message']);
     return parts.join(' | ');
   }
 
@@ -445,22 +383,14 @@ class _AuditLogPageState extends State<AuditLogPage> {
                 value: _filterOperation.isEmpty ? null : _filterOperation,
                 dropdownColor: const Color(0xFF2A2A2A),
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: '操作类型',
-                  labelStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: '操作类型', labelStyle: TextStyle(color: Colors.grey), border: OutlineInputBorder()),
                 items: _operationOptions.map((op) {
                   return DropdownMenuItem(
                     value: op.isEmpty ? null : op,
                     child: Text(op.isEmpty ? '全部' : _getOperationName(op)),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _filterOperation = value ?? '';
-                  });
-                },
+                onChanged: (value) => setState(() => _filterOperation = value ?? ''),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -469,31 +399,16 @@ class _AuditLogPageState extends State<AuditLogPage> {
                   labelText: '用户ID',
                   labelStyle: TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFD4AF37)),
-                  ),
+                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37))),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _filterUserId = value;
-                  });
-                },
+                onChanged: (value) => setState(() => _filterUserId = value),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _loadLogs();
-            },
-            child: const Text('应用筛选'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          ElevatedButton(onPressed: () { Navigator.pop(context); _loadLogs(); }, child: const Text('应用筛选')),
         ],
       ),
     );
@@ -504,10 +419,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF2A2A2A),
-        title: Text(
-          _getOperationName(log['operation'] ?? ''),
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text(_getOperationName(log['operation'] ?? ''), style: const TextStyle(color: Colors.white)),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,10 +442,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('关闭')),
         ],
       ),
     );
@@ -545,19 +454,8 @@ class _AuditLogPageState extends State<AuditLogPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ),
+          SizedBox(width: 70, child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13))),
+          Expanded(child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 13))),
         ],
       ),
     );

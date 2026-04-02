@@ -40,11 +40,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   void _showErrorSnackbar(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 2)),
     );
   }
 
@@ -54,57 +50,48 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _errorMessage = '';
     });
 
-    // 分别调用每个接口，捕获错误，避免一个失败导致整体崩溃
     List<dynamic> strategies = [];
     List<dynamic> pendingRules = [];
     List<dynamic> guardianSuggestions = [];
     Map<String, dynamic> evolutionReport = {};
 
-    // 1. 策略列表
+    // 策略列表
     try {
       final result = await ApiService.getStrategies();
-      if (result != null && result is List) {
-        strategies = result;
-      }
+      if (result != null && result is List) strategies = result;
     } catch (e) {
       debugPrint('getStrategies 错误: $e');
       _showErrorSnackbar('策略列表加载失败');
     }
 
-    // 2. 待审核规则
+    // 待审核规则
     try {
       final result = await ApiService.getPendingRules();
       if (result != null && result is Map<String, dynamic>) {
         final rules = result['rules'];
-        if (rules != null && rules is List) {
-          pendingRules = rules;
-        }
+        if (rules != null && rules is List) pendingRules = rules;
       }
     } catch (e) {
       debugPrint('getPendingRules 错误: $e');
       _showErrorSnackbar('待审核规则加载失败');
     }
 
-    // 3. 守门员建议
+    // 守门员建议
     try {
       final result = await ApiService.getPendingSuggestions();
       if (result != null && result is Map<String, dynamic>) {
         final suggestions = result['suggestions'];
-        if (suggestions != null && suggestions is List) {
-          guardianSuggestions = suggestions;
-        }
+        if (suggestions != null && suggestions is List) guardianSuggestions = suggestions;
       }
     } catch (e) {
       debugPrint('getPendingSuggestions 错误: $e');
       _showErrorSnackbar('守门员建议加载失败');
     }
 
-    // 4. 进化报告（即使失败也不影响其他数据）
+    // 进化报告
     try {
       final result = await ApiService.getEvolutionReport();
-      if (result != null && result is Map<String, dynamic>) {
-        evolutionReport = result;
-      }
+      if (result != null && result is Map<String, dynamic>) evolutionReport = result;
     } catch (e) {
       debugPrint('getEvolutionReport 错误: $e');
       _showErrorSnackbar('进化报告加载失败');
@@ -119,36 +106,24 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _evolutionReport = evolutionReport;
     });
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'running':
-        return '进化中';
-      case 'completed':
-        return '已完成';
-      case 'failed':
-        return '失败';
-      default:
-        return '待执行';
+      case 'running': return '进化中';
+      case 'completed': return '已完成';
+      case 'failed': return '失败';
+      default: return '待执行';
     }
   }
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'running':
-        return Colors.orange;
-      case 'completed':
-        return Colors.green;
-      case 'failed':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'running': return Colors.orange;
+      case 'completed': return Colors.green;
+      case 'failed': return Colors.red;
+      default: return Colors.grey;
     }
   }
 
@@ -170,10 +145,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
           indicatorColor: const Color(0xFFD4AF37),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
       ),
       body: _isLoading
@@ -185,21 +157,14 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
                     children: [
                       const Icon(Icons.error_outline, color: Colors.red, size: 48),
                       const SizedBox(height: 16),
-                      Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
+                      Text(_errorMessage, style: const TextStyle(color: Colors.grey)),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadData,
-                        child: const Text('重试'),
-                      ),
+                      ElevatedButton(onPressed: _loadData, child: const Text('重试')),
                     ],
                   ),
                 )
               : Column(
                   children: [
-                    // 进化报告卡片（如果数据存在）
                     if (_evolutionReport.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.all(16),
@@ -216,40 +181,22 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        '外脑进化报告',
-                                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                                      ),
+                                      const Text('外脑进化报告', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        _evolutionReport['summary'] ?? '暂无新规则',
-                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                      Text(_evolutionReport['summary'] ?? '暂无新规则', style: const TextStyle(color: Colors.grey, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                                     ],
                                   ),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(_evolutionReport['status'] ?? 'idle').withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _getStatusText(_evolutionReport['status'] ?? 'idle'),
-                                    style: TextStyle(
-                                      color: _getStatusColor(_evolutionReport['status'] ?? 'idle'),
-                                      fontSize: 10,
-                                    ),
-                                  ),
+                                  decoration: BoxDecoration(color: _getStatusColor(_evolutionReport['status'] ?? 'idle').withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                                  child: Text(_getStatusText(_evolutionReport['status'] ?? 'idle'), style: TextStyle(color: _getStatusColor(_evolutionReport['status'] ?? 'idle'), fontSize: 10)),
                                 ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                    // Tab内容
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
@@ -266,68 +213,29 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   }
 
   Widget _buildStrategiesTab() {
-    if (_strategies.isEmpty) {
-      return const Center(
-        child: Text(
-          '暂无策略',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+    if (_strategies.isEmpty) return const Center(child: Text('暂无策略', style: TextStyle(color: Colors.grey)));
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _strategies.length,
-      itemBuilder: (context, index) {
-        final strategy = _strategies[index];
-        return StrategyItem(
-          strategy: strategy,
-          onStrategyChanged: _loadData,
-        );
-      },
+      itemBuilder: (context, index) => StrategyItem(strategy: _strategies[index], onStrategyChanged: _loadData),
     );
   }
 
   Widget _buildPendingRulesTab() {
-    if (_pendingRules.isEmpty) {
-      return const Center(
-        child: Text(
-          '暂无待审核规则',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+    if (_pendingRules.isEmpty) return const Center(child: Text('暂无待审核规则', style: TextStyle(color: Colors.grey)));
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _pendingRules.length,
-      itemBuilder: (context, index) {
-        final rule = _pendingRules[index];
-        return PendingRuleItem(
-          rule: rule,
-          onStatusChanged: _loadData,
-        );
-      },
+      itemBuilder: (context, index) => PendingRuleItem(rule: _pendingRules[index], onStatusChanged: _loadData),
     );
   }
 
   Widget _buildGuardianSuggestionsTab() {
-    if (_guardianSuggestions.isEmpty) {
-      return const Center(
-        child: Text(
-          '暂无守门员建议',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+    if (_guardianSuggestions.isEmpty) return const Center(child: Text('暂无守门员建议', style: TextStyle(color: Colors.grey)));
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _guardianSuggestions.length,
-      itemBuilder: (context, index) {
-        final suggestion = _guardianSuggestions[index];
-        return guardian.GuardianSuggestionItem(
-          suggestion: suggestion,
-          onStatusChanged: _loadData,
-        );
-      },
+      itemBuilder: (context, index) => guardian.GuardianSuggestionItem(suggestion: _guardianSuggestions[index], onStatusChanged: _loadData),
     );
   }
 }
