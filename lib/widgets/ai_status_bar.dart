@@ -110,7 +110,6 @@ class _AIStatusBarState extends State<AIStatusBar> {
     return model;
   }
 
-  // 左右脑颜色：正常绿色，降级橙色，错误红色
   Color _getModeColor(String mode) {
     if (mode == 'API_DRIVEN') return Colors.green;
     if (mode == 'LOCAL_RULE') return Colors.orange;
@@ -118,14 +117,14 @@ class _AIStatusBarState extends State<AIStatusBar> {
     return Colors.grey;
   }
 
+  // 修改状态文字：在线 / 离线(本地) / 异常
   String _getModeText(String mode) {
-    if (mode == 'API_DRIVEN') return 'API驱动';
-    if (mode == 'LOCAL_RULE') return '本地规则';
+    if (mode == 'API_DRIVEN') return '在线';
+    if (mode == 'LOCAL_RULE') return '离线(本地)';
     if (mode == 'error') return '异常';
     return mode.isEmpty ? '未知' : mode;
   }
 
-  // 外脑状态颜色（与左右脑风格一致：绿色=正常/完成，橙色=待执行/空闲，红色=错误）
   Color _getOuterStatusColor(String status) {
     switch (status) {
       case 'running':
