@@ -1,6 +1,7 @@
 // lib/pages/real_trade_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import '../widgets/position_item.dart';
 
 class RealTradePage extends StatefulWidget {
   const RealTradePage({super.key});
@@ -14,6 +15,7 @@ class RealTradePageState extends State<RealTradePage> {
   String _currentMode = 'sim';
   double _fund = 0.0;
   double _positionValue = 0.0;
+  List<dynamic> _positions = [];
   String _error = '';
 
   @override
@@ -87,17 +89,26 @@ class RealTradePageState extends State<RealTradePage> {
         fund = (fd['available_fund'] ?? fd['current_fund'] ?? 0.0).toDouble();
       }
       double positionValue = 0.0;
+      List<dynamic> positionsList = [];
       if (results[1] != null && results[1] is Map<String, dynamic>) {
         final pm = results[1] as Map<String, dynamic>;
-        for (var pos in pm.values) {
-          if (pos is Map && pos.containsKey('value')) {
-            positionValue += (pos['value'] as num).toDouble();
+        for (var entry in pm.entries) {
+          final code = entry.key;
+          final pos = entry.value;
+          if (pos is Map) {
+            final value = pos['value']?.toDouble() ?? 0.0;
+            positionValue += value;
+            positionsList.add({
+              'code': code,
+              ...pos,
+            });
           }
         }
       }
       setState(() {
         _fund = fund;
         _positionValue = positionValue;
+        _positions = positionsList;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -134,105 +145,122 @@ class RealTradePageState extends State<RealTradePage> {
                   )
                 : SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
-                    child: Card(
-                      color: const Color(0xFF2A2A2A),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 资金卡片
+                        Card(
+                          color: const Color(0xFF2A2A2A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
                               children: [
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: _currentMode == 'real' ? Colors.red : Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _currentMode == 'real' ? '实盘账户' : '模拟账户',
+                                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                    TextButton(
+                                      onPressed: _switchMode,
+                                      child: Text(
+                                        _currentMode == 'real' ? '切换模拟' : '切换实盘',
+                                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    Text('¥${_formatNumber(_fund + _positionValue)}',
+                                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    const Text('¥0.00', style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('仓位比例', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    Row(
+                                      children: [
+                                        Text('${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
+                                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                        const SizedBox(width: 8),
+                                        SizedBox(
+                                          width: 80,
+                                          child: LinearProgressIndicator(
+                                            value: _positionValue / (_fund > 0 ? _fund : 1),
+                                            backgroundColor: Colors.grey[800],
+                                            color: (_positionValue / (_fund > 0 ? _fund : 1)) > 0.8 ? Colors.orange : Colors.green,
+                                            borderRadius: BorderRadius.circular(2),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('风控状态', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: _currentMode == 'real' ? Colors.red : Colors.green,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _currentMode == 'real' ? '实盘账户' : '模拟账户',
-                                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                                      child: const Text('正常', style: TextStyle(color: Colors.green, fontSize: 12)),
                                     ),
                                   ],
                                 ),
-                                TextButton(
-                                  onPressed: _switchMode,
-                                  child: Text(
-                                    _currentMode == 'real' ? '切换模拟' : '切换实盘',
-                                    style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                Text('¥${_formatNumber(_fund + _positionValue)}',
-                                    style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                const Text('¥0.00', style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('仓位比例', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                const SizedBox(height: 12),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
-                                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                                    const SizedBox(width: 8),
-                                    SizedBox(
-                                      width: 80,
-                                      child: LinearProgressIndicator(
-                                        value: _positionValue / (_fund > 0 ? _fund : 1),
-                                        backgroundColor: Colors.grey[800],
-                                        color: (_positionValue / (_fund > 0 ? _fund : 1)) > 0.8 ? Colors.orange : Colors.green,
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                    ),
+                                    const Text('今日交易次数', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    const Text('0', style: TextStyle(color: Colors.white, fontSize: 14)),
                                   ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('风控状态', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                                  child: const Text('正常', style: TextStyle(color: Colors.green, fontSize: 12)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('今日交易次数', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                const Text('0', style: TextStyle(color: Colors.white, fontSize: 14)),
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+
+                        // 持仓列表
+                        if (_positions.isNotEmpty) ...[
+                          const Text('当前持仓', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          ..._positions.map((position) => PositionItem(
+                                position: position,
+                                onPositionChanged: _loadData,
+                              )),
+                        ],
+                      ],
                     ),
                   ),
       ),
