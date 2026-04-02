@@ -1,3 +1,4 @@
+// lib/pages/audit_log_page.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -47,11 +48,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     });
 
     try {
-      final result = await ApiService.auditLogs(
-        limit: _pageSize,
-        operation: _filterOperation.isEmpty ? null : _filterOperation,
-        userId: _filterUserId.isEmpty ? null : _filterUserId,
-      );
+      final result = await ApiService.getAuditLogs(limit: _pageSize * 5);
 
       List<dynamic> logsList = [];
       if (result != null) {
@@ -66,6 +63,17 @@ class _AuditLogPageState extends State<AuditLogPage> {
           }
         }
       }
+
+      // 前端筛选
+      if (_filterOperation.isNotEmpty || _filterUserId.isNotEmpty) {
+        logsList = logsList.where((log) {
+          final op = log['operation'] ?? '';
+          final uid = log['user_id'] ?? '';
+          return (_filterOperation.isEmpty || op == _filterOperation) &&
+              (_filterUserId.isEmpty || uid.contains(_filterUserId));
+        }).toList();
+      }
+
       setState(() {
         _logs = logsList;
       });
@@ -85,7 +93,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
 
   Future<void> _exportLogs() async {
     try {
-      final result = await ApiService.auditLogs(limit: 1000);
+      final result = await ApiService.getAuditLogs(limit: 1000);
 
       List<dynamic> logsList = [];
       if (result != null) {
@@ -462,4 +470,3 @@ class _AuditLogPageState extends State<AuditLogPage> {
     );
   }
 }
-// force rebuild
