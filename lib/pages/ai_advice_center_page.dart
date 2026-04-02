@@ -66,26 +66,22 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _showErrorSnackbar('策略列表加载失败');
     }
 
-    // 2. 待审核规则
+    // 2. 待审核规则（后端返回数组）
     try {
       final result = await ApiService.getPendingRules();
-      if (result != null && result is Map<String, dynamic>) {
-        if (result['rules'] is List) {
-          pendingRules = result['rules'] as List;
-        }
+      if (result != null && result is List) {
+        pendingRules = result;
       }
     } catch (e) {
       debugPrint('getPendingRules 错误: $e');
       _showErrorSnackbar('待审核规则加载失败');
     }
 
-    // 3. 守门员建议
+    // 3. 守门员建议（后端返回数组）
     try {
       final result = await ApiService.getPendingSuggestions();
-      if (result != null && result is Map<String, dynamic>) {
-        if (result['suggestions'] is List) {
-          guardianSuggestions = result['suggestions'] as List;
-        }
+      if (result != null && result is List) {
+        guardianSuggestions = result;
       }
     } catch (e) {
       debugPrint('getPendingSuggestions 错误: $e');
