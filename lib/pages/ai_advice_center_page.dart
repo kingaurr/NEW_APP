@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../widgets/strategy_item.dart';
 import '../widgets/pending_rule_item.dart';
-import '../widgets/guardian_suggestion_item.dart' as guardian; // 使用别名，避免与 PendingRuleItem 冲突
+import '../widgets/guardian_suggestion_item.dart' as guardian;
 
-/// AI优化建议中心页面
-/// 整合策略库、外脑待审核规则、守门员建议、进化报告
 class AiAdviceCenterPage extends StatefulWidget {
   const AiAdviceCenterPage({super.key});
 
@@ -39,68 +37,92 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     super.dispose();
   }
 
+  void _showErrorSnackbar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
+    // 分别调用每个接口，捕获错误，避免一个失败导致整体崩溃
+    List<dynamic> strategies = [];
+    List<dynamic> pendingRules = [];
+    List<dynamic> guardianSuggestions = [];
+    Map<String, dynamic> evolutionReport = {};
+
+    // 1. 策略列表
     try {
-      final results = await Future.wait([
-        ApiService.getStrategies(),
-        ApiService.getPendingRules(),
-        ApiService.getPendingSuggestions(),
-        ApiService.getEvolutionReport(),
-      ]);
-
-      // 1. 策略列表 - 应为 List
-      if (results[0] != null && results[0] is List) {
-        setState(() {
-          _strategies = results[0] as List<dynamic>;
-        });
-      }
-
-      // 2. 待审核规则 - 后端返回 { "rules": [...] }
-      if (results[1] != null && results[1] is Map<String, dynamic>) {
-        final pendingMap = results[1] as Map<String, dynamic>;
-        final rules = pendingMap['rules'];
-        if (rules != null && rules is List) {
-          setState(() {
-            _pendingRules = rules;
-            _pendingCount = _pendingRules.length;
-          });
-        }
-      }
-
-      // 3. 守门员建议 - 后端返回 { "suggestions": [...] }
-      if (results[2] != null && results[2] is Map<String, dynamic>) {
-        final suggestionMap = results[2] as Map<String, dynamic>;
-        final suggestions = suggestionMap['suggestions'];
-        if (suggestions != null && suggestions is List) {
-          setState(() {
-            _guardianSuggestions = suggestions;
-            _suggestionCount = _guardianSuggestions.length;
-          });
-        }
-      }
-
-      // 4. 进化报告 - 应为 Map
-      if (results[3] != null && results[3] is Map<String, dynamic>) {
-        setState(() {
-          _evolutionReport = results[3] as Map<String, dynamic>;
-        });
+      final result = await ApiService.getStrategies();
+      if (result != null && result is List) {
+        strategies = result;
       }
     } catch (e) {
-      debugPrint('加载AI中心数据失败: $e');
-      setState(() {
-        _errorMessage = '加载失败: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      debugPrint('getStrategies 错误: $e');
+      _showErrorSnackbar('策略列表加载失败');
+    }
+
+    // 2. 待审核规则
+    try {
+      final result = await ApiService.getPendingRules();
+      if (result != null && result is Map<String, dynamic>) {
+        final rules = result['rules'];
+        if (rules != null && rules is List) {
+          pendingRules = rules;
+        }
       }
+    } catch (e) {
+      debugPrint('getPendingRules 错误: $e');
+      _showErrorSnackbar('待审核规则加载失败');
+    }
+
+    // 3. 守门员建议
+    try {
+      final result = await ApiService.getPendingSuggestions();
+      if (result != null && result is Map<String, dynamic>) {
+        final suggestions = result['suggestions'];
+        if (suggestions != null && suggestions is List) {
+          guardianSuggestions = suggestions;
+        }
+      }
+    } catch (e) {
+      debugPrint('getPendingSuggestions 错误: $e');
+      _showErrorSnackbar('守门员建议加载失败');
+    }
+
+    // 4. 进化报告（即使失败也不影响其他数据）
+    try {
+      final result = await ApiService.getEvolutionReport();
+      if (result != null && result is Map<String, dynamic>) {
+        evolutionReport = result;
+      }
+    } catch (e) {
+      debugPrint('getEvolutionReport 错误: $e');
+      _showErrorSnackbar('进化报告加载失败');
+    }
+
+    setState(() {
+      _strategies = strategies;
+      _pendingRules = pendingRules;
+      _pendingCount = _pendingRules.length;
+      _guardianSuggestions = guardianSuggestions;
+      _suggestionCount = _guardianSuggestions.length;
+      _evolutionReport = evolutionReport;
+    });
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -177,7 +199,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
                 )
               : Column(
                   children: [
-                    // 进化报告卡片（在Tab上方）
+                    // 进化报告卡片（如果数据存在）
                     if (_evolutionReport.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.all(16),
@@ -252,7 +274,6 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _strategies.length,
@@ -275,7 +296,6 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _pendingRules.length,
@@ -298,13 +318,11 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _guardianSuggestions.length,
       itemBuilder: (context, index) {
         final suggestion = _guardianSuggestions[index];
-        // 使用别名访问 GuardianSuggestionItem
         return guardian.GuardianSuggestionItem(
           suggestion: suggestion,
           onStatusChanged: _loadData,

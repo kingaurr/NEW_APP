@@ -56,16 +56,24 @@ class _AuditLogPageState extends State<AuditLogPage> {
         userId: _filterUserId.isEmpty ? null : _filterUserId,
       );
 
-      // 安全访问 result['logs']
-      if (result != null && result is Map<String, dynamic> && result.containsKey('logs') && result['logs'] is List) {
-        setState(() {
-          _logs = result['logs'] as List<dynamic>;
-        });
-      } else {
-        setState(() {
-          _errorMessage = '获取审计日志失败：数据格式错误';
-        });
+      List<dynamic> logsList = [];
+      if (result != null) {
+        if (result is List) {
+          // 后端直接返回数组
+          logsList = result;
+        } else if (result is Map && result.containsKey('logs') && result['logs'] is List) {
+          // 后端返回 {"logs": [...]}
+          logsList = result['logs'] as List;
+        } else if (result is Map && result.containsKey('data') && result['data'] is List) {
+          // 兼容其他可能的字段名
+          logsList = result['data'] as List;
+        } else {
+          throw Exception('数据格式错误：期望数组或包含logs字段的对象');
+        }
       }
+      setState(() {
+        _logs = logsList;
+      });
     } catch (e) {
       debugPrint('加载审计日志失败: $e');
       setState(() {
@@ -83,13 +91,21 @@ class _AuditLogPageState extends State<AuditLogPage> {
   Future<void> _exportLogs() async {
     try {
       final result = await ApiService.auditLogs(limit: 1000);
-      // 安全访问
-      if (result == null || result is! Map<String, dynamic> || !result.containsKey('logs') || result['logs'] is! List) {
-        throw Exception('获取日志失败');
+
+      List<dynamic> logsList = [];
+      if (result != null) {
+        if (result is List) {
+          logsList = result;
+        } else if (result is Map && result.containsKey('logs') && result['logs'] is List) {
+          logsList = result['logs'] as List;
+        } else if (result is Map && result.containsKey('data') && result['data'] is List) {
+          logsList = result['data'] as List;
+        } else {
+          throw Exception('获取日志失败：数据格式错误');
+        }
       }
 
-      final logs = result['logs'] as List;
-      if (logs.isEmpty) {
+      if (logsList.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('暂无日志可导出'), backgroundColor: Colors.orange),
@@ -102,7 +118,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
       final csvBuffer = StringBuffer();
       csvBuffer.writeln('时间,操作,用户,结果,详情,IP地址,设备ID');
 
-      for (final log in logs) {
+      for (final log in logsList) {
         final timestamp = log['timestamp'] ?? '';
         final operation = log['operation'] ?? '';
         final userId = log['user_id'] ?? '';
