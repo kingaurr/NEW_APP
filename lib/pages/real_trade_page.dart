@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../widgets/position_item.dart';
-import '../widgets/trade_pool_item.dart';
 
 class RealTradePage extends StatefulWidget {
   const RealTradePage({super.key});
@@ -17,7 +16,6 @@ class RealTradePageState extends State<RealTradePage> {
   double _fund = 0.0;
   double _positionValue = 0.0;
   List<dynamic> _positions = [];
-  List<dynamic> _tradePool = [];
   String _error = '';
 
   @override
@@ -84,7 +82,6 @@ class RealTradePageState extends State<RealTradePage> {
       final results = await Future.wait([
         ApiService.getFund(),
         ApiService.getPositions(),
-        ApiService.getTradePool(),
       ]);
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
@@ -108,16 +105,10 @@ class RealTradePageState extends State<RealTradePage> {
           }
         }
       }
-      List<dynamic> tradePoolList = [];
-      if (results[2] != null && results[2] is Map<String, dynamic>) {
-        final tp = results[2] as Map<String, dynamic>;
-        tradePoolList = tp['stocks'] ?? [];
-      }
       setState(() {
         _fund = fund;
         _positionValue = positionValue;
         _positions = positionsList;
-        _tradePool = tradePoolList;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -268,31 +259,6 @@ class RealTradePageState extends State<RealTradePage> {
                                 position: position,
                                 onPositionChanged: _loadData,
                               )),
-                        ] else ...[
-                          const SizedBox.shrink(), // 无持仓时不显示
-                        ],
-
-                        const SizedBox(height: 16),
-
-                        // AI交易池
-                        if (_tradePool.isNotEmpty) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('AI交易池', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                              TextButton(
-                                onPressed: () => Navigator.pushNamed(context, '/trade_pool'),
-                                child: const Text('查看更多', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ..._tradePool.take(5).map((stock) => TradePoolItem(
-                                stock: stock,
-                                onTrade: _loadData,
-                              )),
-                        ] else ...[
-                          const SizedBox.shrink(),
                         ],
                       ],
                     ),
