@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 
-/// 资金卡片组件
 class FundCard extends StatefulWidget {
   final bool isReal;
   final VoidCallback? onRefresh;
@@ -30,6 +29,7 @@ class _FundCardState extends State<FundCard> {
   }
 
   Future<void> _loadFundData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -37,23 +37,21 @@ class _FundCardState extends State<FundCard> {
 
     try {
       final result = await ApiService.getFund();
-      if (result != null) {
+      if (mounted) {
         setState(() {
-          _fundData = result;
-        });
-      } else {
-        setState(() {
-          _errorMessage = '获取资金信息失败';
+          if (result != null) {
+            _fundData = Map<String, dynamic>.from(result);
+          } else {
+            _errorMessage = '获取资金信息失败';
+          }
+          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('加载资金信息失败: $e');
-      setState(() {
-        _errorMessage = '加载失败: $e';
-      });
-    } finally {
       if (mounted) {
         setState(() {
+          _errorMessage = '加载失败: $e';
           _isLoading = false;
         });
       }
@@ -72,6 +70,7 @@ class _FundCardState extends State<FundCard> {
 
   @override
   Widget build(BuildContext context) {
+    // 安全读取数据，使用默认值避免空指针
     final totalAssets = _fundData['current_fund'] ?? 0.0;
 
     if (_isLoading) {
