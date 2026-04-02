@@ -28,10 +28,6 @@ class TradePoolItem extends StatelessWidget {
     return Colors.red;
   }
 
-  void _navigateToDetail() {
-    Navigator.pushNamed(context, '/candidates_detail', arguments: stock);
-  }
-
   @override
   Widget build(BuildContext context) {
     final code = stock['code'] ?? '';
@@ -51,7 +47,9 @@ class TradePoolItem extends StatelessWidget {
         side: BorderSide(color: _getScoreColor(score).withOpacity(0.3)),
       ),
       child: InkWell(
-        onTap: _navigateToDetail,
+        onTap: () {
+          Navigator.pushNamed(context, '/candidates_detail', arguments: stock);
+        },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -101,7 +99,7 @@ class TradePoolItem extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              // 第三行：成交量和成交额（静态展示，无需展开）
+              // 第三行：成交量和成交额
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
