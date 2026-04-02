@@ -1,4 +1,3 @@
-// lib/pages/ai_advice_center_page.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../widgets/strategy_item.dart';
@@ -70,9 +69,9 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     try {
       final result = await ApiService.getPendingRules();
       if (result != null && result is Map<String, dynamic>) {
-        final rules = result['rules'];
-        if (rules is List) {
-          pendingRules = rules;
+        final rulesData = result['rules'];
+        if (rulesData is List) {
+          pendingRules = rulesData;
         }
       }
     } catch (e) {
@@ -84,9 +83,9 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     try {
       final result = await ApiService.getPendingSuggestions();
       if (result != null && result is Map<String, dynamic>) {
-        final suggestions = result['suggestions'];
-        if (suggestions is List) {
-          guardianSuggestions = suggestions;
+        final suggestionsData = result['suggestions'];
+        if (suggestionsData is List) {
+          guardianSuggestions = suggestionsData;
         }
       }
     } catch (e) {
