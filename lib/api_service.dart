@@ -162,16 +162,18 @@ class ApiService {
     return await httpGet('/right_brain/status');
   }
 
+  // 右脑信号列表（后端未实现，返回空列表避免404）
   static Future<List<dynamic>?> getRightBrainSignals() async {
-    return await httpGet('/right_brain/signals');
+    return [];
   }
 
   static Future<Map<String, dynamic>?> getLeftBrainStatus() async {
     return await httpGet('/left_brain/status');
   }
 
+  // 左脑决策列表（后端未实现，返回空列表）
   static Future<List<dynamic>?> getLeftBrainDecisions() async {
-    return await httpGet('/left_brain/decisions');
+    return [];
   }
 
   // ========== 策略管理 ==========
@@ -213,6 +215,11 @@ class ApiService {
     return result?['success'] ?? false;
   }
 
+  // 策略库规则（兼容旧接口，实际调用 /rules）
+  static Future<List<dynamic>?> getStrategyLibraryRules() async {
+    return await httpGet('/rules');
+  }
+
   // ========== 外脑管理 ==========
   static Future<List<dynamic>?> getPendingRules() async {
     return await httpGet('/outer_brain/pending_rules');
@@ -240,6 +247,11 @@ class ApiService {
 
   // ========== 建议管理 ==========
   static Future<List<dynamic>?> getPendingSuggestions() async {
+    return await httpGet('/advice/pending');
+  }
+
+  // 守门员建议（兼容旧接口，实际调用 /advice/pending）
+  static Future<List<dynamic>?> getGuardianSuggestions() async {
     return await httpGet('/advice/pending');
   }
 
@@ -491,8 +503,13 @@ class ApiService {
     return await httpGet(url);
   }
 
-  static Future<Map<String, dynamic>?> getAuditLogs({int limit = 50}) async {
-    return await httpGet('/logs/audit?limit=$limit');
+  // 修正审计日志解析（后端返回 {"logs": [...]}）
+  static Future<List<dynamic>?> getAuditLogs({int limit = 50}) async {
+    final result = await httpGet('/logs/audit?limit=$limit');
+    if (result != null && result is Map && result['logs'] is List) {
+      return result['logs'] as List;
+    }
+    return null;
   }
 
   // ========== 模式切换 ==========
@@ -875,13 +892,7 @@ class ApiService {
   }
 
   // ========== 审计日志 ==========
-  static Future<Map<String, dynamic>?> auditLogs(
-      {int limit = 100, String? operation, String? userId}) async {
-    String url = '/audit/logs?limit=$limit';
-    if (operation != null) url += '&operation=$operation';
-    if (userId != null) url += '&user_id=$userId';
-    return await httpGet(url);
-  }
+  // 已在上方定义 getAuditLogs，此处不再重复
 
   static Future<Map<String, dynamic>?> auditStatistics({int days = 7}) async {
     return await httpGet('/audit/statistics?days=$days');
