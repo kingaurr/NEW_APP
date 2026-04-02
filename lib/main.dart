@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -33,56 +34,101 @@ import 'pages/report_list_page.dart';
 import 'pages/settings_page.dart';
 import 'api_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  // 全局错误捕获，确保 Release 模式下错误可见
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // 在 Release 模式下捕获错误并写入文件
-  if (kReleaseMode) {
-    final Directory appDocDir = await getApplicationDocumentsDirectory();
-    final File errorLogFile = File('${appDocDir.path}/flutter_error.log');
+    // 原有错误日志写入（保留）
+    if (kReleaseMode) {
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
+      final File errorLogFile = File('${appDocDir.path}/flutter_error.log');
 
-    FlutterError.onError = (FlutterErrorDetails details) {
-      FlutterError.dumpErrorToConsole(details);
-      errorLogFile.writeAsStringSync(
-        '${DateTime.now()}: ${details.toString()}\n',
-        mode: FileMode.append,
-      );
-    };
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.dumpErrorToConsole(details);
+        errorLogFile.writeAsStringSync(
+          '${DateTime.now()}: ${details.toString()}\n',
+          mode: FileMode.append,
+        );
+      };
 
-    PlatformDispatcher.instance.onError = (error, stack) {
-      errorLogFile.writeAsStringSync(
-        '${DateTime.now()}: AsyncError: $error\n$stack\n',
-        mode: FileMode.append,
-      );
-      return true;
-    };
-  }
-
-  // 强制清除旧的 server_url，避免旧配置干扰（仅首次运行）
-  final prefs = await SharedPreferences.getInstance();
-  final oldUrl = prefs.getString('server_url');
-  if (oldUrl != null && !oldUrl.contains('/api')) {
-    await prefs.remove('server_url');
-  }
-
-  // 强制设置正确的 baseUrl（确保包含 /api）
-  ApiService.setBaseUrl('http://47.108.206.221:8080/api');
-
-  // 尝试从 SharedPreferences 获取 token 并验证
-  final token = prefs.getString('auth_token');
-  bool isAuthenticated = false;
-  if (token != null && token.isNotEmpty) {
-    try {
-      final result = await ApiService.verifyToken();
-      if (result != null && result['valid'] == true) {
-        isAuthenticated = true;
-      }
-    } catch (e) {
-      debugPrint('token 验证失败: $e');
+      PlatformDispatcher.instance.onError = (error, stack) {
+        errorLogFile.writeAsStringSync(
+          '${DateTime.now()}: AsyncError: $error\n$stack\n',
+          mode: FileMode.append,
+        );
+        return true;
+      };
     }
-  }
 
-  runApp(MyApp(isAuthenticated: isAuthenticated));
+    // 强制清除旧的 server_url
+    final prefs = await SharedPreferences.getInstance();
+    final oldUrl = prefs.getString('server_url');
+    if (oldUrl != null && !oldUrl.contains('/api')) {
+      await prefs.remove('server_url');
+    }
+
+    ApiService.setBaseUrl('http://47.108.206.221:8080/api');
+
+    final token = prefs.getString('auth_token');
+    bool isAuthenticated = false;
+    if (token != null && token.isNotEmpty) {
+      try {
+        final result = await ApiService.verifyToken();
+        if (result != null && result['valid'] == true) {
+          isAuthenticated = true;
+        }
+      } catch (e) {
+        debugPrint('token 验证失败: $e');
+      }
+    }
+
+    runApp(MyApp(isAuthenticated: isAuthenticated));
+  }, (error, stack) {
+    // 捕获未处理的异步错误，显示错误屏幕
+    print("未捕获的异常: $error\n$stack");
+    runApp(ErrorScreen("未捕获异常: $error\n$stack"));
+  });
+}
+
+/// 错误显示屏幕，用于 Release 模式定位问题
+class ErrorScreen extends StatelessWidget {
+  final String errorMessage;
+  const ErrorScreen(this.errorMessage);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 24),
+                const Text(
+                  '应用发生错误，请将以下信息反馈给开发者',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      errorMessage,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
