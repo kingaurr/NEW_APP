@@ -2,11 +2,8 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 
-/// AI状态栏组件
-/// 显示左右脑状态、外脑状态、守门员建议数量
 class AIStatusBar extends StatefulWidget {
   final VoidCallback? onRefresh;
-
   const AIStatusBar({super.key, this.onRefresh});
 
   @override
@@ -27,7 +24,6 @@ class _AIStatusBarState extends State<AIStatusBar> {
     _loadStatus();
   }
 
-  /// 安全解析 Map
   Map<String, dynamic> _safeParseMap(dynamic data) {
     if (data == null) return {};
     if (data is Map<String, dynamic>) return data;
@@ -41,7 +37,6 @@ class _AIStatusBarState extends State<AIStatusBar> {
     return {};
   }
 
-  /// 安全获取列表长度
   int _safeListLength(dynamic data) {
     if (data == null) return 0;
     if (data is List) return data.length;
@@ -59,11 +54,11 @@ class _AIStatusBarState extends State<AIStatusBar> {
       final results = await Future.wait([
         ApiService.getRightBrainStatus().catchError((e) {
           debugPrint('getRightBrainStatus 错误: $e');
-          return {'status': 'unknown'};
+          return {'mode': 'error', 'model': ''};
         }),
         ApiService.getLeftBrainStatus().catchError((e) {
           debugPrint('getLeftBrainStatus 错误: $e');
-          return {'status': 'unknown'};
+          return {'mode': 'error', 'model': ''};
         }),
         ApiService.getEvolutionReport().catchError((e) {
           debugPrint('getEvolutionReport 错误: $e');
@@ -75,21 +70,14 @@ class _AIStatusBarState extends State<AIStatusBar> {
         }),
       ]);
 
-      // 1. 右脑状态
       _rightBrain = _safeParseMap(results[0]);
-
-      // 2. 左脑状态
       _leftBrain = _safeParseMap(results[1]);
-
-      // 3. 外脑进化报告
       final report = _safeParseMap(results[2]);
       _outerBrain = {
         'status': report['status'] ?? 'idle',
         'last_run_time': report['last_run'],
         'new_rules_count': _safeListLength(report['new_rules']),
       };
-
-      // 4. 待处理建议数量
       final pendingData = results[3];
       if (pendingData != null) {
         if (pendingData is int) {
@@ -105,9 +93,7 @@ class _AIStatusBarState extends State<AIStatusBar> {
         _pendingSuggestions = 0;
       }
 
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     } catch (e) {
       debugPrint('加载AI状态失败: $e');
       setState(() {
@@ -117,18 +103,33 @@ class _AIStatusBarState extends State<AIStatusBar> {
     }
   }
 
-  Color _getStatusColor(String status) {
+  /// 将模型名称转换为友好显示
+  String _formatModelName(String model) {
+    if (model == 'deepseek-chat') return 'DeepSeek';
+    if (model == 'qwen3.5-plus') return '千问';
+    if (model.isEmpty) return '';
+    return model;
+  }
+
+  Color _getModeColor(String mode) {
+    if (mode == 'API_DRIVEN') return Colors.green;
+    if (mode == 'LOCAL_RULE') return Colors.lightBlue;
+    if (mode == 'error') return Colors.red;
+    return Colors.grey;
+  }
+
+  String _getModeText(String mode) {
+    if (mode == 'API_DRIVEN') return 'API驱动';
+    if (mode == 'LOCAL_RULE') return '本地规则';
+    if (mode == 'error') return '异常';
+    return mode.isEmpty ? '未知' : mode;
+  }
+
+  Color _getOuterStatusColor(String status) {
     switch (status) {
-      case 'normal':
-      case 'healthy':
       case 'running':
       case 'completed':
         return Colors.green;
-      case 'warning':
-      case 'degraded':
-        return Colors.orange;
-      case 'error':
-      case 'failed':
       case 'idle':
         return Colors.grey;
       default:
@@ -136,17 +137,8 @@ class _AIStatusBarState extends State<AIStatusBar> {
     }
   }
 
-  String _getStatusText(String status) {
+  String _getOuterStatusText(String status) {
     switch (status) {
-      case 'normal':
-      case 'healthy':
-        return '正常';
-      case 'warning':
-      case 'degraded':
-        return '预警';
-      case 'error':
-      case 'failed':
-        return '异常';
       case 'running':
         return '运行中';
       case 'completed':
@@ -154,13 +146,16 @@ class _AIStatusBarState extends State<AIStatusBar> {
       case 'idle':
         return '待执行';
       default:
-        return '未知';
+        return status;
     }
   }
 
-  Widget _buildStatusChip(String label, String status, {String? extra}) {
-    final color = _getStatusColor(status);
-    final statusText = _getStatusText(status);
+  Widget _buildBrainChip(String label, Map<String, dynamic> data) {
+    final mode = data['mode']?.toString() ?? 'unknown';
+    final model = data['model']?.toString() ?? '';
+    final color = _getModeColor(mode);
+    final modeText = _getModeText(mode);
+    final modelDisplay = _formatModelName(model);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -171,30 +166,14 @@ class _AIStatusBarState extends State<AIStatusBar> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 11),
-          ),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
           const SizedBox(width: 4),
-          Text(
-            statusText,
-            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500),
-          ),
-          if (extra != null) ...[
+          Text(modeText, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500)),
+          if (modelDisplay.isNotEmpty) ...[
             const SizedBox(width: 4),
-            Text(
-              extra,
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
-            ),
+            Text('($modelDisplay)', style: const TextStyle(color: Colors.white70, fontSize: 10)),
           ],
         ],
       ),
@@ -202,11 +181,7 @@ class _AIStatusBarState extends State<AIStatusBar> {
   }
 
   void _navigateToBrainDetail(String brainType) {
-    Navigator.pushNamed(
-      context,
-      '/brain_detail',
-      arguments: {'type': brainType},
-    );
+    Navigator.pushNamed(context, '/brain_detail', arguments: {'type': brainType});
   }
 
   void _navigateToGuardianSuggestions() {
@@ -218,7 +193,6 @@ class _AIStatusBarState extends State<AIStatusBar> {
       final date = DateTime.parse(dateStr);
       final now = DateTime.now();
       final diff = now.difference(date);
-
       if (diff.inDays == 0) {
         if (diff.inHours == 0) {
           if (diff.inMinutes == 0) return '刚刚';
@@ -241,10 +215,7 @@ class _AIStatusBarState extends State<AIStatusBar> {
     if (_isLoading) {
       return Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A2A2A),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(12)),
         child: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -252,76 +223,69 @@ class _AIStatusBarState extends State<AIStatusBar> {
     if (_errorMessage.isNotEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A2A2A),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(12)),
         child: Row(
           children: [
             const Icon(Icons.error_outline, color: Colors.red, size: 16),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                _errorMessage,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh, size: 16),
-              onPressed: _loadStatus,
-            ),
+            Expanded(child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 12))),
+            IconButton(icon: const Icon(Icons.refresh, size: 16), onPressed: _loadStatus),
           ],
         ),
       );
     }
 
-    final rightStatus = _rightBrain['status']?.toString() ?? 'unknown';
-    final leftStatus = _leftBrain['status']?.toString() ?? 'unknown';
     final outerStatus = _outerBrain['status']?.toString() ?? 'idle';
     final outerLastRun = _outerBrain['last_run_time'];
     final outerNewRules = _outerBrain['new_rules_count'] ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'AI状态',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          const Text('AI状态', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: GestureDetector(
                   onTap: () => _navigateToBrainDetail('right'),
-                  child: _buildStatusChip('右脑', rightStatus),
+                  child: _buildBrainChip('右脑', _rightBrain),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: GestureDetector(
                   onTap: () => _navigateToBrainDetail('left'),
-                  child: _buildStatusChip('左脑', leftStatus),
+                  child: _buildBrainChip('左脑', _leftBrain),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: GestureDetector(
                   onTap: () => _navigateToBrainDetail('outer'),
-                  child: _buildStatusChip(
-                    '外脑',
-                    outerStatus,
-                    extra: outerNewRules > 0 ? '+$outerNewRules' : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getOuterStatusColor(outerStatus).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(width: 6, height: 6, decoration: BoxDecoration(color: _getOuterStatusColor(outerStatus), shape: BoxShape.circle)),
+                        const SizedBox(width: 4),
+                        const Text('外脑', style: TextStyle(color: Colors.white, fontSize: 11)),
+                        const SizedBox(width: 4),
+                        Text(_getOuterStatusText(outerStatus), style: TextStyle(color: _getOuterStatusColor(outerStatus), fontSize: 11, fontWeight: FontWeight.w500)),
+                        if (outerNewRules > 0) ...[
+                          const SizedBox(width: 4),
+                          Text('+$outerNewRules', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -329,10 +293,7 @@ class _AIStatusBarState extends State<AIStatusBar> {
           ),
           if (outerLastRun != null) ...[
             const SizedBox(height: 8),
-            Text(
-              '外脑上次运行: ${_formatDate(outerLastRun.toString())}',
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
-            ),
+            Text('外脑上次运行: ${_formatDate(outerLastRun.toString())}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
           ],
           const SizedBox(height: 8),
           GestureDetector(
@@ -340,41 +301,23 @@ class _AIStatusBarState extends State<AIStatusBar> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
-                color: _pendingSuggestions > 0
-                    ? Colors.red.withOpacity(0.2)
-                    : Colors.grey.withOpacity(0.1),
+                color: _pendingSuggestions > 0 ? Colors.red.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   const Icon(Icons.security, size: 14, color: Colors.grey),
                   const SizedBox(width: 8),
-                  const Text(
-                    '守门员建议',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
+                  const Text('守门员建议', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   const Spacer(),
                   if (_pendingSuggestions > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '$_pendingSuggestions',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                      child: Text('$_pendingSuggestions', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                     )
                   else
-                    const Text(
-                      '无新建议',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
+                    const Text('无新建议', style: TextStyle(color: Colors.grey, fontSize: 11)),
                 ],
               ),
             ),
