@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../widgets/position_item.dart';
-import '../widgets/trade_pool_item.dart';
+// import '../widgets/trade_pool_item.dart'; // 暂时注释
 import '../widgets/signal_item.dart';
 import '../widgets/shadow_summary.dart';
 
@@ -20,7 +20,7 @@ class RealTradePageState extends State<RealTradePage> {
   double _fund = 0.0;
   double _positionValue = 0.0;
   List<dynamic> _positions = [];
-  List<dynamic> _tradePool = [];
+  // List<dynamic> _tradePool = []; // 暂时注释
   List<dynamic> _signals = [];
   Map<String, dynamic> _shadowCompare = {};
   String _errorMessage = '';
@@ -125,69 +125,51 @@ class RealTradePageState extends State<RealTradePage> {
       final results = await Future.wait([
         ApiService.getFund(),
         ApiService.getPositions(),
-        ApiService.getTradePool(),
         ApiService.getSignalHistory(),
         ApiService.getShadowRealtimeCompare(),
       ]);
 
-      // 资金
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
-        final fundData = results[0] as Map<String, dynamic>;
-        fund = (fundData['available_fund'] ?? fundData['current_fund'] ?? 0.0).toDouble();
+        final fd = results[0] as Map<String, dynamic>;
+        fund = (fd['available_fund'] ?? fd['current_fund'] ?? 0.0).toDouble();
       }
 
-      // 持仓市值
       double positionValue = 0.0;
+      List<dynamic> positionsList = [];
       if (results[1] != null && results[1] is Map<String, dynamic>) {
-        final positionsMap = results[1] as Map<String, dynamic>;
-        for (var pos in positionsMap.values) {
-          if (pos is Map && pos.containsKey('value')) {
-            positionValue += (pos['value'] as num).toDouble();
+        final pm = results[1] as Map<String, dynamic>;
+        for (var entry in pm.entries) {
+          final code = entry.key;
+          final pos = entry.value;
+          if (pos is Map) {
+            final value = pos['value']?.toDouble() ?? 0.0;
+            positionValue += value;
+            positionsList.add({'code': code, ...pos});
           }
         }
+      }
+
+      List<dynamic> signalsList = [];
+      if (results[2] != null && results[2] is Map<String, dynamic>) {
+        final sm = results[2] as Map<String, dynamic>;
+        signalsList = sm['signals'] ?? [];
+      }
+
+      Map<String, dynamic> shadowCompareMap = {};
+      if (results[3] != null && results[3] is Map<String, dynamic>) {
+        shadowCompareMap = results[3] as Map<String, dynamic>;
       }
 
       setState(() {
         _fund = fund;
         _positionValue = positionValue;
-      });
-
-      // 持仓列表
-      if (results[1] != null && results[1] is Map<String, dynamic>) {
-        final positionsMap = results[1] as Map<String, dynamic>;
-        final positionsList = positionsMap.entries.map((entry) {
-          final value = entry.value;
-          if (value is Map) {
-            return {
-              'code': entry.key,
-              ...value,
-            };
-          }
-          return {'code': entry.key, 'value': value};
-        }).toList();
         _positions = positionsList;
-      }
-
-      // 交易池
-      if (results[2] != null && results[2] is Map<String, dynamic>) {
-        final tradePoolMap = results[2] as Map<String, dynamic>;
-        _tradePool = tradePoolMap['stocks'] ?? [];
-      }
-
-      // 信号历史
-      if (results[3] != null && results[3] is Map<String, dynamic>) {
-        final signalsMap = results[3] as Map<String, dynamic>;
-        _signals = signalsMap['signals'] ?? [];
-      }
-
-      // 影子对比
-      if (results[4] != null && results[4] is Map<String, dynamic>) {
-        _shadowCompare = results[4] as Map<String, dynamic>;
-      }
+        _signals = signalsList;
+        _shadowCompare = shadowCompareMap;
+      });
     } catch (e, stack) {
       debugPrint('加载实盘数据失败: $e\n$stack');
-      // 弹窗显示错误
       if (mounted) {
         showDialog(
           context: context,
@@ -196,34 +178,21 @@ class RealTradePageState extends State<RealTradePage> {
             title: const Text('加载失败'),
             content: Text('错误: $e\n\n请将截图发给开发者'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('确定'),
-              ),
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('确定')),
             ],
           ),
         );
       }
-      setState(() {
-        _errorMessage = '加载失败: $e';
-      });
+      setState(() => _errorMessage = '加载失败: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String _formatNumber(double value) {
-    if (value >= 100000000) {
-      return '${(value / 100000000).toStringAsFixed(2)}亿';
-    } else if (value >= 10000) {
-      return '${(value / 10000).toStringAsFixed(2)}万';
-    } else {
-      return value.toStringAsFixed(2);
-    }
+  String _formatNumber(double v) {
+    if (v >= 1e8) return '${(v/1e8).toStringAsFixed(2)}亿';
+    if (v >= 1e4) return '${(v/1e4).toStringAsFixed(2)}万';
+    return v.toStringAsFixed(2);
   }
 
   @override
@@ -240,20 +209,13 @@ class RealTradePageState extends State<RealTradePage> {
                       children: [
                         const Icon(Icons.error_outline, color: Colors.red, size: 48),
                         const SizedBox(height: 16),
-                        Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        Text(_errorMessage),
                         const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadData,
-                          child: const Text('重试'),
-                        ),
+                        ElevatedButton(onPressed: _loadData, child: const Text('重试')),
                       ],
                     ),
                   )
                 : SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,11 +244,7 @@ class RealTradePageState extends State<RealTradePage> {
                                         const SizedBox(width: 8),
                                         Text(
                                           _currentMode == 'real' ? '实盘账户' : '模拟账户',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                                         ),
                                       ],
                                     ),
@@ -294,10 +252,7 @@ class RealTradePageState extends State<RealTradePage> {
                                       onPressed: _switchMode,
                                       child: Text(
                                         _currentMode == 'real' ? '切换模拟' : '切换实盘',
-                                        style: const TextStyle(
-                                          color: Color(0xFFD4AF37),
-                                          fontSize: 12,
-                                        ),
+                                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
                                       ),
                                     ),
                                   ],
@@ -307,10 +262,8 @@ class RealTradePageState extends State<RealTradePage> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Text(
-                                      '¥${_formatNumber(_fund + _positionValue)}',
-                                      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold),
-                                    ),
+                                    Text('¥${_formatNumber(_fund + _positionValue)}',
+                                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
@@ -318,10 +271,7 @@ class RealTradePageState extends State<RealTradePage> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    const Text(
-                                      '¥0.00',
-                                      style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500),
-                                    ),
+                                    const Text('¥0.00', style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500)),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
@@ -331,10 +281,8 @@ class RealTradePageState extends State<RealTradePage> {
                                     const Text('仓位比例', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Row(
                                       children: [
-                                        Text(
-                                          '${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
-                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
-                                        ),
+                                        Text('${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
+                                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                                         const SizedBox(width: 8),
                                         SizedBox(
                                           width: 80,
@@ -356,14 +304,8 @@ class RealTradePageState extends State<RealTradePage> {
                                     const Text('风控状态', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Text(
-                                        '正常',
-                                        style: TextStyle(color: Colors.green, fontSize: 12),
-                                      ),
+                                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                                      child: const Text('正常', style: TextStyle(color: Colors.green, fontSize: 12)),
                                     ),
                                   ],
                                 ),
@@ -389,24 +331,6 @@ class RealTradePageState extends State<RealTradePage> {
                                 position: position,
                                 onPositionChanged: _loadData,
                               )),
-                        ],
-
-                        const SizedBox(height: 16),
-
-                        // AI交易池（静态只读，无交互）
-                        if (_tradePool.isNotEmpty) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('AI交易池', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                              TextButton(
-                                onPressed: () => Navigator.pushNamed(context, '/trade_pool'),
-                                child: const Text('查看更多', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ..._tradePool.take(5).map((stock) => TradePoolItem(stock: stock)), // 移除 onTrade
                         ],
 
                         const SizedBox(height: 16),
