@@ -1,8 +1,5 @@
 // lib/pages/audit_log_page.dart
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import '../api_service.dart';
 
 class AuditLogPage extends StatefulWidget {
@@ -49,21 +46,10 @@ class _AuditLogPageState extends State<AuditLogPage> {
 
     try {
       final result = await ApiService.getAuditLogs(limit: _pageSize * 5);
-
       List<dynamic> logsList = [];
-      if (result != null) {
-        if (result is List) {
-          logsList = result;
-        } else if (result is Map<String, dynamic>) {
-          final logsData = result['logs'];
-          if (logsData is List) {
-            logsList = logsData;
-          } else if (result['data'] is List) {
-            logsList = result['data'] as List;
-          }
-        }
+      if (result != null && result is List) {
+        logsList = result;
       }
-
       // 前端筛选
       if (_filterOperation.isNotEmpty || _filterUserId.isNotEmpty) {
         logsList = logsList.where((log) {
@@ -73,7 +59,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
               (_filterUserId.isEmpty || uid.contains(_filterUserId));
         }).toList();
       }
-
       setState(() {
         _logs = logsList;
       });
@@ -89,84 +74,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
         });
       }
     }
-  }
-
-  Future<void> _exportLogs() async {
-    try {
-      final result = await ApiService.getAuditLogs(limit: 1000);
-
-      List<dynamic> logsList = [];
-      if (result != null) {
-        if (result is List) {
-          logsList = result;
-        } else if (result is Map<String, dynamic>) {
-          final logsData = result['logs'];
-          if (logsData is List) {
-            logsList = logsData;
-          } else if (result['data'] is List) {
-            logsList = result['data'] as List;
-          }
-        }
-      }
-
-      if (logsList.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('暂无日志可导出'), backgroundColor: Colors.orange),
-          );
-        }
-        return;
-      }
-
-      final csvBuffer = StringBuffer();
-      csvBuffer.writeln('时间,操作,用户,结果,详情,IP地址,设备ID');
-
-      for (final log in logsList) {
-        final timestamp = log['timestamp'] ?? '';
-        final operation = log['operation'] ?? '';
-        final userId = log['user_id'] ?? '';
-        final resultStatus = log['result'] ?? '';
-        final details = _formatDetailsForCsv(log['details']);
-        final ip = log['ip_address'] ?? '';
-        final deviceId = log['device_id'] ?? '';
-
-        csvBuffer.writeln('"$timestamp","$operation","$userId","$resultStatus","$details","$ip","$deviceId"');
-      }
-
-      final directory = await FilePicker.platform.getDirectoryPath();
-      if (directory == null) return;
-
-      final filePath = '$directory/audit_log_${DateTime.now().toIso8601String().replaceAll(':', '-')}.csv';
-      final file = File(filePath);
-      await file.writeAsString(csvBuffer.toString(), encoding: utf8);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('已导出到: $filePath'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('导出失败: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('导出失败: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  String _formatDetailsForCsv(Map<String, dynamic>? details) {
-    if (details == null || details.isEmpty) return '';
-    final parts = <String>[];
-    if (details['rule_name'] != null) parts.add('规则:${details['rule_name']}');
-    if (details['rule_id'] != null) parts.add('ID:${details['rule_id']}');
-    if (details['position_value'] != null) parts.add('金额:${details['position_value']}');
-    if (details['score'] != null) parts.add('相似度:${(details['score'] * 100).toInt()}%');
-    if (details['message'] != null) parts.add(details['message']);
-    return parts.join('|');
   }
 
   String _getOperationName(String operation) {
@@ -215,10 +122,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
           IconButton(
             icon: const Icon(Icons.filter_alt),
             onPressed: () => _showFilterDialog(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _exportLogs,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

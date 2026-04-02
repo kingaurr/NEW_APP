@@ -7,8 +7,6 @@ import 'voice_settings_page.dart';
 import 'audit_log_page.dart';
 import 'ip_whitelist_page.dart';
 
-/// 安全中心页面
-/// 统一管理安全设置、审计日志、紧急停止等
 class SecurityCenterPage extends StatefulWidget {
   const SecurityCenterPage({super.key});
 
@@ -53,10 +51,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         });
       }
 
-      final audit = await ApiService.auditLogs(limit: 5);
-      if (audit != null && audit['logs'] != null) {
+      // 修正：使用 getAuditLogs 方法，直接接收 List
+      final audit = await ApiService.getAuditLogs(limit: 5);
+      if (audit != null && audit is List) {
         setState(() {
-          _recentAuditLogs = audit['logs'];
+          _recentAuditLogs = audit;
         });
       }
     } catch (e) {
@@ -282,7 +281,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           children: [
             Row(
               children: [
-                // 修复：Icons.panic 不存在，改为 Icons.warning
                 Icon(
                   isActive ? Icons.warning : Icons.security,
                   color: isActive ? Colors.red : const Color(0xFFD4AF37),
