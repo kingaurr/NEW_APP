@@ -59,8 +59,9 @@ class _AuditLogPageState extends State<AuditLogPage> {
         if (result is List) {
           logsList = result;
         } else if (result is Map<String, dynamic>) {
-          if (result['logs'] is List) {
-            logsList = result['logs'] as List;
+          final logsData = result['logs'];
+          if (logsData is List) {
+            logsList = logsData;
           } else if (result['data'] is List) {
             logsList = result['data'] as List;
           }
@@ -92,8 +93,9 @@ class _AuditLogPageState extends State<AuditLogPage> {
         if (result is List) {
           logsList = result;
         } else if (result is Map<String, dynamic>) {
-          if (result['logs'] is List) {
-            logsList = result['logs'] as List;
+          final logsData = result['logs'];
+          if (logsData is List) {
+            logsList = logsData;
           } else if (result['data'] is List) {
             logsList = result['data'] as List;
           }
