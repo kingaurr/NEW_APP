@@ -55,43 +55,51 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     List<dynamic> guardianSuggestions = [];
     Map<String, dynamic> evolutionReport = {};
 
-    // 策略列表
+    // 1. 策略列表
     try {
       final result = await ApiService.getStrategies();
-      if (result != null && result is List) strategies = result;
+      if (result != null && result is List) {
+        strategies = result;
+      }
     } catch (e) {
       debugPrint('getStrategies 错误: $e');
       _showErrorSnackbar('策略列表加载失败');
     }
 
-    // 待审核规则
+    // 2. 待审核规则
     try {
       final result = await ApiService.getPendingRules();
       if (result != null && result is Map<String, dynamic>) {
         final rules = result['rules'];
-        if (rules is List) pendingRules = rules;
+        if (rules is List) {
+          pendingRules = rules;
+        }
       }
     } catch (e) {
       debugPrint('getPendingRules 错误: $e');
       _showErrorSnackbar('待审核规则加载失败');
     }
 
-    // 守门员建议
+    // 3. 守门员建议
     try {
       final result = await ApiService.getPendingSuggestions();
       if (result != null && result is Map<String, dynamic>) {
         final suggestions = result['suggestions'];
-        if (suggestions is List) guardianSuggestions = suggestions;
+        if (suggestions is List) {
+          guardianSuggestions = suggestions;
+        }
       }
     } catch (e) {
       debugPrint('getPendingSuggestions 错误: $e');
       _showErrorSnackbar('守门员建议加载失败');
     }
 
-    // 进化报告
+    // 4. 进化报告
     try {
       final result = await ApiService.getEvolutionReport();
-      if (result != null && result is Map<String, dynamic>) evolutionReport = result;
+      if (result != null && result is Map<String, dynamic>) {
+        evolutionReport = result;
+      }
     } catch (e) {
       debugPrint('getEvolutionReport 错误: $e');
       _showErrorSnackbar('进化报告加载失败');
@@ -106,7 +114,9 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _evolutionReport = evolutionReport;
     });
 
-    if (mounted) setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   String _getStatusText(String status) {
