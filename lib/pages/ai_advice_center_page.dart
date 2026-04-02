@@ -70,9 +70,8 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     try {
       final result = await ApiService.getPendingRules();
       if (result != null && result is Map<String, dynamic>) {
-        final dynamic rulesData = result['rules'];
-        if (rulesData is List) {
-          pendingRules = rulesData;
+        if (result['rules'] is List) {
+          pendingRules = result['rules'] as List;
         }
       }
     } catch (e) {
@@ -84,9 +83,8 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     try {
       final result = await ApiService.getPendingSuggestions();
       if (result != null && result is Map<String, dynamic>) {
-        final dynamic suggestionsData = result['suggestions'];
-        if (suggestionsData is List) {
-          guardianSuggestions = suggestionsData;
+        if (result['suggestions'] is List) {
+          guardianSuggestions = result['suggestions'] as List;
         }
       }
     } catch (e) {
