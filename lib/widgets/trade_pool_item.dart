@@ -1,94 +1,15 @@
 // lib/widgets/trade_pool_item.dart
 import 'package:flutter/material.dart';
-import '../api_service.dart';
 import '../pages/candidates_detail_page.dart';
 
-class TradePoolItem extends StatefulWidget {
+/// 交易池条目组件（静态只读，无交互，避免 Release 崩溃）
+class TradePoolItem extends StatelessWidget {
   final Map<String, dynamic> stock;
-  final VoidCallback? onTrade;
 
   const TradePoolItem({
     super.key,
     required this.stock,
-    this.onTrade,
   });
-
-  @override
-  State<TradePoolItem> createState() => _TradePoolItemState();
-}
-
-class _TradePoolItemState extends State<TradePoolItem> {
-  bool _isExpanded = false;
-  bool _isBuying = false;
-  final TextEditingController _sharesController = TextEditingController();
-
-  @override
-  void dispose() {
-    _sharesController.dispose();
-    super.dispose();
-  }
-
-  // Helper to safely show messages, handles if the widget is disposed
-  void _showMessage(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: isError ? Colors.red : Colors.green),
-    );
-  }
-
-  Future<void> _buyStock() async {
-    final sharesText = _sharesController.text.trim();
-    if (sharesText.isEmpty) {
-      _showMessage('请输入买入数量', isError: true);
-      return;
-    }
-    final shares = int.tryParse(sharesText);
-    if (shares == null || shares <= 0) {
-      _showMessage('请输入有效的数量', isError: true);
-      return;
-    }
-
-    // Safe navigation to dialog using the current context
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2A2A2A),
-        title: const Text('确认买入', style: TextStyle(color: Colors.white)),
-        content: Text(
-          '确定要买入 ${widget.stock['name'] ?? ''} (${widget.stock['code'] ?? ''}) 吗？\n'
-          '当前价: ¥${(widget.stock['current_price'] ?? 0.0).toStringAsFixed(2)}\n'
-          '数量: $shares股\n'
-          '预估金额: ¥${_formatNumber((widget.stock['current_price'] ?? 0.0) * shares)}',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('买入')),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    setState(() => _isBuying = true);
-    try {
-      final success = await ApiService.buyStock(
-        widget.stock['code'] ?? '',
-        shares,
-        widget.stock['current_price'] ?? 0.0,
-      );
-      if (!mounted) return;
-      if (success == true) {
-        _showMessage('买入成功');
-        widget.onTrade?.call();
-      } else {
-        throw Exception('买入失败');
-      }
-    } catch (e) {
-      _showMessage('买入失败: $e', isError: true);
-    } finally {
-      if (mounted) setState(() => _isBuying = false);
-    }
-  }
 
   String _formatNumber(double value) {
     if (value >= 100000000) {
@@ -108,19 +29,19 @@ class _TradePoolItemState extends State<TradePoolItem> {
   }
 
   void _navigateToDetail() {
-    Navigator.pushNamed(context, '/candidates_detail', arguments: widget.stock);
+    Navigator.pushNamed(context, '/candidates_detail', arguments: stock);
   }
 
   @override
   Widget build(BuildContext context) {
-    final code = widget.stock['code'] ?? '';
-    final name = widget.stock['name'] ?? '';
-    final currentPrice = (widget.stock['current_price'] ?? 0.0).toDouble();
-    final changePercent = (widget.stock['change_percent'] ?? 0.0).toDouble();
-    final score = (widget.stock['score'] ?? 0.5).toDouble();
-    final reason = widget.stock['reason'] ?? '';
-    final volume = (widget.stock['volume'] ?? 0).toInt();
-    final turnover = (widget.stock['turnover'] ?? 0).toInt();
+    final code = stock['code'] ?? '';
+    final name = stock['name'] ?? '';
+    final currentPrice = (stock['current_price'] ?? 0.0).toDouble();
+    final changePercent = (stock['change_percent'] ?? 0.0).toDouble();
+    final score = (stock['score'] ?? 0.5).toDouble();
+    final reason = stock['reason'] ?? '';
+    final volume = (stock['volume'] ?? 0).toInt();
+    final turnover = (stock['turnover'] ?? 0).toInt();
 
     return Card(
       color: const Color(0xFF2A2A2A),
@@ -137,6 +58,7 @@ class _TradePoolItemState extends State<TradePoolItem> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 第一行：名称、代码、价格、涨跌幅
               Row(
                 children: [
                   Expanded(
@@ -163,6 +85,7 @@ class _TradePoolItemState extends State<TradePoolItem> {
                 ],
               ),
               const SizedBox(height: 8),
+              // 第二行：得分、推荐理由
               Row(
                 children: [
                   Container(
@@ -178,78 +101,26 @@ class _TradePoolItemState extends State<TradePoolItem> {
                 ],
               ),
               const SizedBox(height: 8),
+              // 第三行：成交量和成交额（静态展示，无需展开）
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => setState(() => _isExpanded = !_isExpanded),
-                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(_isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 16),
-                          const SizedBox(width: 4),
-                          Text(_isExpanded ? '收起' : '买入'),
-                        ],
-                      ),
-                    ),
+                  Row(
+                    children: [
+                      const Text('成交量', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Text(_formatNumber(volume.toDouble()), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    ],
                   ),
-                  Expanded(
-                    child: TextButton(
-                      onPressed: _navigateToDetail,
-                      style: TextButton.styleFrom(foregroundColor: const Color(0xFFD4AF37)),
-                      child: const Text('详情'),
-                    ),
+                  Row(
+                    children: [
+                      const Text('成交额', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Text('¥${_formatNumber(turnover.toDouble())}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    ],
                   ),
                 ],
               ),
-              if (_isExpanded) ...[
-                const Divider(color: Colors.grey, height: 1),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('成交量', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    Text(_formatNumber(volume.toDouble()), style: const TextStyle(color: Colors.white, fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('成交额', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    Text('¥${_formatNumber(turnover.toDouble())}', style: const TextStyle(color: Colors.white, fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _sharesController,
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: '买入数量',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37))),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 80,
-                      child: ElevatedButton(
-                        onPressed: _isBuying ? null : _buyStock,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
-                        child: _isBuying ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('买入'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),

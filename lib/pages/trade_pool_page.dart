@@ -232,10 +232,7 @@ class _TradePoolPageState extends State<TradePoolPage> {
                             itemCount: _filteredStocks.length,
                             itemBuilder: (context, index) {
                               final stock = _filteredStocks[index];
-                              return TradePoolItem(
-                                stock: stock,
-                                onTrade: _loadData,
-                              );
+                              return TradePoolItem(stock: stock); // 移除 onTrade
                             },
                           ),
           ),
