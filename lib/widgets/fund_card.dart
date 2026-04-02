@@ -70,7 +70,6 @@ class _FundCardState extends State<FundCard> {
 
   @override
   Widget build(BuildContext context) {
-    // 安全读取数据，使用默认值避免空指针
     final totalAssets = _fundData['current_fund'] ?? 0.0;
 
     if (_isLoading) {
