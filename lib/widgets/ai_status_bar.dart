@@ -103,7 +103,6 @@ class _AIStatusBarState extends State<AIStatusBar> {
     }
   }
 
-  /// 将模型名称转换为友好显示
   String _formatModelName(String model) {
     if (model == 'deepseek-chat') return 'DeepSeek';
     if (model == 'qwen3.5-plus') return '千问';
@@ -111,9 +110,10 @@ class _AIStatusBarState extends State<AIStatusBar> {
     return model;
   }
 
+  // 左右脑颜色：正常绿色，降级橙色，错误红色
   Color _getModeColor(String mode) {
     if (mode == 'API_DRIVEN') return Colors.green;
-    if (mode == 'LOCAL_RULE') return Colors.lightBlue;
+    if (mode == 'LOCAL_RULE') return Colors.orange;
     if (mode == 'error') return Colors.red;
     return Colors.grey;
   }
@@ -125,13 +125,16 @@ class _AIStatusBarState extends State<AIStatusBar> {
     return mode.isEmpty ? '未知' : mode;
   }
 
+  // 外脑状态颜色（与左右脑风格一致：绿色=正常/完成，橙色=待执行/空闲，红色=错误）
   Color _getOuterStatusColor(String status) {
     switch (status) {
       case 'running':
       case 'completed':
         return Colors.green;
       case 'idle':
-        return Colors.grey;
+        return Colors.orange;
+      case 'error':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -145,6 +148,8 @@ class _AIStatusBarState extends State<AIStatusBar> {
         return '已完成';
       case 'idle':
         return '待执行';
+      case 'error':
+        return '异常';
       default:
         return status;
     }
