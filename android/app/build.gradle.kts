@@ -29,22 +29,11 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            // 暂时关闭混淆以解决构建错误，后续可再优化
-            // minifyEnabled = true
-            // shrinkResources = true
-            // proguardFiles(
-            //     getDefaultProguardFile("proguard-android-optimize.txt"),
-            //     "proguard-rules.pro"
-            // )
+            // 完全禁用混淆
         }
     }
 }
 
 flutter {
     source = "../.."
-}
-
-dependencies {
-    implementation "com.google.android.play:app-update:2.1.0"
-    implementation "com.google.android.play:feature-delivery:2.1.0"
 }
