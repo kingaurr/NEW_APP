@@ -54,7 +54,7 @@ class _AlertListPageState extends State<AlertListPage> {
           unread = result['unread_count'] ?? 0;
         } else if (result is List) {
           // 格式2: 直接返回告警列表
-          alertsList = List<dynamic>.from(result);
+          alertsList = result.cast<dynamic>();
           unread = alertsList.where((a) => a['read'] != true).length;
         }
       }
@@ -76,11 +76,6 @@ class _AlertListPageState extends State<AlertListPage> {
       }
     }
   }
-
-  // 其余方法保持不变...
-  // 由于篇幅，以下省略与之前完全相同的代码（_markAsRead, _markAllRead, _getSeverityColor, _getSeverityText, _getSeverityIcon, _formatTime, _navigateToDetail, build, _buildAlertItem, _showFilterDialog）
-  // 请确保原文件中的这些方法完整保留，此处仅展示修改的部分。
-  // 实际替换时请使用完整的文件内容。
 
   Future<void> _markAsRead(String alertId) async {
     try {
