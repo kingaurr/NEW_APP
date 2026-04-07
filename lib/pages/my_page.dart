@@ -12,6 +12,7 @@ import '../pages/experience_log_page.dart';
 import '../pages/command_history_page.dart';
 import '../pages/version_history_page.dart';
 import '../pages/risk_settings_page.dart';
+import '../pages/outer_brain_center_page.dart';
 import 'chat_page.dart';
 
 class MyPage extends StatefulWidget {
@@ -28,6 +29,7 @@ class _MyPageState extends State<MyPage> {
   bool _voiceEnabled = true;
   String _currentVersion = '';
   int _unreadAlerts = 0;
+  int _pendingCodeFixCount = 0; // 新增：待审批代码修改数量
   String _errorMessage = '';
 
   @override
@@ -46,6 +48,7 @@ class _MyPageState extends State<MyPage> {
       final results = await Future.wait([
         ApiService.getSystemVersion(),
         ApiService.getUnreadAlertCount(),
+        ApiService.getPendingCodeFixCount(), // 新增
       ]);
 
       if (results[0] != null && results[0] is Map<String, dynamic>) {
@@ -63,6 +66,13 @@ class _MyPageState extends State<MyPage> {
         final alertMap = results[1] as Map<String, dynamic>;
         setState(() {
           _unreadAlerts = alertMap['count'] ?? 0;
+        });
+      }
+
+      // 新增：待审批代码修改数量
+      if (results[2] != null && results[2] is int) {
+        setState(() {
+          _pendingCodeFixCount = results[2];
         });
       }
     } catch (e) {
@@ -147,6 +157,18 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
+  void _openOuterBrainCenter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const OuterBrainCenterPage()),
+    );
+  }
+
+  // 新增：跳转到 AI 优化建议中心（筛选 code_fix 建议）
+  void _openCodeFixApproval() {
+    Navigator.pushNamed(context, '/ai_advice_center', arguments: {'filter_type': 'code_fix'});
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -195,6 +217,65 @@ class _MyPageState extends State<MyPage> {
                           onChanged: _loadData,
                         ),
                         const SizedBox(height: 16),
+
+                        // 新增：待办事项卡片（代码修改待审批）
+                        if (_pendingCodeFixCount > 0)
+                          Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: const Color(0xFFD4AF37).withOpacity(0.5)),
+                            ),
+                            child: InkWell(
+                              onTap: _openCodeFixApproval,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFD4AF37).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.code,
+                                        color: Color(0xFFD4AF37),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            '代码修改待审批',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '有 $_pendingCodeFixCount 条修改请求等待处理',
+                                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(Icons.chevron_right, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 16),
+
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -274,6 +355,11 @@ class _MyPageState extends State<MyPage> {
                                       icon: Icons.chat,
                                       label: '千寻助手',
                                       onTap: _openQianxunChat,
+                                    ),
+                                    _buildGridItem(
+                                      icon: Icons.auto_awesome,
+                                      label: '外脑中心',
+                                      onTap: _openOuterBrainCenter,
                                     ),
                                   ],
                                 ),

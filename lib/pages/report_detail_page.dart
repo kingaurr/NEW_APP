@@ -24,6 +24,9 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
   String _content = '';
   String _errorMessage = '';
 
+  // 发送分析时的加载状态
+  bool _isSending = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +35,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
   }
 
   Future<void> _loadReport() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -42,20 +46,23 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
         widget.filename,
         type: widget.reportType,
       );
-      if (result != null) {
-        setState(() {
-          _content = result;
-        });
-      } else {
-        setState(() {
-          _errorMessage = '获取报告内容失败';
-        });
+      if (mounted) {
+        if (result != null) {
+          setState(() {
+            _content = result;
+          });
+        } else {
+          setState(() {
+            _errorMessage = '获取报告内容失败';
+          });
+        }
       }
     } catch (e) {
-      debugPrint('加载报告失败: $e');
-      setState(() {
-        _errorMessage = '加载失败: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = '加载失败: $e';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -70,6 +77,66 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
       await ApiService.markReportRead(widget.filename, widget.reportType);
     } catch (e) {
       debugPrint('标记已读失败: $e');
+    }
+  }
+
+  // 新增：发送报告给千寻分析
+  Future<void> _sendToQianxun() async {
+    if (_content.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('报告内容为空，无法分析'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    if (_isSending) return;
+
+    setState(() => _isSending = true);
+
+    try {
+      final result = await ApiService.voiceAsk(_content);
+      if (mounted) {
+        if (result != null && result['answer'] != null) {
+          // 显示分析结果对话框
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: const Color(0xFF2A2A2A),
+              title: const Row(
+                children: [
+                  Icon(Icons.psychology, color: Color(0xFFD4AF37)),
+                  SizedBox(width: 8),
+                  Text('千寻分析', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Text(
+                  result['answer'],
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('关闭'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          throw Exception('未收到有效回复');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('分析失败: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
@@ -111,6 +178,18 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
         title: Text(_formatTitle(widget.filename)),
         backgroundColor: const Color(0xFF1E1E1E),
         actions: [
+          // 新增：发送给千寻分析按钮
+          IconButton(
+            icon: _isSending
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.psychology),
+            tooltip: '发送给千寻分析',
+            onPressed: _isSending ? null : _sendToQianxun,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadReport,
@@ -174,7 +253,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
                       ),
                       blockquote: TextStyle(
                         color: Colors.grey[400],
-                        fontStyle: FontStyle.italic,
+                        fontStyle: Italic,
                         background: Paint()..color = Colors.grey[800]!,
                       ),
                       tableHead: const TextStyle(

@@ -2,6 +2,7 @@
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../api_service.dart';  // 新增导入
 
 /// 生物识别辅助类
 /// 支持指纹/面容识别，集成本地存储保存用户偏好
@@ -11,6 +12,10 @@ class BiometricsHelper {
   // 存储键
   static const String _keyBiometricsEnabled = 'biometrics_enabled';
   static const String _keyBiometricsType = 'biometrics_type';
+
+  // 指纹 token 存储（内存）
+  static String? _fingerprintToken;
+  static int _tokenExpiry = 0;
 
   /// 检查设备是否支持生物识别（指纹/面容）
   static Future<bool> isAvailable() async {
@@ -67,10 +72,8 @@ class BiometricsHelper {
     await prefs.setString(_keyBiometricsType, type);
   }
 
-  /// 执行生物识别验证
-  /// [reason] 验证原因，显示在弹窗中
-  /// [usePasscodeFallback] 是否允许使用设备密码作为备选
-  static Future<bool> authenticate({
+  /// 执行生物识别验证（仅本地，不获取后端 token）
+  static Future<bool> authenticateOnly({
     String reason = '请验证指纹以继续操作',
     bool usePasscodeFallback = false,
   }) async {
@@ -79,7 +82,6 @@ class BiometricsHelper {
       if (!isAvailable) {
         return false;
       }
-
       final authenticated = await _auth.authenticate(
         localizedReason: reason,
         options: AuthenticationOptions(
@@ -94,9 +96,45 @@ class BiometricsHelper {
     }
   }
 
-  /// 执行带操作上下文的高风险操作验证
-  /// [operation] 操作类型（如 'clear_position', 'modify_config'）
-  /// [operationDesc] 操作描述（用于提示）
+  /// 执行生物识别验证并获取后端指纹 token（用于敏感操作）
+  static Future<bool> authenticateAndGetToken({
+    String reason = '请验证指纹以继续操作',
+    bool usePasscodeFallback = true,
+  }) async {
+    // 1. 本地验证
+    final authenticated = await authenticateOnly(reason: reason, usePasscodeFallback: usePasscodeFallback);
+    if (!authenticated) {
+      return false;
+    }
+
+    // 2. 调用后端获取短期 token
+    try {
+      final result = await ApiService.fingerprintVerify('');
+      if (result != null && result['token'] != null) {
+        final token = result['token'];
+        final expiresIn = result['expires_in'] ?? 300;
+        ApiService.setFingerprintToken(token, expiresIn);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print('获取指纹token异常: $e');
+      return false;
+    }
+  }
+
+  /// 获取存储的指纹 token（供 api_service 使用）
+  static String? getStoredFingerprintToken() {
+    return ApiService.getFingerprintToken();
+  }
+
+  /// 清除指纹 token
+  static void clearFingerprintToken() {
+    ApiService.clearFingerprintToken();
+  }
+
+  /// 执行带操作上下文的高风险操作验证（自动获取 token）
   static Future<bool> authenticateForOperation({
     required String operation,
     required String operationDesc,
@@ -111,7 +149,7 @@ class BiometricsHelper {
     final biometricName = await getBiometricTypeName();
     final reason = '验证$biometricName以执行$operationDesc';
 
-    return await authenticate(
+    return await authenticateAndGetToken(
       reason: reason,
       usePasscodeFallback: usePasscodeFallback,
     );
@@ -145,18 +183,12 @@ class BiometricsHelper {
   }
 
   /// 请求注册生物识别（引导用户注册）
-  /// 注意：此方法会触发系统生物识别注册流程（如果设备支持）
   static Future<bool> requestEnroll() async {
     try {
-      // 检查是否有已注册的生物识别
       final types = await getAvailableBiometrics();
       if (types.isNotEmpty) {
-        // 已有注册，直接返回成功
         return true;
       }
-
-      // 设备支持但未注册，尝试触发系统注册
-      // 注意：部分系统可能不支持直接触发注册，需要引导用户去设置
       return false;
     } catch (e) {
       return false;

@@ -26,6 +26,7 @@ class _BrokerCardState extends State<BrokerCard> {
   }
 
   Future<void> _loadBrokerStatus() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -33,20 +34,23 @@ class _BrokerCardState extends State<BrokerCard> {
 
     try {
       final result = await ApiService.getBrokerStatus();
-      if (result != null) {
-        setState(() {
-          _brokerInfo = result;
-        });
-      } else {
-        setState(() {
-          _errorMessage = '获取券商信息失败';
-        });
+      if (mounted) {
+        if (result != null) {
+          setState(() {
+            _brokerInfo = result;
+          });
+        } else {
+          setState(() {
+            _errorMessage = '获取券商信息失败';
+          });
+        }
       }
     } catch (e) {
-      debugPrint('加载券商状态失败: $e');
-      setState(() {
-        _errorMessage = '加载失败: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = '加载失败: $e';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -57,26 +61,26 @@ class _BrokerCardState extends State<BrokerCard> {
   }
 
   Future<void> _testConnection() async {
+    if (!mounted) return;
     setState(() {
       _isTesting = true;
       _errorMessage = '';
     });
 
     try {
-      // 修复：testBrokerConnection 返回 bool，不是 Map
       final success = await ApiService.testBrokerConnection();
-      if (success == true) {
-        if (mounted) {
+      if (mounted) {
+        if (success == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('券商连接测试成功'),
               backgroundColor: Colors.green,
             ),
           );
+          await _loadBrokerStatus();
+        } else {
+          throw Exception('连接测试失败');
         }
-        await _loadBrokerStatus();
-      } else {
-        throw Exception('连接测试失败');
       }
     } catch (e) {
       if (mounted) {

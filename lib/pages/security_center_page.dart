@@ -51,7 +51,6 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         });
       }
 
-      // 修正：使用 getAuditLogs 方法，直接接收 List
       final audit = await ApiService.getAuditLogs(limit: 5);
       if (audit != null && audit is List) {
         setState(() {
@@ -75,6 +74,19 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _updateSecurityLevel(String level) async {
+    // 增加指纹验证
+    final authenticated = await BiometricsHelper.authenticateAndGetToken(
+      reason: '验证指纹以修改安全级别',
+    );
+    if (!authenticated) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('指纹验证失败，操作取消'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
     final result = await ApiService.securityLevelSet(level);
     if (result?['success'] == true) {
       if (mounted) {
@@ -82,6 +94,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
           SnackBar(content: Text('安全级别已切换为$level'), backgroundColor: Colors.green),
         );
         _loadData();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('切换失败: ${result?['error'] ?? '未知错误'}'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -457,6 +475,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
+  // 修复布局：将 ListView.separated 改为 Column 手动构建，避免嵌套滚动导致无限长
   Widget _buildRecentAuditLogs() {
     if (_recentAuditLogs.isEmpty) {
       return const SizedBox.shrink();
@@ -475,41 +494,42 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         Card(
           color: const Color(0xFF2A2A2A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _recentAuditLogs.length,
-            separatorBuilder: (_, __) => const Divider(color: Colors.grey, height: 1),
-            itemBuilder: (context, index) {
-              final log = _recentAuditLogs[index];
-              final operation = log['operation'] ?? '';
-              final result = log['result'] ?? '';
-              final timestamp = log['timestamp'] ?? '';
-
-              return ListTile(
-                dense: true,
-                leading: Icon(
-                  result == 'success' ? Icons.check_circle : Icons.error,
-                  color: result == 'success' ? Colors.green : Colors.red,
-                  size: 18,
-                ),
-                title: Text(
-                  _getOperationName(operation),
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-                subtitle: Text(
-                  timestamp.length > 19 ? timestamp.substring(0, 19) : timestamp,
-                  style: const TextStyle(color: Colors.grey, fontSize: 11),
-                ),
-                trailing: Text(
-                  log['user_id'] ?? '',
-                  style: const TextStyle(color: Colors.grey, fontSize: 11),
-                ),
-              );
-            },
+          child: Column(
+            children: [
+              for (int i = 0; i < _recentAuditLogs.length; i++) ...[
+                if (i > 0) const Divider(color: Colors.grey, height: 1),
+                _buildAuditLogItem(_recentAuditLogs[i]),
+              ],
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAuditLogItem(Map<String, dynamic> log) {
+    final operation = log['operation'] ?? '';
+    final result = log['result'] ?? '';
+    final timestamp = log['timestamp'] ?? '';
+    return ListTile(
+      dense: true,
+      leading: Icon(
+        result == 'success' ? Icons.check_circle : Icons.error,
+        color: result == 'success' ? Colors.green : Colors.red,
+        size: 18,
+      ),
+      title: Text(
+        _getOperationName(operation),
+        style: const TextStyle(color: Colors.white, fontSize: 13),
+      ),
+      subtitle: Text(
+        timestamp.length > 19 ? timestamp.substring(0, 19) : timestamp,
+        style: const TextStyle(color: Colors.grey, fontSize: 11),
+      ),
+      trailing: Text(
+        log['user_id'] ?? '',
+        style: const TextStyle(color: Colors.grey, fontSize: 11),
+      ),
     );
   }
 

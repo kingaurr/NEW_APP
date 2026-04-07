@@ -39,26 +39,53 @@ class ApiService {
     await prefs.remove('auth_token');
   }
 
-  // ---------- 通用请求方法（自动携带 token） ----------
+  // ===== 新增：指纹 token 管理（延迟导入避免循环依赖） =====
+  static String? _fingerprintToken;
+  static int _fingerprintTokenExpiry = 0;
+
+  static void setFingerprintToken(String token, int expiresInSeconds) {
+    _fingerprintToken = token;
+    _fingerprintTokenExpiry = DateTime.now().millisecondsSinceEpoch + expiresInSeconds * 1000;
+  }
+
+  static String? getFingerprintToken() {
+    if (_fingerprintToken != null && DateTime.now().millisecondsSinceEpoch < _fingerprintTokenExpiry) {
+      return _fingerprintToken;
+    }
+    return null;
+  }
+
+  static void clearFingerprintToken() {
+    _fingerprintToken = null;
+    _fingerprintTokenExpiry = 0;
+  }
+  // ================================================
+
+  // ---------- 通用请求方法（自动携带 token 和指纹 token，统一错误处理） ----------
   static Future<dynamic> httpGet(String endpoint) async {
     final url = '$_baseUrl$endpoint';
     debugPrint('GET请求: $url');
     try {
       final token = await _getToken();
+      final fingerprintToken = getFingerprintToken();
       final headers = <String, String>{};
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
+      }
+      if (fingerprintToken != null) {
+        headers['X-Fingerprint-Token'] = fingerprintToken;
       }
       final response = await _client.get(Uri.parse(url), headers: headers);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
+        // 统一错误返回格式
         debugPrint('HTTP GET 错误: ${response.statusCode} - ${response.body}');
-        return null;
+        return {'success': false, 'message': 'HTTP ${response.statusCode}', 'statusCode': response.statusCode};
       }
     } catch (e) {
       debugPrint('HTTP GET 异常: $e');
-      return null;
+      return {'success': false, 'message': e.toString()};
     }
   }
 
@@ -68,12 +95,16 @@ class ApiService {
     debugPrint('POST请求: $url');
     try {
       final token = await _getToken();
+      final fingerprintToken = getFingerprintToken();
       final requestHeaders = {
         'Content-Type': 'application/json',
         ...?headers,
       };
       if (token != null) {
         requestHeaders['Authorization'] = 'Bearer $token';
+      }
+      if (fingerprintToken != null) {
+        requestHeaders['X-Fingerprint-Token'] = fingerprintToken;
       }
       final response = await _client.post(
         Uri.parse(url),
@@ -84,11 +115,11 @@ class ApiService {
         return jsonDecode(response.body);
       } else {
         debugPrint('HTTP POST 错误: ${response.statusCode} - ${response.body}');
-        return null;
+        return {'success': false, 'message': 'HTTP ${response.statusCode}', 'statusCode': response.statusCode};
       }
     } catch (e) {
       debugPrint('HTTP POST 异常: $e');
-      return null;
+      return {'success': false, 'message': e.toString()};
     }
   }
 
@@ -1096,4 +1127,128 @@ class ApiService {
 
   /// 获取实盘资金（实际调用 /fund）
   static Future<Map<String, dynamic>?> getRealFund() => getFund();
+
+  // ========== 新增接口（外脑中心、日志、仲裁、系统升级、IPO等） ==========
+  // 外脑中心
+  static Future<Map<String, dynamic>?> getOuterBrainStatusV2() async {
+    return await httpGet('/outer_brain/status');
+  }
+
+  static Future<List<dynamic>> getPendingRulesV2({int limit = 5}) async {
+    final result = await httpGet('/outer_brain/pending_rules?limit=$limit');
+    if (result is List) return result;
+    if (result is Map && result['rules'] is List) return result['rules'];
+    return [];
+  }
+
+  static Future<Map<String, dynamic>?> getStrategyAlchemyStatus() async {
+    return await httpGet('/strategy_library/status');
+  }
+
+  static Future<Map<String, dynamic>> terminateInternship(String strategyId) async {
+    return await httpPost('/strategy_library/terminate_internship', body: {'strategy_id': strategyId});
+  }
+
+  static Future<Map<String, dynamic>> adjustGrayWeight(String strategyId, double weight) async {
+    return await httpPost('/strategy_library/adjust_gray_weight', body: {'strategy_id': strategyId, 'weight': weight});
+  }
+
+  // IPO
+  static Future<Map<String, dynamic>> getUpcomingIpo() async {
+    return await httpGet('/ipo/upcoming');
+  }
+
+  static Future<Map<String, dynamic>> getIpoAnalysis(String stockCode) async {
+    return await httpGet('/ipo/analysis?stock_code=$stockCode');
+  }
+
+  static Future<Map<String, dynamic>> participateIpo(String stockCode) async {
+    return await httpPost('/ipo/participate', body: {'stock_code': stockCode});
+  }
+
+  // 红蓝军
+  static Future<Map<String, dynamic>> runLightWarGame() async {
+    return await httpPost('/war_game/run_light');
+  }
+
+  static Future<Map<String, dynamic>> runDeepWarGame() async {
+    return await httpPost('/war_game/run_deep');
+  }
+
+  // 日志
+  static Future<Map<String, dynamic>> searchLogs({
+    String? module,
+    String? level,
+    String? keyword,
+    int days = 7,
+    int page = 1,
+    int pageSize = 50,
+  }) async {
+    return await httpPost('/logs/search', body: {
+      'module': module,
+      'level': level,
+      'keyword': keyword,
+      'days': days,
+      'page': page,
+      'page_size': pageSize,
+    });
+  }
+
+  static Future<Map<String, dynamic>> exportLogs({
+    String? module,
+    String? level,
+    String? keyword,
+    int days = 7,
+  }) async {
+    return await httpGet('/logs/export?module=${module ?? ''}&level=${level ?? ''}&keyword=${keyword ?? ''}&days=$days');
+  }
+
+  static Future<Map<String, dynamic>> uploadLogs(String filePath) async {
+    // 注意：此方法需要 multipart 上传，简化实现暂不提供完整代码，可后续补充
+    return {'success': false, 'message': '上传功能暂未实现'};
+  }
+
+  // 仲裁
+  static Future<Map<String, dynamic>> getLatestArbitration() async {
+    return await httpGet('/arbitration/latest');
+  }
+
+  static Future<Map<String, dynamic>> getArbitrationHistory({int page = 1, int limit = 20}) async {
+    return await httpGet('/arbitration/history?page=$page&limit=$limit');
+  }
+
+  // 系统升级
+  static Future<Map<String, dynamic>> getSystemUpgradeStatus() async {
+    return await httpGet('/system/upgrade_status');
+  }
+
+  static Future<Map<String, dynamic>> systemUpgrade() async {
+    return await httpPost('/system/upgrade');
+  }
+
+  // 语音反馈
+  static Future<Map<String, dynamic>> voiceFeedback(String command, {String? error, String? feedback}) async {
+    return await httpPost('/voice/feedback', body: {
+      'command': command,
+      'error': error,
+      'feedback': feedback,
+    });
+  }
+
+  // 一键修复
+  static Future<Map<String, dynamic>> oneClickFix() async {
+    return await httpPost('/code/fix', body: {'operation': 'apply_patch', 'fingerprint_verified': true});
+  }
+
+  // ========== 获取指定类型的待审批建议 ==========
+  static Future<List<dynamic>> getPendingAdviceByType(String type) async {
+    final result = await httpGet('/advice/pending?type=$type');
+    if (result != null && result is List) {
+      return result;
+    }
+    if (result != null && result is Map && result['advices'] is List) {
+      return result['advices'] as List;
+    }
+    return [];
+  }
 }

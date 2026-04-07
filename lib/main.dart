@@ -34,6 +34,18 @@ import 'pages/report_list_page.dart';
 import 'pages/settings_page.dart';
 import 'api_service.dart';
 
+// ===== 新增页面导入 =====
+import 'pages/outer_brain_center_page.dart';
+import 'pages/log_analysis_page.dart';
+import 'pages/arbitration_detail_page.dart';
+import 'pages/alert_list_page.dart';
+import 'pages/system_upgrade_page.dart';
+import 'pages/community_strategies_page.dart';
+import 'pages/community_strategy_detail_page.dart';
+import 'pages/ipo_analysis_page.dart';
+import 'pages/ipo_analysis_detail_page.dart';
+// =======================
+
 void main() {
   // 全局错误捕获，确保 Release 模式下错误可见
   runZonedGuarded(() async {
@@ -319,6 +331,49 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const SettingsPage(),
           );
         }
+        
+        // ===== 新增路由 =====
+        else if (settings.name == '/outer_brain_center') {
+          return MaterialPageRoute(
+            builder: (context) => const OuterBrainCenterPage(),
+          );
+        } else if (settings.name == '/log_analysis') {
+          return MaterialPageRoute(
+            builder: (context) => const LogAnalysisPage(),
+          );
+        } else if (settings.name == '/arbitration_detail') {
+          return MaterialPageRoute(
+            builder: (context) => const ArbitrationDetailPage(),
+          );
+        } else if (settings.name == '/alert_list') {
+          return MaterialPageRoute(
+            builder: (context) => const AlertListPage(),
+          );
+        } else if (settings.name == '/system_upgrade') {
+          return MaterialPageRoute(
+            builder: (context) => const SystemUpgradePage(),
+          );
+        } else if (settings.name == '/community_strategies') {
+          return MaterialPageRoute(
+            builder: (context) => const CommunityStrategiesPage(),
+          );
+        } else if (settings.name == '/community_strategy_detail') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => CommunityStrategyDetailPage(ruleId: args['id']),
+          );
+        } else if (settings.name == '/ipo_analysis') {
+          return MaterialPageRoute(
+            builder: (context) => const IpoAnalysisPage(),
+          );
+        } else if (settings.name == '/ipo_analysis_detail') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => IpoAnalysisDetailPage(stockCode: args['stock_code']),
+          );
+        }
+        // ===================
+        
         return null;
       },
     );

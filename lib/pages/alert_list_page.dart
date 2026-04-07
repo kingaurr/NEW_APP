@@ -41,20 +41,22 @@ class _AlertListPageState extends State<AlertListPage> {
 
     try {
       final result = await ApiService.getAlerts();
-      // 兼容不同的后端返回格式
+      // 【修正1】处理 result 为 null 的情况
       List<dynamic> alertsList = [];
       int unread = 0;
 
-      if (result is Map<String, dynamic>) {
-        // 格式1: { "alerts": [...], "unread_count": N }
-        if (result['alerts'] is List) {
-          alertsList = result['alerts'] as List<dynamic>;
+      if (result != null) {
+        if (result is Map<String, dynamic>) {
+          // 格式1: { "alerts": [...], "unread_count": N }
+          if (result['alerts'] is List) {
+            alertsList = result['alerts'] as List<dynamic>;
+          }
+          unread = result['unread_count'] ?? 0;
+        } else if (result is List) {
+          // 格式2: 直接返回告警列表
+          alertsList = result;
+          unread = alertsList.where((a) => a['read'] != true).length;
         }
-        unread = result['unread_count'] ?? 0;
-      } else if (result is List) {
-        // 格式2: 直接返回告警列表
-        alertsList = result;
-        unread = alertsList.where((a) => a['read'] != true).length;
       }
 
       setState(() {
@@ -77,7 +79,6 @@ class _AlertListPageState extends State<AlertListPage> {
 
   Future<void> _markAsRead(String alertId) async {
     try {
-      // 修复：acknowledgeAlert 返回 bool
       final success = await ApiService.acknowledgeAlert(alertId);
       if (success == true) {
         setState(() {
@@ -125,7 +126,6 @@ class _AlertListPageState extends State<AlertListPage> {
     if (confirmed != true) return;
 
     try {
-      // 逐个标记已读（若后端无批量接口）
       for (final alert in _alerts) {
         if (alert['read'] != true) {
           await ApiService.acknowledgeAlert(alert['id']);
@@ -196,10 +196,13 @@ class _AlertListPageState extends State<AlertListPage> {
     }
   }
 
-  String _formatTime(String? timestamp) {
+  String _formatTime(dynamic timestamp) {
+    // 【修正2】处理 timestamp 不是字符串或为空的情况
     if (timestamp == null) return '';
+    String tsStr = timestamp.toString();
+    if (tsStr.isEmpty) return '';
     try {
-      final date = DateTime.parse(timestamp);
+      final date = DateTime.parse(tsStr);
       final now = DateTime.now();
       final diff = now.difference(date);
 
@@ -215,7 +218,8 @@ class _AlertListPageState extends State<AlertListPage> {
         return '${date.month}/${date.day} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
       }
     } catch (e) {
-      return timestamp.substring(0, 16);
+      // 解析失败时返回原始字符串的前16个字符
+      return tsStr.length > 16 ? tsStr.substring(0, 16) : tsStr;
     }
   }
 
@@ -284,7 +288,6 @@ class _AlertListPageState extends State<AlertListPage> {
       ),
       body: Column(
         children: [
-          // 筛选条件栏
           if (_filterSeverity.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -318,7 +321,6 @@ class _AlertListPageState extends State<AlertListPage> {
               ),
             ),
 
-          // 告警列表
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

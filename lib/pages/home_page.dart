@@ -4,6 +4,7 @@ import '../api_service.dart';
 import '../widgets/fund_card.dart';
 import '../widgets/ai_status_bar.dart';
 import '../widgets/alert_settings.dart';
+import '../widgets/upgrade_status_card.dart'; // 新增导入
 import '../pages/guardian_suggestions_page.dart';
 import '../pages/risk_settings_page.dart';
 
@@ -187,6 +188,129 @@ class _HomePageState extends State<HomePage> {
       default:
         return Colors.transparent;
     }
+  }
+
+  // ===== 新增：语音快捷入口菜单 =====
+  void _showVoiceMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF2A2A2A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.mic, color: Color(0xFFD4AF37)),
+            title: const Text('语音对话', style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context);
+              // 提示用户使用悬浮球（简化实现）
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('请使用右下角语音悬浮球进行语音对话')),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.message, color: Color(0xFFD4AF37)),
+            title: const Text('文字对话', style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context);
+              _showTextDialog();
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  void _showTextDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('千寻文字对话', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: '输入您的问题...',
+            hintStyle: TextStyle(color: Colors.grey),
+            border: OutlineInputBorder(),
+          ),
+          style: const TextStyle(color: Colors.white),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isEmpty) return;
+              Navigator.pop(ctx);
+              // 显示加载
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx2) => const AlertDialog(
+                  backgroundColor: Color(0xFF2A2A2A),
+                  content: Row(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('思考中...', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                ),
+              );
+              try {
+                final result = await ApiService.voiceAsk(text);
+                Navigator.pop(context); // 关闭加载
+                if (result != null && result['answer'] != null) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx3) => AlertDialog(
+                      backgroundColor: const Color(0xFF2A2A2A),
+                      title: const Text('千寻回复', style: TextStyle(color: Colors.white)),
+                      content: SingleChildScrollView(
+                        child: Text(
+                          result['answer'],
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx3),
+                          child: const Text('关闭'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  throw Exception('未收到回复');
+                }
+              } catch (e) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('请求失败: $e'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('发送'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -388,9 +512,7 @@ class _HomePageState extends State<HomePage> {
                                     _buildQuickAction(
                                       icon: Icons.mic,
                                       label: '语音',
-                                      onTap: () {
-                                        // 语音功能由悬浮球处理
-                                      },
+                                      onTap: _showVoiceMenu, // 修复：打开语音菜单
                                     ),
                                   ],
                                 ),
@@ -398,6 +520,10 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+
+                        // ===== 新增：系统升级状态卡片 =====
+                        const UpgradeStatusCard(),
                         const SizedBox(height: 16),
 
                         // 待处理事项

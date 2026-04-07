@@ -30,6 +30,9 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
   bool _enabled = true;
   String _wakeWord = '千寻';
 
+  // 新增：保存上一条指令，用于重新尝试
+  String? _lastCommand;
+
   final List<Function(String)> _listeners = [];
 
   @override
@@ -119,6 +122,8 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
       _showMessage('请说出指令');
       return;
     }
+    // 保存指令用于重新尝试
+    _lastCommand = command;
     _showVoiceDialog(command);
   }
 
@@ -142,6 +147,63 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
       context,
       MaterialPageRoute(builder: (context) => const ChatPage()),
     );
+  }
+
+  // 新增：反馈问题
+  Future<void> _feedback() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('反馈问题', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: '请描述您遇到的问题...',
+            hintStyle: TextStyle(color: Colors.grey),
+            border: OutlineInputBorder(),
+          ),
+          style: const TextStyle(color: Colors.white),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('提交'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty) {
+      try {
+        final response = await ApiService.voiceFeedback('user_feedback', feedback: result);
+        if (response['success'] == true) {
+          _showMessage('感谢您的反馈！');
+        } else {
+          _showMessage('提交失败，请稍后重试');
+        }
+      } catch (e) {
+        _showMessage('提交异常: $e');
+      }
+    }
+  }
+
+  // 新增：重新尝试上一条指令
+  Future<void> _retryLastCommand() async {
+    if (_lastCommand == null || _lastCommand!.isEmpty) {
+      _showMessage('没有可重试的指令');
+      return;
+    }
+    _showVoiceDialog(_lastCommand!);
   }
 
   void _showMessage(String message) {
@@ -190,6 +252,24 @@ class _VoiceFloatingButtonState extends State<VoiceFloatingButton> {
               onTap: () {
                 Navigator.pop(context);
                 _showTextDialog();
+              },
+            ),
+            // 新增：反馈问题
+            ListTile(
+              leading: const Icon(Icons.feedback, color: Color(0xFFD4AF37)),
+              title: const Text('反馈问题', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _feedback();
+              },
+            ),
+            // 新增：重新尝试
+            ListTile(
+              leading: const Icon(Icons.replay, color: Color(0xFFD4AF37)),
+              title: const Text('重新尝试', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _retryLastCommand();
               },
             ),
             const SizedBox(height: 8),

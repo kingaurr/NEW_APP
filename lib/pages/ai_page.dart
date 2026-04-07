@@ -4,7 +4,9 @@ import '../api_service.dart';
 import '../widgets/strategy_item.dart';
 import '../widgets/pending_rule_item.dart';
 import '../widgets/guardian_suggestion_item.dart';
+import '../widgets/arbitration_card.dart'; // 新增导入
 import '../pages/brain_detail_page.dart';
+import '../pages/outer_brain_center_page.dart'; // 新增导入，用于跳转
 
 /// AI页面
 /// 决策层+进化层：左右脑状态、策略库（已认证）、外脑（待验证）、守门员建议
@@ -140,11 +142,19 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
   }
 
   void _navigateToBrainDetail(String brainType) {
-    Navigator.pushNamed(
-      context,
-      '/brain_detail',
-      arguments: {'type': brainType},
-    );
+    if (brainType == 'outer') {
+      // 外脑跳转到外脑中心
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const OuterBrainCenterPage()),
+      );
+    } else {
+      Navigator.pushNamed(
+        context,
+        '/brain_detail',
+        arguments: {'type': brainType},
+      );
+    }
   }
 
   @override
@@ -201,7 +211,11 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                       _buildBrainStatusCard(),
                       const SizedBox(height: 16),
 
-                      // 外脑进化报告卡片（点击跳转到外脑详情）
+                      // 新增：仲裁卡片
+                      const ArbitrationCard(),
+                      const SizedBox(height: 16),
+
+                      // 外脑进化报告卡片（点击跳转到外脑中心）
                       _buildEvolutionReportCard(),
                       const SizedBox(height: 16),
 
@@ -383,7 +397,7 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
 
     return GestureDetector(
       onTap: () {
-        // 点击跳转到外脑详情页
+        // 跳转到外脑中心
         _navigateToBrainDetail('outer');
       },
       child: Card(
@@ -433,6 +447,11 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
+              const SizedBox(height: 8),
+              const Text(
+                '更多外脑功能，请点击进入外脑中心',
+                style: TextStyle(color: Colors.grey, fontSize: 11),
+              ),
             ],
           ),
         ),
@@ -486,24 +505,39 @@ class _AiPageState extends State<AiPage> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildPendingRulesList() {
-    if (_pendingRules.isEmpty) {
-      return const Center(
-        child: Text(
-          '暂无待审核规则',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: _pendingRules.length,
-      itemBuilder: (context, index) {
-        final rule = _pendingRules[index];
-        return PendingRuleItem(
-          rule: rule,
-          onStatusChanged: _loadData,
-        );
-      },
+    // 外脑功能已迁移到外脑中心，显示提示并跳转
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.auto_awesome, size: 48, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            '外脑功能已迁移到外脑中心',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '请点击下方按钮查看待审核策略、IPO提醒等',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OuterBrainCenterPage()),
+              );
+            },
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('打开外脑中心'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
