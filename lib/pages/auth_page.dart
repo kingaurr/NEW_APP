@@ -203,7 +203,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     });
 
     try {
-      final authenticated = await BiometricsHelper.authenticate(
+      final authenticated = await BiometricsHelper.authenticateAndGetToken(
         reason: '验证指纹以登录系统',
         usePasscodeFallback: true,
       );

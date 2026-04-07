@@ -1134,15 +1134,16 @@ class ApiService {
     return await httpGet('/outer_brain/status');
   }
 
-  static Future<List<dynamic>> getPendingRulesV2({int limit = 5}) async {
+  static Future<List<dynamic>> getPendingRulesV2({int limit = 5, int page = 1}) async {
+    // 后端暂不支持分页，忽略 page 参数
     final result = await httpGet('/outer_brain/pending_rules?limit=$limit');
     if (result is List) return result;
     if (result is Map && result['rules'] is List) return result['rules'];
     return [];
   }
 
-  static Future<Map<String, dynamic>?> getStrategyAlchemyStatus() async {
-    return await httpGet('/strategy_library/status');
+  static Future<Map<String, dynamic>> getUpcomingIpo({int page = 1, int pageSize = 20}) async {
+    return await httpGet('/ipo/upcoming?page=$page&pageSize=$pageSize');
   }
 
   static Future<Map<String, dynamic>> terminateInternship(String strategyId) async {
@@ -1251,4 +1252,10 @@ class ApiService {
     }
     return [];
   }
+}
+
+// ========== 获取待审批代码修改数量 ==========
+static Future<int> getPendingCodeFixCount() async {
+  final list = await getPendingAdviceByType('code_fix');
+  return list.length;
 }

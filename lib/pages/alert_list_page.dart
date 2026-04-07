@@ -41,20 +41,20 @@ class _AlertListPageState extends State<AlertListPage> {
 
     try {
       final result = await ApiService.getAlerts();
-      // 【修正1】处理 result 为 null 的情况
       List<dynamic> alertsList = [];
       int unread = 0;
 
       if (result != null) {
         if (result is Map<String, dynamic>) {
           // 格式1: { "alerts": [...], "unread_count": N }
-          if (result['alerts'] is List) {
-            alertsList = result['alerts'] as List<dynamic>;
+          final alertsData = result['alerts'];
+          if (alertsData is List) {
+            alertsList = alertsData.cast<dynamic>();
           }
           unread = result['unread_count'] ?? 0;
         } else if (result is List) {
           // 格式2: 直接返回告警列表
-          alertsList = result;
+          alertsList = result.cast<dynamic>();
           unread = alertsList.where((a) => a['read'] != true).length;
         }
       }
@@ -76,6 +76,11 @@ class _AlertListPageState extends State<AlertListPage> {
       }
     }
   }
+
+  // 其余方法保持不变...
+  // 由于篇幅，以下省略与之前完全相同的代码（_markAsRead, _markAllRead, _getSeverityColor, _getSeverityText, _getSeverityIcon, _formatTime, _navigateToDetail, build, _buildAlertItem, _showFilterDialog）
+  // 请确保原文件中的这些方法完整保留，此处仅展示修改的部分。
+  // 实际替换时请使用完整的文件内容。
 
   Future<void> _markAsRead(String alertId) async {
     try {
@@ -197,7 +202,6 @@ class _AlertListPageState extends State<AlertListPage> {
   }
 
   String _formatTime(dynamic timestamp) {
-    // 【修正2】处理 timestamp 不是字符串或为空的情况
     if (timestamp == null) return '';
     String tsStr = timestamp.toString();
     if (tsStr.isEmpty) return '';
@@ -205,7 +209,6 @@ class _AlertListPageState extends State<AlertListPage> {
       final date = DateTime.parse(tsStr);
       final now = DateTime.now();
       final diff = now.difference(date);
-
       if (diff.inDays == 0) {
         if (diff.inHours == 0) {
           if (diff.inMinutes == 0) return '刚刚';
@@ -218,7 +221,6 @@ class _AlertListPageState extends State<AlertListPage> {
         return '${date.month}/${date.day} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
       }
     } catch (e) {
-      // 解析失败时返回原始字符串的前16个字符
       return tsStr.length > 16 ? tsStr.substring(0, 16) : tsStr;
     }
   }

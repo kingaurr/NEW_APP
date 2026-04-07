@@ -72,7 +72,7 @@ class _MyPageState extends State<MyPage> {
       // 新增：待审批代码修改数量
       if (results[2] != null && results[2] is int) {
         setState(() {
-          _pendingCodeFixCount = results[2];
+          _pendingCodeFixCount = results[2] as int;
         });
       }
     } catch (e) {

@@ -253,7 +253,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
                       ),
                       blockquote: TextStyle(
                         color: Colors.grey[400],
-                        fontStyle: Italic,
+                        fontStyle: FontStyle.italic,
                         background: Paint()..color = Colors.grey[800]!,
                       ),
                       tableHead: const TextStyle(

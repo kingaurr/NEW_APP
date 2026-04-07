@@ -34,10 +34,10 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     _error = '';
     try {
       final status = await ApiService.getOuterBrainStatus();
-      final pending = await ApiService.getPendingRules(limit: 5);
+      final pending = await ApiService.getPendingRulesV2(limit: 5);
       final ipo = await ApiService.getUpcomingIpo();
-      final light = await ApiService.getLightWarGame();
-      final deep = await ApiService.getDeepWarGame();
+      final light = await ApiService.getLatestlightWarGame();
+      final deep = await ApiService.getLatestDeepWarGame();
       final strategy = await ApiService.getStrategyAlchemyStatus();
 
       if (mounted) {
