@@ -2,8 +2,10 @@
 -keep class io.flutter.util.PathUtils { *; }
 -keep class io.flutter.** { *; }
 
-# Keep all classes from path_provider plugin
+# Keep path_provider plugin classes
 -keep class io.flutter.plugins.pathprovider.** { *; }
 
-# Keep generic Flutter embedding classes
--keep class io.flutter.embedding.** { *; }
+# Ignore missing Google Play Core classes (they are optional)
+-dontwarn com.google.android.play.core.**
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
