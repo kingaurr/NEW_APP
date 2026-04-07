@@ -29,7 +29,8 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            // 完全禁用混淆
+            minifyEnabled = false
+            shrinkResources = false
         }
     }
 }
