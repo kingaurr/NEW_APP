@@ -44,19 +44,12 @@ class _AlertListPageState extends State<AlertListPage> {
       List<dynamic> alertsList = [];
       int unread = 0;
 
-      if (result != null) {
-        if (result is Map<String, dynamic>) {
-          // 格式1: { "alerts": [...], "unread_count": N }
-          final alertsData = result['alerts'];
-          if (alertsData is List) {
-            alertsList = alertsData.cast<dynamic>();
-          }
-          unread = result['unread_count'] ?? 0;
-        } else if (result is List) {
-          // 格式2: 直接返回告警列表
-          alertsList = result.cast<dynamic>();
-          unread = alertsList.where((a) => a['read'] != true).length;
+      if (result != null && result is Map<String, dynamic>) {
+        final alertsData = result['alerts'];
+        if (alertsData is List) {
+          alertsList = alertsData;
         }
+        unread = result['unread_count'] ?? 0;
       }
 
       setState(() {
