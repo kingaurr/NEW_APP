@@ -28,12 +28,9 @@ android {
 
     buildTypes {
         release {
-            // 使用 debug 签名（临时，正式发布需替换）
             signingConfig = signingConfigs.getByName("debug")
-            // 启用混淆和资源压缩
-            isMinifyEnabled = true
-            isShrinkResources = true
-            // 指定混淆规则文件
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -44,4 +41,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation "com.google.android.play:app-update:2.1.0"
+    implementation "com.google.android.play:feature-delivery:2.1.0"
 }
