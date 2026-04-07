@@ -48,7 +48,7 @@ class _CommunityStrategiesPageState extends State<CommunityStrategiesPage> {
     try {
       final result = await ApiService.getPendingRulesV2(limit: _pageSize, page: _page);
       if (mounted) {
-        final List<dynamic> newList = result['list'] ?? [];
+        final List<dynamic> newList = result is List ? result : [];
         if (refresh || _page == 1) {
           _strategies = newList;
         } else {

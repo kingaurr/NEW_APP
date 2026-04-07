@@ -54,7 +54,7 @@ class _AlertListPageState extends State<AlertListPage> {
           unread = result['unread_count'] ?? 0;
         } else if (result is List) {
           // 格式2: 直接返回告警列表
-          alertsList = result.cast<dynamic>();
+          alertsList = List<dynamic>.from(result);
           unread = alertsList.where((a) => a['read'] != true).length;
         }
       }

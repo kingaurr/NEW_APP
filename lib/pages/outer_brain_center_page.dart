@@ -36,7 +36,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
       final status = await ApiService.getOuterBrainStatus();
       final pending = await ApiService.getPendingRulesV2(limit: 5);
       final ipo = await ApiService.getUpcomingIpo();
-      final light = await ApiService.getLatestlightWarGame();
+      final light = await ApiService.getLatestLightWarGame();
       final deep = await ApiService.getLatestDeepWarGame();
       final strategy = await ApiService.getStrategyAlchemyStatus();
 
