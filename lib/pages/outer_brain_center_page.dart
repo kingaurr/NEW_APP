@@ -181,20 +181,23 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _buildEvolutionReportCard(),
-                        const SizedBox(height: 16),
-                        _buildCollectionStatusCard(),
-                        const SizedBox(height: 16),
-                        _buildPendingRulesCard(),
-                        const SizedBox(height: 16),
-                        _buildIpoReminderCard(),
-                        const SizedBox(height: 16),
-                        _buildWarGameCard(),
-                        const SizedBox(height: 16),
-                        _buildStrategyAlchemyCard(),
-                        const SizedBox(height: 16),
-                        _buildLogAnalysisButton(),
-                        const SizedBox(height: 32),
+                        // ========== 临时测试：只保留一个 Text ==========
+                        const Text('测试', style: TextStyle(color: Colors.white)),
+                        // ========== 以下所有卡片全部注释 ==========
+                        // _buildEvolutionReportCard(),
+                        // const SizedBox(height: 16),
+                        // _buildCollectionStatusCard(),
+                        // const SizedBox(height: 16),
+                        // _buildPendingRulesCard(),
+                        // const SizedBox(height: 16),
+                        // _buildIpoReminderCard(),
+                        // const SizedBox(height: 16),
+                        // _buildWarGameCard(),
+                        // const SizedBox(height: 16),
+                        // _buildStrategyAlchemyCard(),
+                        // const SizedBox(height: 16),
+                        // _buildLogAnalysisButton(),
+                        // const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -202,13 +205,12 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     );
   }
 
-  // ========== 重构后的外脑进化报告卡片（固定高度，避免布局冲突） ==========
+  // ========== 以下卡片方法保留，但暂时未调用 ==========
   Widget _buildEvolutionReportCard() {
     final status = _evolutionReport['status'] ?? 'idle';
     final summary = _evolutionReport['summary'] ?? '';
     final newRules = _evolutionReport['new_rules'] ?? 0;
 
-    // 使用 SizedBox 固定高度，彻底避免布局冲突
     return SizedBox(
       height: 120,
       child: Card(
