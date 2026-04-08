@@ -181,8 +181,9 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _buildEvolutionReportCard(),
-                        const SizedBox(height: 16),
+                        // 临时移除外脑进化报告卡片以排查灰屏问题
+                        // _buildEvolutionReportCard(),
+                        // const SizedBox(height: 16),
                         _buildCollectionStatusCard(),
                         const SizedBox(height: 16),
                         _buildPendingRulesCard(),
@@ -202,57 +203,8 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     );
   }
 
-  Widget _buildEvolutionReportCard() {
-    final status = _evolutionReport['status'] ?? 'idle';
-    final summary = _evolutionReport['summary'] ?? '';
-    final newRules = _evolutionReport['new_rules'] ?? 0;
-    return Card(
-      color: const Color(0xFF2A2A2A),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 28),
-                const SizedBox(width: 8),
-                const Text('外脑进化报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(status).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _getStatusText(status),
-                    style: TextStyle(color: _getStatusColor(status), fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (summary.isNotEmpty)
-              Text(
-                summary,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            if (newRules > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  '新规则数: $newRules',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  // 外脑进化报告卡片（暂时注释）
+  // Widget _buildEvolutionReportCard() { ... }
 
   Widget _buildCollectionStatusCard() {
     final successRate = _status['collection_success_rate'] ?? 0.0;
