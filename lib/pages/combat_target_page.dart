@@ -75,14 +75,18 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
         }
       }
 
-      // 修复：获取策略列表，兼容 Map 和 List 返回值
+      // 获取策略列表，兼容 Map 和 List 返回值
       final strategiesResult = await ApiService.getStrategies();
       if (strategiesResult != null) {
         List<dynamic> strategiesList = [];
         if (strategiesResult is List) {
           strategiesList = strategiesResult;
-        } else if (strategiesResult is Map && strategiesResult['strategies'] is List) {
-          strategiesList = strategiesResult['strategies'] as List<dynamic>;
+        } else if (strategiesResult is Map) {
+          // 安全地提取 strategies 键
+          final strategiesData = (strategiesResult as Map).['strategies'];
+          if (strategiesData is List) {
+            strategiesList = strategiesData;
+          }
         }
         _strategyContributions = strategiesList.where((s) =>
           s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
