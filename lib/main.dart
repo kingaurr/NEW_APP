@@ -44,6 +44,8 @@ import 'pages/community_strategies_page.dart';
 import 'pages/community_strategy_detail_page.dart';
 import 'pages/ipo_analysis_page.dart';
 import 'pages/ipo_analysis_detail_page.dart';
+// 假设 StrategyLibraryPage 存在，请根据实际路径调整
+import 'pages/strategy_library_page.dart';
 // =======================
 
 void main() {
@@ -370,6 +372,12 @@ class _MyAppState extends State<MyApp> {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(
             builder: (context) => IpoAnalysisDetailPage(stockCode: args['stock_code']),
+          );
+        }
+        // ===== 策略库路由（新增） =====
+        else if (settings.name == '/strategy_library') {
+          return MaterialPageRoute(
+            builder: (context) => const StrategyLibraryPage(),
           );
         }
         // ===================
