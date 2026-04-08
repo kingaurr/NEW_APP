@@ -269,12 +269,12 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
 
   Widget _buildScoreRow(Map<String, dynamic> stock) {
     final scores = [
-      {'label': '技术', 'value': stock['tech_score'] ?? 0},
-      {'label': '资金', 'value': stock['fund_score'] ?? 0},
-      {'label': '基本', 'value': stock['fundamental_score'] ?? 0},
-      {'label': '情绪', 'value': stock['sentiment_score'] ?? 0},
-      {'label': '行业', 'value': stock['sector_score'] ?? 0},
-      {'label': '动量', 'value': stock['momentum_score'] ?? 0},
+      {'label': '技术', 'value': (stock['tech_score'] ?? 0).toDouble()},
+      {'label': '资金', 'value': (stock['fund_score'] ?? 0).toDouble()},
+      {'label': '基本', 'value': (stock['fundamental_score'] ?? 0).toDouble()},
+      {'label': '情绪', 'value': (stock['sentiment_score'] ?? 0).toDouble()},
+      {'label': '行业', 'value': (stock['sector_score'] ?? 0).toDouble()},
+      {'label': '动量', 'value': (stock['momentum_score'] ?? 0).toDouble()},
     ];
 
     return Row(
@@ -311,7 +311,9 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
     final totalScore = (stock['total_score'] ?? stock['score'] ?? 0).toDouble();
     final isHeld = stock['is_held'] ?? false;
     final isGray = stock['is_gray'] ?? false;
-    final reason = stock['reason'] ?? stock['selected_reason'] ?? '';
+    // 增加默认理由，避免因空字符串导致不显示
+    final reason = (stock['reason'] ?? stock['selected_reason'] ?? '');
+    final displayReason = reason.isEmpty ? 'AI选股' : reason;
     final ruleId = stock['rule_id'] ?? '';
 
     return Card(
@@ -391,28 +393,27 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
               ),
               const SizedBox(height: 8),
               _buildScoreRow(stock),
-              if (reason.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.info_outline, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        reason,
-                        style: const TextStyle(fontSize: 12, color: Colors.white70),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+              // 理由区域：始终显示，使用 displayReason
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      displayReason,
+                      style: const TextStyle(fontSize: 12, color: Colors.white70),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (ruleId.isNotEmpty)
-                      GestureDetector(
-                        onTap: () => _showRuleDetail(ruleId),
-                        child: const Icon(Icons.menu_book, size: 14, color: Color(0xFFD4AF37)),
-                      ),
-                  ],
-                ),
-              ],
+                  ),
+                  if (ruleId.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => _showRuleDetail(ruleId),
+                      child: const Icon(Icons.menu_book, size: 14, color: Color(0xFFD4AF37)),
+                    ),
+                ],
+              ),
               if (!isTradePool) ...[
                 const SizedBox(height: 8),
                 Row(

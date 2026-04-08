@@ -113,6 +113,129 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     return '平局';
   }
 
+  // ========== 新增：手动触发红蓝军对抗的方法 ==========
+  Future<void> _runLightWarGame() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('运行轻量对抗', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          '轻量对抗将在后台运行，大约需要几秒钟，是否继续？',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('运行'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final result = await ApiService.runLightWarGame();
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('轻量对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
+          );
+          // 延迟刷新，等待后端计算完成
+          Future.delayed(const Duration(seconds: 3), () {
+            _loadData();
+          });
+        } else {
+          throw Exception(result['message'] ?? '启动失败');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('启动轻量对抗失败: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _runDeepWarGame() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('运行深度对抗', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          '深度对抗将模拟极端行情，耗时较长，是否继续？',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('运行'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final result = await ApiService.runDeepWarGame();
+      if (mounted) {
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('深度对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
+          );
+          Future.delayed(const Duration(seconds: 5), () {
+            _loadData();
+          });
+        } else {
+          throw Exception(result['message'] ?? '启动失败');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('启动深度对抗失败: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  // ====================================================
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -310,7 +433,39 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                             ),
                           ),
 
+                        // ========== 新增：手动运行红蓝军对抗按钮 ==========
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _runLightWarGame,
+                                icon: const Icon(Icons.play_arrow, size: 16),
+                                label: const Text('运行轻量对抗'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2A2A2A),
+                                  foregroundColor: const Color(0xFFD4AF37),
+                                  side: const BorderSide(color: Color(0xFFD4AF37)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _runDeepWarGame,
+                                icon: const Icon(Icons.speed, size: 16),
+                                label: const Text('运行深度对抗'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2A2A2A),
+                                  foregroundColor: const Color(0xFFD4AF37),
+                                  side: const BorderSide(color: Color(0xFFD4AF37)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
+                        // =================================================
 
                         // 压力测试报告
                         if (_stressTest.isNotEmpty)

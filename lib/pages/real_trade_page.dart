@@ -5,6 +5,9 @@ import '../widgets/position_item.dart';
 // import '../widgets/trade_pool_item.dart'; // 暂时注释
 import '../widgets/signal_item.dart';
 import '../widgets/shadow_summary.dart';
+// ========== 新增导入：指纹验证 ==========
+import '../utils/biometrics_helper.dart';
+// ====================================
 
 class RealTradePage extends StatefulWidget {
   const RealTradePage({super.key});
@@ -118,6 +121,72 @@ class RealTradePageState extends State<RealTradePage> {
       ),
     );
   }
+
+  // ========== 新增：一键平仓方法 ==========
+  Future<void> _clearAllPositions() async {
+    // 先确认对话框
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('确认一键平仓', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          '此操作将卖出所有持仓股票，是否继续？',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确认平仓'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    // 指纹验证
+    final authenticated = await BiometricsHelper.authenticateForOperation(
+      operation: 'clear_all_positions',
+      operationDesc: '一键平仓',
+    );
+    if (!authenticated) {
+      _showMessage('指纹验证失败，无法平仓', isError: true);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await ApiService.clearAllPositions();
+      if (mounted) {
+        if (result == true) {
+          _showMessage('一键平仓成功');
+          await _loadData();
+        } else {
+          throw Exception('平仓请求失败');
+        }
+      }
+    } catch (e) {
+      _showMessage('平仓失败: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  // ====================================
 
   Future<void> _loadData() async {
     if (!mounted) return;
@@ -333,6 +402,28 @@ class RealTradePageState extends State<RealTradePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        // ========== 新增：一键平仓按钮（仅当有持仓时显示） ==========
+                        if (_positions.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _clearAllPositions,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text('一键平仓', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ),
+                        // =====================================================
 
                         // 当前持仓
                         if (_positions.isNotEmpty) ...[
