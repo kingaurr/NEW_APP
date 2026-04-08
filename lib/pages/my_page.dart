@@ -14,6 +14,10 @@ import '../pages/version_history_page.dart';
 import '../pages/risk_settings_page.dart';
 import '../pages/outer_brain_center_page.dart';
 import 'chat_page.dart';
+// ========== 新增导入 ==========
+import 'trading_signals_page.dart';
+import 'evolution_report_page.dart';
+// ============================
 
 class MyPage extends StatefulWidget {
   final bool biometricsEnabled;
@@ -186,6 +190,22 @@ class _MyPageState extends State<MyPage> {
   void _openCodeFixApproval() {
     Navigator.pushNamed(context, '/ai_advice_center', arguments: {'filter_type': 'code_fix'});
   }
+
+  // ========== 新增跳转方法 ==========
+  void _openTradingSignals() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TradingSignalsPage()),
+    );
+  }
+
+  void _openEvolutionReport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EvolutionReportPage()),
+    );
+  }
+  // =================================
 
   @override
   Widget build(BuildContext context) {
@@ -378,6 +398,18 @@ class _MyPageState extends State<MyPage> {
                                       label: '外脑中心',
                                       onTap: _openOuterBrainCenter,
                                     ),
+                                    // ========== 新增两个入口 ==========
+                                    _buildGridItem(
+                                      icon: Icons.trending_up,
+                                      label: '交易信号池',
+                                      onTap: _openTradingSignals,
+                                    ),
+                                    _buildGridItem(
+                                      icon: Icons.auto_awesome,
+                                      label: '外脑进化报告',
+                                      onTap: _openEvolutionReport,
+                                    ),
+                                    // =================================
                                   ],
                                 ),
                               ],

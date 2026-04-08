@@ -4,9 +4,13 @@ import '../api_service.dart';
 import '../widgets/fund_card.dart';
 import '../widgets/ai_status_bar.dart';
 import '../widgets/alert_settings.dart';
-import '../widgets/upgrade_status_card.dart'; // 新增导入
+import '../widgets/upgrade_status_card.dart';
 import '../pages/guardian_suggestions_page.dart';
 import '../pages/risk_settings_page.dart';
+// ========== 新增导入 ==========
+import 'trading_signals_page.dart';
+import 'evolution_report_page.dart';
+// ============================
 
 /// 首页
 /// 全局状态总览：资金、AI状态、风控、待处理事项
@@ -190,7 +194,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ===== 新增：语音快捷入口菜单 =====
+  // 语音快捷入口菜单
   void _showVoiceMenu() {
     showModalBottomSheet(
       context: context,
@@ -207,7 +211,6 @@ class _HomePageState extends State<HomePage> {
             title: const Text('语音对话', style: TextStyle(color: Colors.white)),
             onTap: () {
               Navigator.pop(context);
-              // 提示用户使用悬浮球（简化实现）
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('请使用右下角语音悬浮球进行语音对话')),
               );
@@ -254,7 +257,6 @@ class _HomePageState extends State<HomePage> {
               final text = controller.text.trim();
               if (text.isEmpty) return;
               Navigator.pop(ctx);
-              // 显示加载
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -271,7 +273,7 @@ class _HomePageState extends State<HomePage> {
               );
               try {
                 final result = await ApiService.voiceAsk(text);
-                Navigator.pop(context); // 关闭加载
+                Navigator.pop(context);
                 if (result != null && result['answer'] != null) {
                   showDialog(
                     context: context,
@@ -313,6 +315,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ========== 新增跳转方法 ==========
+  void _openTradingSignals() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TradingSignalsPage()),
+    );
+  }
+
+  void _openEvolutionReport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EvolutionReportPage()),
+    );
+  }
+  // =================================
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -345,7 +363,6 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 预警级别显示
                         if (_alertLevel != 'none')
                           Container(
                             margin: const EdgeInsets.only(bottom: 16),
@@ -386,7 +403,6 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
 
-                        // 资金双卡片
                         FundCard(
                           isReal: true,
                           onRefresh: _loadData,
@@ -398,11 +414,9 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // AI状态栏
                         AIStatusBar(onRefresh: _loadData),
                         const SizedBox(height: 16),
 
-                        // 市场与风控
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -463,7 +477,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // 快捷入口（使用 GridView 使按钮均匀分布并对齐）
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -512,8 +525,20 @@ class _HomePageState extends State<HomePage> {
                                     _buildQuickAction(
                                       icon: Icons.mic,
                                       label: '语音',
-                                      onTap: _showVoiceMenu, // 修复：打开语音菜单
+                                      onTap: _showVoiceMenu,
                                     ),
+                                    // ========== 新增两个快捷入口 ==========
+                                    _buildQuickAction(
+                                      icon: Icons.trending_up,
+                                      label: '信号池',
+                                      onTap: _openTradingSignals,
+                                    ),
+                                    _buildQuickAction(
+                                      icon: Icons.auto_awesome,
+                                      label: '外脑报告',
+                                      onTap: _openEvolutionReport,
+                                    ),
+                                    // ====================================
                                   ],
                                 ),
                               ],
@@ -522,11 +547,9 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // ===== 新增：系统升级状态卡片 =====
                         const UpgradeStatusCard(),
                         const SizedBox(height: 16),
 
-                        // 待处理事项
                         if (_pendingSuggestions > 0)
                           Card(
                             color: const Color(0xFF2A2A2A),
@@ -593,11 +616,8 @@ class _HomePageState extends State<HomePage> {
 
                         const SizedBox(height: 16),
 
-                        // 主动提醒设置
                         AlertSettings(
-                          onSettingsChanged: () {
-                            // 设置变更后的回调
-                          },
+                          onSettingsChanged: () {},
                         ),
                       ],
                     ),

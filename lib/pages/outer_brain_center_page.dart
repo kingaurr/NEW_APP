@@ -20,7 +20,6 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
   Map<String, dynamic> _warGameLight = {};
   Map<String, dynamic> _warGameDeep = {};
   Map<String, dynamic> _strategyStatus = {};
-  Map<String, dynamic> _evolutionReport = {};
   String _error = '';
 
   @override
@@ -40,7 +39,6 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
       final light = await ApiService.getLatestLightWarGame();
       final deep = await ApiService.getLatestDeepWarGame();
       final strategy = await ApiService.getStrategyAlchemyStatus();
-      final evolution = await ApiService.getEvolutionReport();
 
       if (mounted) {
         setState(() {
@@ -51,7 +49,6 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
           _warGameLight = light ?? {};
           _warGameDeep = deep ?? {};
           _strategyStatus = strategy ?? {};
-          _evolutionReport = evolution ?? {};
           _isLoading = false;
         });
       }
@@ -126,24 +123,6 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     );
   }
 
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'running': return '进化中';
-      case 'completed': return '已完成';
-      case 'failed': return '失败';
-      default: return '待执行';
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'running': return Colors.orange;
-      case 'completed': return Colors.green;
-      case 'failed': return Colors.red;
-      default: return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,86 +160,21 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        // ========== 临时测试：只保留一个 Text ==========
-                        const Text('测试', style: TextStyle(color: Colors.white)),
-                        // ========== 以下所有卡片全部注释 ==========
-                        // _buildEvolutionReportCard(),
-                        // const SizedBox(height: 16),
-                        // _buildCollectionStatusCard(),
-                        // const SizedBox(height: 16),
-                        // _buildPendingRulesCard(),
-                        // const SizedBox(height: 16),
-                        // _buildIpoReminderCard(),
-                        // const SizedBox(height: 16),
-                        // _buildWarGameCard(),
-                        // const SizedBox(height: 16),
-                        // _buildStrategyAlchemyCard(),
-                        // const SizedBox(height: 16),
-                        // _buildLogAnalysisButton(),
-                        // const SizedBox(height: 32),
+                        _buildCollectionStatusCard(),
+                        const SizedBox(height: 16),
+                        _buildPendingRulesCard(),
+                        const SizedBox(height: 16),
+                        _buildIpoReminderCard(),
+                        const SizedBox(height: 16),
+                        _buildWarGameCard(),
+                        const SizedBox(height: 16),
+                        _buildStrategyAlchemyCard(),
+                        const SizedBox(height: 16),
+                        _buildLogAnalysisButton(),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
-      ),
-    );
-  }
-
-  // ========== 以下卡片方法保留，但暂时未调用 ==========
-  Widget _buildEvolutionReportCard() {
-    final status = _evolutionReport['status'] ?? 'idle';
-    final summary = _evolutionReport['summary'] ?? '';
-    final newRules = _evolutionReport['new_rules'] ?? 0;
-
-    return SizedBox(
-      height: 120,
-      child: Card(
-        color: const Color(0xFF2A2A2A),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
-                  const SizedBox(width: 8),
-                  const Text('外脑进化报告', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      _getStatusText(status),
-                      style: TextStyle(color: _getStatusColor(status), fontSize: 10),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              if (summary.isNotEmpty)
-                Text(
-                  summary,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              if (newRules > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '新规则数: $newRules',
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
-                  ),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }

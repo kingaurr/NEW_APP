@@ -1257,4 +1257,29 @@ class ApiService {
     final list = await getPendingAdviceByType('code_fix');
     return list.length;
   }
+
+  // ========== 交易信号池接口 ==========
+  /// 获取交易信号池数据（包括交易池和影子池）
+  static Future<Map<String, dynamic>?> getTradingSignals() async {
+    return await httpGet('/trading_signals');
+  }
+
+  /// 从交易信号池中剔除股票
+  static Future<Map<String, dynamic>> removeFromTradingSignals(String stockCode) async {
+    final result = await httpPost('/trading_signals/remove', body: {'stock_code': stockCode});
+    return result ?? {'success': false, 'message': '请求失败'};
+  }
+
+  /// 将影子池中的股票提升到交易信号池
+  static Future<Map<String, dynamic>> promoteToTradingSignals(String stockCode) async {
+    final result = await httpPost('/trading_signals/promote', body: {'stock_code': stockCode});
+    return result ?? {'success': false, 'message': '请求失败'};
+  }
+
+  // ========== 外脑一键批准所有待审核规则 ==========
+  /// 一键批准所有待审核规则（需指纹验证）
+  static Future<Map<String, dynamic>> approveAllPendingRules() async {
+    final result = await httpPost('/outer_brain/approve_all');
+    return result ?? {'success': false, 'message': '请求失败'};
+  }
 }

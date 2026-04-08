@@ -44,9 +44,11 @@ import 'pages/community_strategies_page.dart';
 import 'pages/community_strategy_detail_page.dart';
 import 'pages/ipo_analysis_page.dart';
 import 'pages/ipo_analysis_detail_page.dart';
-// 假设 StrategyLibraryPage 存在，请根据实际路径调整
 import 'pages/strategy_library_page.dart';
-// =======================
+// ===== 新增交易信号池和外脑进化报告页面 =====
+import 'pages/trading_signals_page.dart';
+import 'pages/evolution_report_page.dart';
+// ============================================
 
 void main() {
   // 全局错误捕获，确保 Release 模式下错误可见
@@ -374,13 +376,23 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => IpoAnalysisDetailPage(stockCode: args['stock_code']),
           );
         }
-        // ===== 策略库路由（新增） =====
+        // ===== 策略库路由 =====
         else if (settings.name == '/strategy_library') {
           return MaterialPageRoute(
             builder: (context) => const StrategyLibraryPage(),
           );
         }
-        // ===================
+        // ===== 交易信号池和外脑进化报告路由 =====
+        else if (settings.name == '/trading_signals') {
+          return MaterialPageRoute(
+            builder: (context) => const TradingSignalsPage(),
+          );
+        } else if (settings.name == '/evolution_report') {
+          return MaterialPageRoute(
+            builder: (context) => const EvolutionReportPage(),
+          );
+        }
+        // ==========================================
         
         return null;
       },
