@@ -20,7 +20,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
   Map<String, dynamic> _warGameLight = {};
   Map<String, dynamic> _warGameDeep = {};
   Map<String, dynamic> _strategyStatus = {};
-  Map<String, dynamic> _evolutionReport = {}; // 新增
+  Map<String, dynamic> _evolutionReport = {};
   String _error = '';
 
   @override
@@ -40,7 +40,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
       final light = await ApiService.getLatestLightWarGame();
       final deep = await ApiService.getLatestDeepWarGame();
       final strategy = await ApiService.getStrategyAlchemyStatus();
-      final evolution = await ApiService.getEvolutionReport(); // 新增
+      final evolution = await ApiService.getEvolutionReport();
 
       if (mounted) {
         setState(() {
@@ -181,7 +181,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _buildEvolutionReportCard(), // 新增：外脑进化报告卡片
+                        _buildEvolutionReportCard(),
                         const SizedBox(height: 16),
                         _buildCollectionStatusCard(),
                         const SizedBox(height: 16),
@@ -202,7 +202,6 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     );
   }
 
-  // 新增：外脑进化报告卡片
   Widget _buildEvolutionReportCard() {
     final status = _evolutionReport['status'] ?? 'idle';
     final summary = _evolutionReport['summary'] ?? '';
