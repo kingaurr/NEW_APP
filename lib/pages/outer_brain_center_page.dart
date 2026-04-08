@@ -202,13 +202,15 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     );
   }
 
+  // ========== 重构后的外脑进化报告卡片（固定高度，避免布局冲突） ==========
   Widget _buildEvolutionReportCard() {
     final status = _evolutionReport['status'] ?? 'idle';
     final summary = _evolutionReport['summary'] ?? '';
     final newRules = _evolutionReport['new_rules'] ?? 0;
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 180),
+    // 使用 SizedBox 固定高度，彻底避免布局冲突
+    return SizedBox(
+      height: 120,
       child: Card(
         color: const Color(0xFF2A2A2A),
         elevation: 2,
@@ -221,19 +223,19 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 24),
+                  const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
                   const SizedBox(width: 8),
-                  const Text('外脑进化报告', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text('外脑进化报告', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: _getStatusColor(status).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       _getStatusText(status),
-                      style: TextStyle(color: _getStatusColor(status), fontSize: 11),
+                      style: TextStyle(color: _getStatusColor(status), fontSize: 10),
                     ),
                   ),
                 ],
@@ -242,7 +244,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
               if (summary.isNotEmpty)
                 Text(
                   summary,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -251,7 +253,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '新规则数: $newRules',
-                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    style: const TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ),
             ],
