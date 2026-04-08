@@ -1,17 +1,17 @@
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
-    namespace = "com.example.trading_app"
+    namespace "com.example.trading_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.trading_app"
+        applicationId "com.example.trading_app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -28,11 +28,11 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig signingConfigs.debug
         }
     }
 }
 
 flutter {
-    source = "../.."
+    source '../..'
 }
