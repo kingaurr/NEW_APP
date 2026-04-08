@@ -83,7 +83,7 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
           strategiesList = strategiesResult;
         } else if (strategiesResult is Map) {
           // 安全地提取 strategies 键
-          final strategiesData = (strategiesResult as Map).['strategies'];
+          final strategiesData = (strategiesResult as Map)['strategies'];
           if (strategiesData is List) {
             strategiesList = strategiesData;
           }
