@@ -82,7 +82,7 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
         if (strategiesResult is List) {
           strategiesList = strategiesResult;
         } else if (strategiesResult is Map && strategiesResult['strategies'] is List) {
-          strategiesList = strategiesResult['strategies'] as List;
+          strategiesList = strategiesResult['strategies'] as List<dynamic>;
         }
         _strategyContributions = strategiesList.where((s) =>
           s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)

@@ -65,7 +65,7 @@ class _MyPageState extends State<MyPage> {
         if (results[1] != null) {
           if (results[1] is int) {
             setState(() {
-              _unreadAlerts = results[1];
+              _unreadAlerts = results[1] as int;
             });
           } else if (results[1] is Map) {
             final alertMap = results[1] as Map<String, dynamic>;
@@ -78,7 +78,7 @@ class _MyPageState extends State<MyPage> {
         // 3. 待审批代码修改数量（修复空值问题）
         if (results[2] != null && results[2] is int) {
           setState(() {
-            _pendingCodeFixCount = results[2];
+            _pendingCodeFixCount = results[2] as int;
           });
         } else if (results[2] != null && results[2] is Map) {
           // 兼容 Map 返回值
