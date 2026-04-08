@@ -17,7 +17,6 @@ class _RightBrainPageState extends State<RightBrainPage> {
   List<dynamic> _signals = [];
   String _error = '';
 
-  // 用于记录展开的信号ID（思维链）
   final Set<String> _expandedSignalIds = {};
 
   @override
@@ -27,6 +26,7 @@ class _RightBrainPageState extends State<RightBrainPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     _error = '';
     try {
@@ -50,6 +50,7 @@ class _RightBrainPageState extends State<RightBrainPage> {
   }
 
   void _toggleThinkingTrace(String signalId) {
+    if (!mounted) return;
     setState(() {
       if (_expandedSignalIds.contains(signalId)) {
         _expandedSignalIds.remove(signalId);
@@ -107,6 +108,7 @@ class _RightBrainPageState extends State<RightBrainPage> {
   Widget _buildStatusCard() {
     final mode = _status['mode'] ?? '未知';
     final model = _status['model'] ?? _status['model_name'] ?? '未配置';
+    final statusText = _status['status'] ?? _status['state'] ?? '未知';
     final todaySignals = _status['today_signals'] ?? 0;
     final avgConfidence = (_status['avg_confidence'] ?? 0.5).toDouble();
     final costToday = (_status['cost_today'] ?? 0.0).toDouble();
@@ -128,7 +130,7 @@ class _RightBrainPageState extends State<RightBrainPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('状态', mode),
+            _buildInfoRow('状态', statusText),
             _buildInfoRow('模式', useApi ? 'API驱动' : '本地规则'),
             _buildInfoRow('模型', model),
             const Divider(color: Colors.grey, height: 24),
@@ -156,11 +158,22 @@ class _RightBrainPageState extends State<RightBrainPage> {
 
   Widget _buildSignalsList() {
     if (_signals.isEmpty) {
-      return const Card(
-        color: Color(0xFF2A2A2A),
+      return Card(
+        color: const Color(0xFF2A2A2A),
         child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Center(child: Text('暂无信号记录', style: TextStyle(color: Colors.grey))),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              const Icon(Icons.psychology, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('暂无信号记录', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 8),
+              Text(
+                '请等待右脑生成信号',
+                style: TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 12),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -189,7 +202,7 @@ class _RightBrainPageState extends State<RightBrainPage> {
     final action = signal['action'] ?? 'hold';
     final confidence = (signal['confidence'] ?? 0.5).toDouble();
     final reason = signal['reason'] ?? '';
-    final thinkingTrace = signal['thinking_trace'] ?? signal['trace']; // 兼容字段名
+    final thinkingTrace = signal['thinking_trace'] ?? signal['trace'];
     final timestamp = signal['timestamp'] ?? '';
     final isExpanded = _expandedSignalIds.contains(signalId);
 

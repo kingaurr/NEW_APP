@@ -1,6 +1,7 @@
 // lib/widgets/budget_setting.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import '../utils/biometrics_helper.dart'; // 新增导入
 
 /// 预算设置组件
 /// 用于设置和显示AI调用预算（日预算/月预算）
@@ -39,14 +40,14 @@ class _BudgetSettingState extends State<BudgetSetting> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 获取预算配置
       final config = await ApiService.getBudgetConfig();
-      if (config != null) {
+      if (config != null && mounted) {
         setState(() {
           _dailyBudget = config['daily_budget'] ?? 5.0;
           _monthlyBudget = config['monthly_budget'] ?? 200.0;
@@ -55,9 +56,8 @@ class _BudgetSettingState extends State<BudgetSetting> {
         });
       }
 
-      // 获取成本使用情况
       final costStatus = await ApiService.getCostStatus();
-      if (costStatus != null) {
+      if (costStatus != null && mounted) {
         setState(() {
           _dailyUsed = costStatus['daily_used'] ?? 0.0;
           _monthlyUsed = costStatus['monthly_used'] ?? 0.0;
@@ -77,6 +77,19 @@ class _BudgetSettingState extends State<BudgetSetting> {
         });
       }
     }
+  }
+
+  Future<bool> _verifyFingerprint(String actionDesc) async {
+    final authenticated = await BiometricsHelper.authenticateAndGetToken(
+      reason: '验证指纹以$actionDesc',
+    );
+    if (!authenticated && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('指纹验证失败，操作取消'), backgroundColor: Colors.red),
+      );
+      return false;
+    }
+    return authenticated;
   }
 
   Future<void> _saveDailyBudget() async {
@@ -108,30 +121,33 @@ class _BudgetSettingState extends State<BudgetSetting> {
       return;
     }
 
+    // 指纹验证
+    final verified = await _verifyFingerprint('修改日预算');
+    if (!verified) return;
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // 修复：updateBudgetConfig 接受 Map 参数
       final success = await ApiService.updateBudgetConfig({
         'daily_budget': newValue,
         'monthly_budget': _monthlyBudget,
       });
-      if (success == true) {
-        setState(() {
-          _dailyBudget = newValue;
-          _dailyController.text = newValue.toStringAsFixed(2);
-          _isEditingDaily = false;
-        });
-        widget.onChanged?.call();
-        if (mounted) {
+      if (mounted) {
+        if (success == true) {
+          setState(() {
+            _dailyBudget = newValue;
+            _dailyController.text = newValue.toStringAsFixed(2);
+            _isEditingDaily = false;
+          });
+          widget.onChanged?.call();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('日预算已更新'), backgroundColor: Colors.green),
           );
+        } else {
+          throw Exception('保存失败');
         }
-      } else {
-        throw Exception('保存失败');
       }
     } catch (e) {
       if (mounted) {
@@ -177,30 +193,33 @@ class _BudgetSettingState extends State<BudgetSetting> {
       return;
     }
 
+    // 指纹验证
+    final verified = await _verifyFingerprint('修改月预算');
+    if (!verified) return;
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // 修复：updateBudgetConfig 接受 Map 参数
       final success = await ApiService.updateBudgetConfig({
         'daily_budget': _dailyBudget,
         'monthly_budget': newValue,
       });
-      if (success == true) {
-        setState(() {
-          _monthlyBudget = newValue;
-          _monthlyController.text = newValue.toStringAsFixed(2);
-          _isEditingMonthly = false;
-        });
-        widget.onChanged?.call();
-        if (mounted) {
+      if (mounted) {
+        if (success == true) {
+          setState(() {
+            _monthlyBudget = newValue;
+            _monthlyController.text = newValue.toStringAsFixed(2);
+            _isEditingMonthly = false;
+          });
+          widget.onChanged?.call();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('月预算已更新'), backgroundColor: Colors.green),
           );
+        } else {
+          throw Exception('保存失败');
         }
-      } else {
-        throw Exception('保存失败');
       }
     } catch (e) {
       if (mounted) {
@@ -300,7 +319,6 @@ class _BudgetSettingState extends State<BudgetSetting> {
             ),
             const SizedBox(height: 16),
 
-            // 日预算
             _buildBudgetItem(
               title: '日预算',
               budget: _dailyBudget,
@@ -325,7 +343,6 @@ class _BudgetSettingState extends State<BudgetSetting> {
 
             const SizedBox(height: 16),
 
-            // 月预算
             _buildBudgetItem(
               title: '月预算',
               budget: _monthlyBudget,

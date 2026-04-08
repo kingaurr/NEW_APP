@@ -38,6 +38,7 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -74,11 +75,16 @@ class _CombatTargetPageState extends State<CombatTargetPage> {
         }
       }
 
-      final strategies = await ApiService.getStrategies();
-      if (strategies != null) {
-        // 使用 extractList 统一处理列表数据
-        final list = ApiService.extractList(strategies, key: 'strategies');
-        _strategyContributions = list.where((s) =>
+      // 修复：获取策略列表，兼容 Map 和 List 返回值
+      final strategiesResult = await ApiService.getStrategies();
+      if (strategiesResult != null) {
+        List<dynamic> strategiesList = [];
+        if (strategiesResult is List) {
+          strategiesList = strategiesResult;
+        } else if (strategiesResult is Map && strategiesResult['strategies'] is List) {
+          strategiesList = strategiesResult['strategies'] as List;
+        }
+        _strategyContributions = strategiesList.where((s) =>
           s is Map && (s['negative_contribution_score'] != null && s['negative_contribution_score'] > 0)
         ).toList();
       }

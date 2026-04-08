@@ -17,11 +17,10 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   List<dynamic> _strategies = [];
   List<dynamic> _pendingRules = [];
   List<dynamic> _guardianSuggestions = [];
-  List<dynamic> _codeFixSuggestions = []; // 新增：代码修改建议
-  Map<String, dynamic> _evolutionReport = {};
+  List<dynamic> _codeFixSuggestions = [];
   int _pendingCount = 0;
   int _suggestionCount = 0;
-  int _codeFixCount = 0; // 新增
+  int _codeFixCount = 0;
   String _errorMessage = '';
 
   late TabController _tabController;
@@ -29,7 +28,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this); // 改为4个Tab
+    _tabController = TabController(length: 4, vsync: this);
     _loadData();
   }
 
@@ -47,6 +46,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -56,20 +56,21 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     List<dynamic> pendingRules = [];
     List<dynamic> guardianSuggestions = [];
     List<dynamic> codeFixSuggestions = [];
-    Map<String, dynamic> evolutionReport = {};
 
     // 1. 策略列表
     try {
       final result = await ApiService.getStrategies();
       if (result != null && result is List) {
         strategies = result;
+      } else {
+        strategies = [];
       }
     } catch (e) {
       debugPrint('getStrategies 错误: $e');
-      _showErrorSnackbar('策略列表加载失败');
+      strategies = [];
     }
 
-    // 2. 待审核规则（外脑规则）
+    // 2. 待审核规则
     try {
       final result = await ApiService.getPendingRules();
       if (result != null && result is List) {
@@ -80,7 +81,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _showErrorSnackbar('待审核规则加载失败');
     }
 
-    // 3. 守门员建议（普通建议）
+    // 3. 守门员建议
     try {
       final result = await ApiService.getPendingSuggestions();
       if (result != null && result is List) {
@@ -91,7 +92,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _showErrorSnackbar('守门员建议加载失败');
     }
 
-    // 4. 代码修改建议（type=code_fix）
+    // 4. 代码修改建议
     try {
       final result = await ApiService.getPendingAdviceByType('code_fix');
       if (result != null && result is List) {
@@ -102,45 +103,17 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       _showErrorSnackbar('代码修改建议加载失败');
     }
 
-    // 5. 进化报告
-    try {
-      final result = await ApiService.getEvolutionReport();
-      if (result != null && result is Map<String, dynamic>) {
-        evolutionReport = result;
-      }
-    } catch (e) {
-      debugPrint('getEvolutionReport 错误: $e');
-      _showErrorSnackbar('进化报告加载失败');
-    }
-
-    setState(() {
-      _strategies = strategies;
-      _pendingRules = pendingRules;
-      _pendingCount = _pendingRules.length;
-      _guardianSuggestions = guardianSuggestions;
-      _suggestionCount = _guardianSuggestions.length;
-      _codeFixSuggestions = codeFixSuggestions;
-      _codeFixCount = _codeFixSuggestions.length;
-      _evolutionReport = evolutionReport;
-      _isLoading = false;
-    });
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'running': return '进化中';
-      case 'completed': return '已完成';
-      case 'failed': return '失败';
-      default: return '待执行';
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'running': return Colors.orange;
-      case 'completed': return Colors.green;
-      case 'failed': return Colors.red;
-      default: return Colors.grey;
+    if (mounted) {
+      setState(() {
+        _strategies = strategies;
+        _pendingRules = pendingRules;
+        _pendingCount = _pendingRules.length;
+        _guardianSuggestions = guardianSuggestions;
+        _suggestionCount = _guardianSuggestions.length;
+        _codeFixSuggestions = codeFixSuggestions;
+        _codeFixCount = _codeFixSuggestions.length;
+        _isLoading = false;
+      });
     }
   }
 
@@ -156,7 +129,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
             const Tab(text: '策略库'),
             Tab(text: '待审核规则($_pendingCount)'),
             Tab(text: '守门员建议($_suggestionCount)'),
-            Tab(text: '代码修改($_codeFixCount)'), // 新增Tab
+            Tab(text: '代码修改($_codeFixCount)'),
           ],
           labelColor: const Color(0xFFD4AF37),
           unselectedLabelColor: Colors.grey,
@@ -183,38 +156,6 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
                 )
               : Column(
                   children: [
-                    if (_evolutionReport.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Card(
-                          color: const Color(0xFF2A2A2A),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('外脑进化报告', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                                      const SizedBox(height: 4),
-                                      Text(_evolutionReport['summary'] ?? '暂无新规则', style: const TextStyle(color: Colors.grey, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(color: _getStatusColor(_evolutionReport['status'] ?? 'idle').withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                                  child: Text(_getStatusText(_evolutionReport['status'] ?? 'idle'), style: TextStyle(color: _getStatusColor(_evolutionReport['status'] ?? 'idle'), fontSize: 10)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
@@ -222,7 +163,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
                           _buildStrategiesTab(),
                           _buildPendingRulesTab(),
                           _buildGuardianSuggestionsTab(),
-                          _buildCodeFixTab(), // 新增
+                          _buildCodeFixTab(),
                         ],
                       ),
                     ),
@@ -258,7 +199,6 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     );
   }
 
-  // 新增：代码修改审批Tab
   Widget _buildCodeFixTab() {
     if (_codeFixSuggestions.isEmpty) {
       return const Center(child: Text('暂无代码修改请求', style: TextStyle(color: Colors.grey)));
@@ -266,14 +206,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _codeFixSuggestions.length,
-      itemBuilder: (context, index) {
-        final suggestion = _codeFixSuggestions[index];
-        // 复用守门员建议组件（如果字段不匹配，可以新建一个组件，但暂时复用）
-        return guardian.GuardianSuggestionItem(
-          suggestion: suggestion,
-          onStatusChanged: _loadData,
-        );
-      },
+      itemBuilder: (context, index) => guardian.GuardianSuggestionItem(suggestion: _codeFixSuggestions[index], onStatusChanged: _loadData),
     );
   }
 }

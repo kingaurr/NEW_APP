@@ -29,30 +29,29 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (!mounted) return;
+    setState(() => _isLoading = true);
 
     try {
       _biometricsEnabled = await BiometricsHelper.isEnabled();
       _biometricType = await BiometricsHelper.getBiometricTypeName();
 
       final status = await ApiService.securityStatus();
-      if (status != null) {
+      if (mounted && status != null) {
         setState(() {
           _securityStatus = status;
         });
       }
 
       final esStatus = await ApiService.emergencyStatus();
-      if (esStatus != null) {
+      if (mounted && esStatus != null) {
         setState(() {
           _emergencyStatus = esStatus;
         });
       }
 
       final audit = await ApiService.getAuditLogs(limit: 5);
-      if (audit != null && audit is List) {
+      if (mounted && audit != null && audit is List) {
         setState(() {
           _recentAuditLogs = audit;
         });
@@ -66,15 +65,12 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> _updateSecurityLevel(String level) async {
-    // 增加指纹验证
     final authenticated = await BiometricsHelper.authenticateAndGetToken(
       reason: '验证指纹以修改安全级别',
     );
@@ -88,15 +84,13 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     }
 
     final result = await ApiService.securityLevelSet(level);
-    if (result?['success'] == true) {
-      if (mounted) {
+    if (mounted) {
+      if (result?['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('安全级别已切换为$level'), backgroundColor: Colors.green),
         );
         _loadData();
-      }
-    } else {
-      if (mounted) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('切换失败: ${result?['error'] ?? '未知错误'}'), backgroundColor: Colors.red),
         );
@@ -131,13 +125,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     if (confirmed != true) return;
 
     final result = await ApiService.emergencyStop('用户手动触发');
-    if (result?['success'] == true) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('紧急停止已触发'), backgroundColor: Colors.red),
-        );
-        _loadData();
-      }
+    if (mounted && result?['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('紧急停止已触发'), backgroundColor: Colors.red),
+      );
+      _loadData();
     }
   }
 
@@ -168,13 +160,11 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     if (confirmed != true) return;
 
     final result = await ApiService.emergencyRecover(reason: '用户手动恢复');
-    if (result?['success'] == true) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('系统已恢复'), backgroundColor: Colors.green),
-        );
-        _loadData();
-      }
+    if (mounted && result?['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('系统已恢复'), backgroundColor: Colors.green),
+      );
+      _loadData();
     }
   }
 
@@ -397,12 +387,14 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
                   activeColor: const Color(0xFFD4AF37),
                   onChanged: (value) async {
                     await BiometricsHelper.setEnabled(value);
-                    setState(() {
-                      _biometricsEnabled = value;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(value ? '已启用$_biometricType验证' : '已禁用生物识别')),
-                    );
+                    if (mounted) {
+                      setState(() {
+                        _biometricsEnabled = value;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(value ? '已启用$_biometricType验证' : '已禁用生物识别')),
+                      );
+                    }
                   },
                 ),
               ],
@@ -475,7 +467,7 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
     );
   }
 
-  // 修复布局：将 ListView.separated 改为 Column 手动构建，避免嵌套滚动导致无限长
+  // 修复布局：使用 ListView.builder 并限制高度，避免无限滚动
   Widget _buildRecentAuditLogs() {
     if (_recentAuditLogs.isEmpty) {
       return const SizedBox.shrink();
@@ -494,13 +486,23 @@ class _SecurityCenterPageState extends State<SecurityCenterPage> {
         Card(
           color: const Color(0xFF2A2A2A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Column(
-            children: [
-              for (int i = 0; i < _recentAuditLogs.length; i++) ...[
-                if (i > 0) const Divider(color: Colors.grey, height: 1),
-                _buildAuditLogItem(_recentAuditLogs[i]),
-              ],
-            ],
+          child: SizedBox(
+            height: 300, // 限制高度，避免无限滚动
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: _recentAuditLogs.length,
+              itemBuilder: (context, index) {
+                final log = _recentAuditLogs[index];
+                return Column(
+                  children: [
+                    _buildAuditLogItem(log),
+                    if (index < _recentAuditLogs.length - 1)
+                      const Divider(color: Colors.grey, height: 1),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ],

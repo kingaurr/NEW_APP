@@ -39,7 +39,7 @@ class RealTradePageState extends State<RealTradePage> {
   Future<void> _loadMode() async {
     try {
       final result = await ApiService.getMode();
-      if (result != null && result['mode'] != null) {
+      if (mounted && result != null && result['mode'] != null) {
         setState(() {
           _currentMode = result['mode'];
         });
@@ -79,20 +79,24 @@ class RealTradePageState extends State<RealTradePage> {
 
     if (confirm != true) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final result = await ApiService.setMode(newMode);
-      if (result != null && result['success'] == true) {
-        setState(() {
-          _currentMode = newMode;
-        });
-        _showMessage('已切换到${newMode == 'real' ? '实盘' : '模拟'}模式');
-        _loadData();
-      } else {
-        throw Exception('切换失败');
+      if (mounted) {
+        if (result != null && result['success'] == true) {
+          setState(() {
+            _currentMode = newMode;
+          });
+          _showMessage('已切换到${newMode == 'real' ? '实盘' : '模拟'}模式');
+          _loadData();
+        } else {
+          throw Exception('切换失败');
+        }
       }
     } catch (e) {
       _showMessage('切换失败: $e', isError: true);
@@ -116,6 +120,7 @@ class RealTradePageState extends State<RealTradePage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -128,6 +133,8 @@ class RealTradePageState extends State<RealTradePage> {
         ApiService.getSignalHistory(),
         ApiService.getShadowRealtimeCompare(),
       ]);
+
+      if (!mounted) return;
 
       double fund = 0.0;
       if (results[0] != null && results[0] is Map<String, dynamic>) {
@@ -183,9 +190,13 @@ class RealTradePageState extends State<RealTradePage> {
           ),
         );
       }
-      setState(() => _errorMessage = '加载失败: $e');
+      if (mounted) {
+        setState(() => _errorMessage = '加载失败: $e');
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

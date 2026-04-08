@@ -29,7 +29,7 @@ class _MyPageState extends State<MyPage> {
   bool _voiceEnabled = true;
   String _currentVersion = '';
   int _unreadAlerts = 0;
-  int _pendingCodeFixCount = 0; // 新增：待审批代码修改数量
+  int _pendingCodeFixCount = 0;
   String _errorMessage = '';
 
   @override
@@ -39,6 +39,7 @@ class _MyPageState extends State<MyPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -48,38 +49,56 @@ class _MyPageState extends State<MyPage> {
       final results = await Future.wait([
         ApiService.getSystemVersion(),
         ApiService.getUnreadAlertCount(),
-        ApiService.getPendingCodeFixCount(), // 新增
+        ApiService.getPendingCodeFixCount(),
       ]);
 
-      if (results[0] != null && results[0] is Map<String, dynamic>) {
-        final versionMap = results[0] as Map<String, dynamic>;
-        setState(() {
-          _currentVersion = versionMap['current_version'] ?? 'v1.0.0';
-        });
-      }
+      if (mounted) {
+        // 1. 系统版本
+        if (results[0] != null && results[0] is Map<String, dynamic>) {
+          final versionMap = results[0] as Map<String, dynamic>;
+          setState(() {
+            _currentVersion = versionMap['current_version'] ?? 'v1.0.0';
+          });
+        }
 
-      if (results[1] != null && results[1] is int) {
-        setState(() {
-          _unreadAlerts = results[1] as int;
-        });
-      } else if (results[1] != null && results[1] is Map) {
-        final alertMap = results[1] as Map<String, dynamic>;
-        setState(() {
-          _unreadAlerts = alertMap['count'] ?? 0;
-        });
-      }
+        // 2. 未读告警数
+        if (results[1] != null) {
+          if (results[1] is int) {
+            setState(() {
+              _unreadAlerts = results[1];
+            });
+          } else if (results[1] is Map) {
+            final alertMap = results[1] as Map<String, dynamic>;
+            setState(() {
+              _unreadAlerts = alertMap['count'] ?? 0;
+            });
+          }
+        }
 
-      // 新增：待审批代码修改数量
-      if (results[2] != null && results[2] is int) {
-        setState(() {
-          _pendingCodeFixCount = results[2] as int;
-        });
+        // 3. 待审批代码修改数量（修复空值问题）
+        if (results[2] != null && results[2] is int) {
+          setState(() {
+            _pendingCodeFixCount = results[2];
+          });
+        } else if (results[2] != null && results[2] is Map) {
+          // 兼容 Map 返回值
+          final map = results[2] as Map<String, dynamic>;
+          setState(() {
+            _pendingCodeFixCount = map['count'] ?? 0;
+          });
+        } else {
+          setState(() {
+            _pendingCodeFixCount = 0;
+          });
+        }
       }
     } catch (e) {
       debugPrint('加载个人页面数据失败: $e');
-      setState(() {
-        _errorMessage = '加载失败: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = '加载失败: $e';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -164,7 +183,6 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  // 新增：跳转到 AI 优化建议中心（筛选 code_fix 建议）
   void _openCodeFixApproval() {
     Navigator.pushNamed(context, '/ai_advice_center', arguments: {'filter_type': 'code_fix'});
   }
@@ -218,7 +236,6 @@ class _MyPageState extends State<MyPage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // 新增：待办事项卡片（代码修改待审批）
                         if (_pendingCodeFixCount > 0)
                           Card(
                             color: const Color(0xFF2A2A2A),

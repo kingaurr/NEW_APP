@@ -17,7 +17,6 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
   List<dynamic> _decisions = [];
   String _error = '';
 
-  // 用于记录展开的决策ID（辩论日志）
   final Set<String> _expandedDecisionIds = {};
 
   @override
@@ -27,6 +26,7 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     _error = '';
     try {
@@ -50,6 +50,7 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
   }
 
   void _toggleDebateLog(String decisionId) {
+    if (!mounted) return;
     setState(() {
       if (_expandedDecisionIds.contains(decisionId)) {
         _expandedDecisionIds.remove(decisionId);
@@ -107,6 +108,7 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
   Widget _buildStatusCard() {
     final mode = _status['mode'] ?? '未知';
     final model = _status['model'] ?? _status['model_name'] ?? '未配置';
+    final statusText = _status['status'] ?? _status['state'] ?? '未知';
     final todayDecisions = _status['today_decisions'] ?? 0;
     final avgConfidence = (_status['avg_confidence'] ?? 0.5).toDouble();
     final costToday = (_status['cost_today'] ?? 0.0).toDouble();
@@ -128,7 +130,7 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('状态', mode),
+            _buildInfoRow('状态', statusText),
             _buildInfoRow('模式', mode == 'API_DRIVEN' ? 'API驱动' : mode),
             _buildInfoRow('模型', model),
             const Divider(color: Colors.grey, height: 24),
@@ -177,11 +179,22 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
 
   Widget _buildDecisionsList() {
     if (_decisions.isEmpty) {
-      return const Card(
-        color: Color(0xFF2A2A2A),
+      return Card(
+        color: const Color(0xFF2A2A2A),
         child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Center(child: Text('暂无决策记录', style: TextStyle(color: Colors.grey))),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              const Icon(Icons.shield, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('暂无决策记录', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 8),
+              Text(
+                '请等待左脑生成决策',
+                style: TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 12),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -210,7 +223,7 @@ class _LeftBrainPageState extends State<LeftBrainPage> {
     final action = decision['action'] ?? decision['decision'] ?? 'hold';
     final confidence = (decision['confidence'] ?? 0.5).toDouble();
     final reason = decision['reason'] ?? '';
-    final debateLog = decision['debate_log'] ?? decision['log']; // 兼容字段名
+    final debateLog = decision['debate_log'] ?? decision['log'];
     final timestamp = decision['timestamp'] ?? '';
     final isExpanded = _expandedDecisionIds.contains(decisionId);
 

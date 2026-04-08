@@ -20,6 +20,7 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
   Map<String, dynamic> _warGameLight = {};
   Map<String, dynamic> _warGameDeep = {};
   Map<String, dynamic> _strategyStatus = {};
+  Map<String, dynamic> _evolutionReport = {}; // 新增
   String _error = '';
 
   @override
@@ -39,17 +40,18 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
       final light = await ApiService.getLatestLightWarGame();
       final deep = await ApiService.getLatestDeepWarGame();
       final strategy = await ApiService.getStrategyAlchemyStatus();
+      final evolution = await ApiService.getEvolutionReport(); // 新增
 
       if (mounted) {
         setState(() {
           _status = status ?? {};
           _pendingRules = pending ?? [];
-          // 安全解析 IPO 列表
           final upcoming = ipo is Map ? (ipo['upcoming'] is List ? ipo['upcoming'] as List : const []) : const [];
           _upcomingIpo = upcoming;
           _warGameLight = light ?? {};
           _warGameDeep = deep ?? {};
           _strategyStatus = strategy ?? {};
+          _evolutionReport = evolution ?? {};
           _isLoading = false;
         });
       }
@@ -124,6 +126,24 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
     );
   }
 
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'running': return '进化中';
+      case 'completed': return '已完成';
+      case 'failed': return '失败';
+      default: return '待执行';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'running': return Colors.orange;
+      case 'completed': return Colors.green;
+      case 'failed': return Colors.red;
+      default: return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,6 +181,8 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
+                        _buildEvolutionReportCard(), // 新增：外脑进化报告卡片
+                        const SizedBox(height: 16),
                         _buildCollectionStatusCard(),
                         const SizedBox(height: 16),
                         _buildPendingRulesCard(),
@@ -176,6 +198,59 @@ class _OuterBrainCenterPageState extends State<OuterBrainCenterPage> {
                       ],
                     ),
                   ),
+      ),
+    );
+  }
+
+  // 新增：外脑进化报告卡片
+  Widget _buildEvolutionReportCard() {
+    final status = _evolutionReport['status'] ?? 'idle';
+    final summary = _evolutionReport['summary'] ?? '';
+    final newRules = _evolutionReport['new_rules'] ?? 0;
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 28),
+                const SizedBox(width: 8),
+                const Text('外脑进化报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getStatusText(status),
+                    style: TextStyle(color: _getStatusColor(status), fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (summary.isNotEmpty)
+              Text(
+                summary,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            if (newRules > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '新规则数: $newRules',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
