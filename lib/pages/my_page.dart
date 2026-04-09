@@ -79,7 +79,7 @@ class _MyPageState extends State<MyPage> {
           }
         }
 
-        // 3. 待审批代码修改数量（修复空值问题）
+        // 3. 待审批代码修改数量
         if (results[2] != null && results[2] is int) {
           setState(() {
             _pendingCodeFixCount = results[2] as int;
@@ -402,7 +402,7 @@ class _MyPageState extends State<MyPage> {
                                       label: '外脑中心',
                                       onTap: _openOuterBrainCenter,
                                     ),
-                                    // ========== 新增两个入口 ==========
+                                    // ========== 新增入口 ==========
                                     _buildGridItem(
                                       icon: Icons.trending_up,
                                       label: '交易信号池',
@@ -413,16 +413,15 @@ class _MyPageState extends State<MyPage> {
                                       label: '外脑进化报告',
                                       onTap: _openEvolutionReport,
                                     ),
-                                    // ========== 新增报告中心入口 ==========
                                     _buildGridItem(
-                                      icon: Icons.description,
+                                      icon: Icons.assessment,
                                       label: '系统报告',
                                       onTap: _openReportCenter,
                                     ),
                                     // ===================================
                                   ],
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
