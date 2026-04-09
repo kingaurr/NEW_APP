@@ -114,6 +114,10 @@ class _ReportCenterPageState extends State<ReportCenterPage>
     final poolStats = report['pool_stats'] ?? {};
     final aiEvolution = report['ai_evolution'] ?? {};
     final marketEnv = report['market_environment'] ?? {};
+    final health = report['system_health'] ?? {};
+    final infrastructure = report['infrastructure'] ?? {};
+    final todos = report['todos'] ?? {};
+    final trends = report['trends'] ?? {};
     final summary = report['summary'] ?? '';
 
     final parts = <String>[];
@@ -129,6 +133,15 @@ class _ReportCenterPageState extends State<ReportCenterPage>
     }
     if (marketEnv.isNotEmpty) {
       parts.add('【市场环境】情绪${marketEnv['sentiment']}，波动率${marketEnv['volatility_state']}，市场状态${marketEnv['market_state']}。');
+    }
+    if (health.isNotEmpty) {
+      parts.add('【系统健康】心跳${health['heartbeat'] ?? ''}，模块健康分${health['module_health_score']}，数据源健康分${health['data_source_health']}。');
+    }
+    if (infrastructure.isNotEmpty) {
+      parts.add('【基础设施】数据源切换${infrastructure['source_switches']}次，日志异常${infrastructure['log_errors']}条。');
+    }
+    if (todos.isNotEmpty) {
+      parts.add('【待办】昨日完成${todos['yesterday_completed']}项，今日待办${todos['today_pending']}项。');
     }
 
     final text = parts.isNotEmpty ? parts.join('\n') : '请分析此报告。';
@@ -219,6 +232,10 @@ class _ReportCenterPageState extends State<ReportCenterPage>
     final poolStats = report['pool_stats'] ?? {};
     final aiEvolution = report['ai_evolution'] ?? {};
     final marketEnv = report['market_environment'] ?? {};
+    final health = report['system_health'] ?? {};
+    final infrastructure = report['infrastructure'] ?? {};
+    final todos = report['todos'] ?? {};
+    final trends = report['trends'] ?? {};
     final summary = report['summary'] ?? '';
 
     return SingleChildScrollView(
@@ -226,6 +243,7 @@ class _ReportCenterPageState extends State<ReportCenterPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 报告摘要
           Card(
             color: const Color(0xFF2A2A2A),
             child: Padding(
@@ -241,6 +259,30 @@ class _ReportCenterPageState extends State<ReportCenterPage>
             ),
           ),
           const SizedBox(height: 16),
+
+          // 系统健康度总览（新增）
+          if (health.isNotEmpty) ...[
+            Card(
+              color: const Color(0xFF2A2A2A),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('系统健康度', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('心跳状态', health['heartbeat'] ?? '未知'),
+                    _buildInfoRow('模块健康分', health['module_health_score']?.toString() ?? '暂无'),
+                    _buildInfoRow('数据源健康分', health['data_source_health']?.toString() ?? '暂无'),
+                    _buildInfoRow('网络延迟', health['network_latency_ms'] != null ? '${health['network_latency_ms']}ms' : '暂无'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 交易绩效
           Card(
             color: const Color(0xFF2A2A2A),
             child: Padding(
@@ -255,11 +297,21 @@ class _ReportCenterPageState extends State<ReportCenterPage>
                   _buildInfoRow('总盈亏', stats['total_pnl'] != null ? '¥${stats['total_pnl']}' : '暂无'),
                   _buildInfoRow('最大回撤', stats['max_drawdown'] != null ? '${(stats['max_drawdown'] * 100).toStringAsFixed(1)}%' : '暂无'),
                   _buildInfoRow('夏普比率', stats['sharpe_ratio']?.toStringAsFixed(2) ?? '暂无'),
+                  // 趋势对比（新增）
+                  if (trends['win_rate_vs_baseline'] != null) ...[
+                    const SizedBox(height: 8),
+                    const Divider(color: Colors.grey),
+                    Text('较15日基线', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    _buildInfoRow('胜率变化', trends['win_rate_vs_baseline'] != null ? '${trends['win_rate_vs_baseline'] > 0 ? '+' : ''}${(trends['win_rate_vs_baseline'] * 100).toStringAsFixed(1)}%' : '暂无'),
+                    _buildInfoRow('回撤变化', trends['drawdown_vs_baseline'] != null ? '${trends['drawdown_vs_baseline'] > 0 ? '+' : ''}${(trends['drawdown_vs_baseline'] * 100).toStringAsFixed(1)}%' : '暂无'),
+                  ],
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
+
+          // 五层池
           Card(
             color: const Color(0xFF2A2A2A),
             child: Padding(
@@ -269,16 +321,24 @@ class _ReportCenterPageState extends State<ReportCenterPage>
                 children: [
                   const Text('五层池', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 8),
-                  _buildInfoRow('交易池', poolStats['trade_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('影子池', poolStats['shadow_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('观察池', poolStats['watch_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('研究池', poolStats['research_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('备选池', poolStats['backup_pool']?['count']?.toString() ?? '暂无'),
+                  _buildInfoRow('交易池 (1-50)', poolStats['trade_pool']?['count']?.toString() ?? '暂无'),
+                  _buildInfoRow('影子池 (51-100)', poolStats['shadow_pool']?['count']?.toString() ?? '暂无'),
+                  _buildInfoRow('观察池 (101-250)', poolStats['watch_pool']?['count']?.toString() ?? '暂无'),
+                  _buildInfoRow('研究池 (251-500)', poolStats['research_pool']?['count']?.toString() ?? '暂无'),
+                  _buildInfoRow('备选池 (501-866)', poolStats['backup_pool']?['count']?.toString() ?? '暂无'),
+                  if (poolStats['trade_pool']?['avg_score'] != null) ...[
+                    const SizedBox(height: 8),
+                    const Divider(color: Colors.grey),
+                    _buildInfoRow('交易池平均得分', poolStats['trade_pool']['avg_score'].toStringAsFixed(2)),
+                    _buildInfoRow('跑赢基准比例', poolStats['trade_pool']['beat_benchmark_ratio'] != null ? '${(poolStats['trade_pool']['beat_benchmark_ratio'] * 100).toStringAsFixed(1)}%' : '暂无'),
+                  ],
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
+
+          // AI进化
           Card(
             color: const Color(0xFF2A2A2A),
             child: Padding(
@@ -292,11 +352,14 @@ class _ReportCenterPageState extends State<ReportCenterPage>
                   _buildInfoRow('左脑通过率', aiEvolution['left_brain']?['pass_rate'] != null ? '${(aiEvolution['left_brain']['pass_rate'] * 100).toStringAsFixed(1)}%' : '暂无'),
                   _buildInfoRow('仲裁冲突数', aiEvolution['arbitration']?['conflicts_today']?.toString() ?? '暂无'),
                   _buildInfoRow('待审核规则', aiEvolution['outer_brain']?['pending_rules_count']?.toString() ?? '暂无'),
+                  _buildInfoRow('外脑今日产出', aiEvolution['outer_brain']?['today_generated']?.toString() ?? '暂无'),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
+
+          // 市场环境
           Card(
             color: const Color(0xFF2A2A2A),
             child: Padding(
@@ -309,11 +372,71 @@ class _ReportCenterPageState extends State<ReportCenterPage>
                   _buildInfoRow('市场情绪', marketEnv['sentiment'] ?? '暂无'),
                   _buildInfoRow('波动率状态', marketEnv['volatility_state'] ?? '暂无'),
                   _buildInfoRow('市场状态', marketEnv['market_state'] ?? '暂无'),
+                  _buildInfoRow('板块轮动信号', marketEnv['sector_rotation']?.join(', ') ?? '暂无'),
+                  _buildInfoRow('IPO提醒', marketEnv['ipo_alerts']?.join(', ') ?? '暂无'),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
+
+          // 数据与基础设施层（新增）
+          if (infrastructure.isNotEmpty) ...[
+            Card(
+              color: const Color(0xFF2A2A2A),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('基础设施', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('数据源切换次数', infrastructure['source_switches']?.toString() ?? '暂无'),
+                    _buildInfoRow('日志异常数', infrastructure['log_errors']?.toString() ?? '暂无'),
+                    _buildInfoRow('缓存命中率', infrastructure['cache_hit_rate'] != null ? '${(infrastructure['cache_hit_rate'] * 100).toStringAsFixed(1)}%' : '暂无'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 待办闭环跟踪（新增）
+          if (todos.isNotEmpty) ...[
+            Card(
+              color: const Color(0xFF2A2A2A),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('待办事项', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('昨日完成', todos['yesterday_completed']?.toString() ?? '暂无'),
+                    _buildInfoRow('今日待办', todos['today_pending']?.toString() ?? '暂无'),
+                    if (todos['top_items'] != null && (todos['top_items'] as List).isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Divider(color: Colors.grey),
+                      const Text('高优待办', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      ...(todos['top_items'] as List).map((item) => Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.circle, size: 6, color: Color(0xFFD4AF37)),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(item.toString(), style: const TextStyle(color: Colors.white70))),
+                          ],
+                        ),
+                      )),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // AI分析按钮
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
