@@ -1282,4 +1282,25 @@ class ApiService {
     final result = await httpPost('/outer_brain/approve_all');
     return result ?? {'success': false, 'message': '请求失败'};
   }
+
+  // ========== 日报/周报/月报接口 ==========
+  /// 获取最新日报
+  static Future<Map<String, dynamic>?> getDailyReportLatest() async {
+    return await httpGet('/reports/daily/latest');
+  }
+
+  /// 获取最新周报
+  static Future<Map<String, dynamic>?> getWeeklyReportLatest() async {
+    return await httpGet('/reports/weekly/latest');
+  }
+
+  /// 获取最新月报
+  static Future<Map<String, dynamic>?> getMonthlyReportLatest() async {
+    return await httpGet('/reports/monthly/latest');
+  }
+
+  /// 获取指定日期的日报（格式 YYYY-MM-DD）
+  static Future<Map<String, dynamic>?> getDailyReportByDate(String date) async {
+    return await httpGet('/reports/daily/$date');
+  }
 }

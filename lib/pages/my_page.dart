@@ -85,7 +85,6 @@ class _MyPageState extends State<MyPage> {
             _pendingCodeFixCount = results[2] as int;
           });
         } else if (results[2] != null && results[2] is Map) {
-          // 兼容 Map 返回值
           final map = results[2] as Map<String, dynamic>;
           setState(() {
             _pendingCodeFixCount = map['count'] ?? 0;
@@ -204,6 +203,11 @@ class _MyPageState extends State<MyPage> {
       context,
       MaterialPageRoute(builder: (context) => const EvolutionReportPage()),
     );
+  }
+
+  // ========== 新增报告中心跳转方法 ==========
+  void _openReportCenter() {
+    Navigator.pushNamed(context, '/report_center');
   }
   // =================================
 
@@ -409,10 +413,16 @@ class _MyPageState extends State<MyPage> {
                                       label: '外脑进化报告',
                                       onTap: _openEvolutionReport,
                                     ),
-                                    // =================================
+                                    // ========== 新增报告中心入口 ==========
+                                    _buildGridItem(
+                                      icon: Icons.description,
+                                      label: '系统报告',
+                                      onTap: _openReportCenter,
+                                    ),
+                                    // ===================================
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),

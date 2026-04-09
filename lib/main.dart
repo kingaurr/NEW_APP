@@ -48,6 +48,8 @@ import 'pages/strategy_library_page.dart';
 // ===== 新增交易信号池和外脑进化报告页面 =====
 import 'pages/trading_signals_page.dart';
 import 'pages/evolution_report_page.dart';
+// ===== 新增报告中心页面 =====
+import 'pages/report_center_page.dart';
 // ============================================
 
 void main() {
@@ -390,6 +392,12 @@ class _MyAppState extends State<MyApp> {
         } else if (settings.name == '/evolution_report') {
           return MaterialPageRoute(
             builder: (context) => const EvolutionReportPage(),
+          );
+        }
+        // ===== 报告中心路由 =====
+        else if (settings.name == '/report_center') {
+          return MaterialPageRoute(
+            builder: (context) => const ReportCenterPage(),
           );
         }
         // ==========================================
