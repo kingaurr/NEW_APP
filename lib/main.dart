@@ -48,8 +48,6 @@ import 'pages/strategy_library_page.dart';
 // ===== 新增交易信号池和外脑进化报告页面 =====
 import 'pages/trading_signals_page.dart';
 import 'pages/evolution_report_page.dart';
-// ===== 新增报告中心页面 =====
-import 'pages/report_center_page.dart';
 // ===== 新增9个骨架页面（日报下钻及功能扩展） =====
 import 'pages/fund_curve_page.dart';
 import 'pages/data_source_health_page.dart';
@@ -62,6 +60,9 @@ import 'pages/action_history_page.dart';
 import 'pages/backtest_report_page.dart';
 // ===== 新增交易监控页面 =====
 import 'pages/trade_monitor_page.dart';
+// ===== 新增战略规划与战略执行页面 =====
+import 'pages/strategy_planning_page.dart';
+import 'pages/strategy_execution_page.dart';
 // ============================================
 
 void main() {
@@ -406,10 +407,16 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const EvolutionReportPage(),
           );
         }
-        // ===== 报告中心路由 =====
+        // ===== 报告中心路由（现在指向战略规划） =====
         else if (settings.name == '/report_center') {
           return MaterialPageRoute(
-            builder: (context) => const ReportCenterPage(),
+            builder: (context) => const StrategyPlanningPage(),
+          );
+        }
+        // ===== 战略执行路由 =====
+        else if (settings.name == '/strategy_execution') {
+          return MaterialPageRoute(
+            builder: (context) => const StrategyExecutionPage(),
           );
         }
         // ===== 新增9个骨架页面路由（日报下钻及功能扩展） =====
@@ -432,7 +439,7 @@ class _MyAppState extends State<MyApp> {
         } else if (settings.name == '/sector_detail') {
           final args = settings.arguments as String? ?? '';
           return MaterialPageRoute(
-            builder: (context) => SectorDetailPage(sectorName: args), // ✅ 已移除 const，正确传参
+            builder: (context) => SectorDetailPage(sectorName: args),
           );
         } else if (settings.name == '/ipo_list') {
           return MaterialPageRoute(
@@ -450,7 +457,7 @@ class _MyAppState extends State<MyApp> {
           final args = settings.arguments as Map<String, dynamic>? ?? {};
           final strategyId = args['strategyId'] as String? ?? '';
           return MaterialPageRoute(
-            builder: (context) => BacktestReportPage(strategyId: strategyId), // ✅ 已移除 const，正确传参
+            builder: (context) => BacktestReportPage(strategyId: strategyId),
           );
         }
         // ===== 交易监控路由 =====
