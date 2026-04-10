@@ -110,7 +110,7 @@ class _StrategyPlanningPageState extends State<StrategyPlanningPage> {
         setState(() {
           _isAnalyzing = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(content: Text('分析失败: $e'), backgroundColor: Colors.red),
         );
       }
@@ -143,7 +143,6 @@ class _StrategyPlanningPageState extends State<StrategyPlanningPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // 跳转到战略执行页面，携带分析结论
               Navigator.pushNamed(
                 context,
                 '/strategy_execution',
@@ -250,7 +249,7 @@ class _StrategyPlanningPageState extends State<StrategyPlanningPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        // 查看详细报告入口（直接跳转，不携带分析结论）
+                        // 查看详细报告入口
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
@@ -271,7 +270,6 @@ class _StrategyPlanningPageState extends State<StrategyPlanningPage> {
     );
   }
 
-  // ========== UI 构建方法 ==========
   Widget _buildAssetCard() {
     final totalAsset = (_fundData['current_fund'] ?? 0.0) + (_statusData['position_value'] ?? 0.0);
     final todayPnl = _statusData['today_pnl'] ?? 0.0;

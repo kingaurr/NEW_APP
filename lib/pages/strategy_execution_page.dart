@@ -307,7 +307,7 @@ ${_strategicAdvice ?? '无'}
     } catch (e) {
       if (mounted) {
         setState(() => _isAnalyzing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(content: Text('分析失败: $e'), backgroundColor: Colors.red),
         );
       }
