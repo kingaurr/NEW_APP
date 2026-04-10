@@ -432,7 +432,7 @@ class _MyAppState extends State<MyApp> {
         } else if (settings.name == '/sector_detail') {
           final args = settings.arguments as String? ?? '';
           return MaterialPageRoute(
-            builder: (context) => SectorDetailPage(sectorName: args),
+            builder: (context) => SectorDetailPage(sectorName: args), // ✅ 已移除 const，正确传参
           );
         } else if (settings.name == '/ipo_list') {
           return MaterialPageRoute(
@@ -450,7 +450,7 @@ class _MyAppState extends State<MyApp> {
           final args = settings.arguments as Map<String, dynamic>? ?? {};
           final strategyId = args['strategyId'] as String? ?? '';
           return MaterialPageRoute(
-            builder: (context) => BacktestReportPage(strategyId: strategyId),
+            builder: (context) => BacktestReportPage(strategyId: strategyId), // ✅ 已移除 const，正确传参
           );
         }
         // ===== 交易监控路由 =====
