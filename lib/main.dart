@@ -349,7 +349,7 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const SettingsPage(),
           );
         }
-        
+       
         // ===== 新增路由 =====
         else if (settings.name == '/outer_brain_center') {
           return MaterialPageRoute(
@@ -430,8 +430,9 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const CostDetailPage(),
           );
         } else if (settings.name == '/sector_detail') {
+          final args = settings.arguments as String? ?? '';
           return MaterialPageRoute(
-            builder: (context) => const SectorDetailPage(),
+            builder: (context) => SectorDetailPage(sectorName: args),
           );
         } else if (settings.name == '/ipo_list') {
           return MaterialPageRoute(
@@ -446,8 +447,10 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const ActionHistoryPage(),
           );
         } else if (settings.name == '/backtest_report') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          final strategyId = args['strategyId'] as String? ?? '';
           return MaterialPageRoute(
-            builder: (context) => const BacktestReportPage(),
+            builder: (context) => BacktestReportPage(strategyId: strategyId),
           );
         }
         // ===== 交易监控路由 =====
@@ -457,7 +460,7 @@ class _MyAppState extends State<MyApp> {
           );
         }
         // ==================================================
-        
+       
         return null;
       },
     );

@@ -357,7 +357,7 @@ class _FundCurvePageState extends State<FundCurvePage> {
                       ],
                       lineTouchData: LineTouchData(
                         touchTooltipData: LineTouchTooltipData(
-                          getTooltipColor: (touchedSpot) => const Color(0xFF1E1E1E),
+                          tooltipBgColor: const Color(0xFF1E1E1E),
                           getTooltipItems: (touchedSpots) {
                             return touchedSpots.map((spot) {
                               return LineTooltipItem(

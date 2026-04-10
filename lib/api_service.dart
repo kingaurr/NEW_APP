@@ -1332,15 +1332,6 @@ class ApiService {
     return null;
   }
 
-  /// 获取指定日期的日报（格式 YYYY-MM-DD）
-  static Future<Map<String, dynamic>?> getDailyReportByDate(String date) async {
-    final result = await httpGet('/reports/daily/$date');
-    if (result != null && result is Map && result['success'] == true) {
-      return result['data'] as Map<String, dynamic>?;
-    }
-    return null;
-  }
-
   // ========== 待办事项接口 ==========
   /// 获取当前待办事项列表
   static Future<List<dynamic>> getActionItems() async {
