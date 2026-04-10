@@ -117,11 +117,14 @@ class _ReportCenterPageState extends State<ReportCenterPage>
     final health = report['system_health'] ?? {};
     final infrastructure = report['infrastructure'] ?? {};
     final todos = report['todos'] ?? {};
-    final trends = report['trends'] ?? {};
     final summary = report['summary'] ?? '';
+    final asset = report['asset'] ?? {};
 
     final parts = <String>[];
     if (summary.isNotEmpty) parts.add('【摘要】$summary');
+    if (asset.isNotEmpty) {
+      parts.add('【资产】总资产${asset['total_asset']}元，今日盈亏${asset['today_pnl']}元 (${asset['today_return_pct']}%)');
+    }
     if (stats.isNotEmpty) {
       parts.add('【交易统计】总交易${stats['total_trades']}次，胜率${stats['win_rate'] != null ? (stats['win_rate'] * 100).toStringAsFixed(1) : ''}%，总盈亏${stats['total_pnl']}元，最大回撤${stats['max_drawdown'] != null ? (stats['max_drawdown'] * 100).toStringAsFixed(1) : ''}%。');
     }
@@ -199,6 +202,462 @@ class _ReportCenterPageState extends State<ReportCenterPage>
     }
   }
 
+  // ===== 新增：标记待办完成 =====
+  Future<void> _completeActionItem(String itemId) async {
+    try {
+      final success = await ApiService.completeActionItem(itemId);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('待办已标记为完成'), backgroundColor: Colors.green),
+        );
+        // 刷新当前报告
+        _loadDailyReport();
+      } else {
+        throw Exception('操作失败');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('操作失败: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // ===== 新增：构建七大板块视图 =====
+  Widget _buildReportView(Map<String, dynamic> report, String type) {
+    final stats = report['stats'] ?? {};
+    final poolStats = report['pool_stats'] ?? {};
+    final aiEvolution = report['ai_evolution'] ?? {};
+    final marketEnv = report['market_environment'] ?? {};
+    final health = report['system_health'] ?? {};
+    final infrastructure = report['infrastructure'] ?? {};
+    final todos = report['todos'] ?? {};
+    final asset = report['asset'] ?? {};
+    final topStrategies = report['top_strategies'] as List<dynamic>? ?? [];
+    final actionItems = report['action_items'] as List<dynamic>? ?? [];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 板块一：实盘资产总览
+          if (asset.isNotEmpty) ...[
+            _buildAssetCard(asset),
+            const SizedBox(height: 16),
+          ],
+
+          // 板块二：今日交易与信号执行
+          _buildTradingCard(stats, aiEvolution),
+          const SizedBox(height: 16),
+
+          // 板块三：系统健康与AI状态
+          _buildHealthAndAICard(health, aiEvolution),
+          const SizedBox(height: 16),
+
+          // 板块四：策略与选股运行状态（五层池 + 策略绩效）
+          _buildStrategyAndPoolCard(poolStats, topStrategies),
+          const SizedBox(height: 16),
+
+          // 板块五：市场感知与风险提示
+          _buildMarketCard(marketEnv),
+          const SizedBox(height: 16),
+
+          // 板块六：待办闭环跟踪
+          if (actionItems.isNotEmpty || todos.isNotEmpty)
+            _buildActionItemsCard(todos, actionItems),
+          const SizedBox(height: 16),
+
+          // 板块七：AI分析入口
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _analyzeReport(report, type),
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('千寻AI分析'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssetCard(Map<String, dynamic> asset) {
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, '/fund_curve'),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('💰 实盘资产', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildAssetItem('总资产', '¥${(asset['total_asset'] ?? 0).toStringAsFixed(2)}'),
+                  _buildAssetItem('可用资金', '¥${(asset['available_cash'] ?? 0).toStringAsFixed(2)}'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildAssetItem('今日盈亏', '${asset['today_pnl'] >= 0 ? '+' : ''}¥${(asset['today_pnl'] ?? 0).toStringAsFixed(2)}',
+                      color: (asset['today_pnl'] ?? 0) >= 0 ? Colors.green : Colors.red),
+                  _buildAssetItem('收益率', '${asset['today_return_pct'] >= 0 ? '+' : ''}${(asset['today_return_pct'] ?? 0).toStringAsFixed(2)}%',
+                      color: (asset['today_return_pct'] ?? 0) >= 0 ? Colors.green : Colors.red),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAssetItem(String label, String value, {Color? color}) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(color: color ?? Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildTradingCard(Map<String, dynamic> stats, Map<String, dynamic> aiEvolution) {
+    final rightBrain = aiEvolution['right_brain'] ?? {};
+    final leftBrain = aiEvolution['left_brain'] ?? {};
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('📊 今日交易', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTradingItem('交易次数', stats['total_trades']?.toString() ?? '0'),
+                _buildTradingItem('胜率', stats['win_rate'] != null ? '${(stats['win_rate'] * 100).toStringAsFixed(1)}%' : '-'),
+                _buildTradingItem('总盈亏', '¥${(stats['total_pnl'] ?? 0).toStringAsFixed(2)}',
+                    color: (stats['total_pnl'] ?? 0) >= 0 ? Colors.green : Colors.red),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTradingItem('买入信号', rightBrain['buy_signals']?.toString() ?? '0'),
+                _buildTradingItem('卖出信号', rightBrain['sell_signals']?.toString() ?? '0'),
+                _buildTradingItem('审核通过率', leftBrain['pass_rate'] != null ? '${(leftBrain['pass_rate'] * 100).toStringAsFixed(1)}%' : '-'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTradingItem(String label, String value, {Color? color}) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(color: color ?? Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _buildHealthAndAICard(Map<String, dynamic> health, Map<String, dynamic> aiEvolution) {
+    final arbitration = aiEvolution['arbitration'] ?? {};
+    final guardian = aiEvolution['guardian'] ?? {};
+    final outerBrain = aiEvolution['outer_brain'] ?? {};
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('🛡️ 系统健康 & AI状态', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                InkWell(
+                  onTap: () => Navigator.pushNamed(context, '/data_source_health'),
+                  child: const Icon(Icons.info_outline, color: Colors.grey, size: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                _buildStatusChip('心脏', health['heartbeat'] == '正常'),
+                _buildStatusChip('数据源', (health['data_source_health'] ?? 0) >= 80),
+                _buildStatusChip('右脑', aiEvolution['right_brain']?['mode'] != 'error'),
+                _buildStatusChip('左脑', aiEvolution['left_brain']?['mode'] != 'error'),
+              ],
+            ),
+            const Divider(color: Colors.white24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildAIStat('仲裁冲突', arbitration['conflicts_today']?.toString() ?? '0'),
+                _buildAIStat('守门员建议', guardian['suggestions_today']?.toString() ?? '0'),
+                _buildAIStat('待审核规则', outerBrain['pending_rules_count']?.toString() ?? '0'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String label, bool isHealthy) {
+    return Chip(
+      avatar: Icon(isHealthy ? Icons.check_circle : Icons.warning, color: isHealthy ? Colors.green : Colors.orange, size: 16),
+      label: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+      backgroundColor: Colors.white10,
+    );
+  }
+
+  Widget _buildAIStat(String label, String value) {
+    return Column(
+      children: [
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+      ],
+    );
+  }
+
+  Widget _buildStrategyAndPoolCard(Map<String, dynamic> poolStats, List<dynamic> topStrategies) {
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('📈 策略与选股', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/trading_signals'),
+                  child: const Text('查看详情', style: TextStyle(color: Color(0xFFD4AF37))),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // 五层池摘要
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildPoolChip('交易池', poolStats['trade_pool']?['count'] ?? 0),
+                _buildPoolChip('影子池', poolStats['shadow_pool']?['count'] ?? 0),
+                _buildPoolChip('观察池', poolStats['watch_pool']?['count'] ?? 0),
+                _buildPoolChip('研究池', poolStats['research_pool']?['count'] ?? 0),
+                _buildPoolChip('备选池', poolStats['backup_pool']?['count'] ?? 0),
+              ],
+            ),
+            if (topStrategies.isNotEmpty) ...[
+              const Divider(color: Colors.white24),
+              const Text('策略绩效 Top3', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 8),
+              ...topStrategies.take(3).map((s) => ListTile(
+                dense: true,
+                leading: CircleAvatar(backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2), child: Text(s['name']?.substring(0, 1) ?? 'S', style: const TextStyle(color: Color(0xFFD4AF37)))),
+                title: Text(s['name'] ?? '', style: const TextStyle(color: Colors.white)),
+                trailing: Text('胜率 ${((s['win_rate'] ?? 0) * 100).toStringAsFixed(1)}%', style: const TextStyle(color: Colors.green)),
+                onTap: () => Navigator.pushNamed(context, '/strategy_detail', arguments: s),
+              )),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPoolChip(String label, int count) {
+    return Chip(
+      label: Text('$label: $count', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+      backgroundColor: Colors.white10,
+      onDeleted: null,
+    );
+  }
+
+  Widget _buildMarketCard(Map<String, dynamic> marketEnv) {
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('🌍 市场感知', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                InkWell(
+                  onTap: () => Navigator.pushNamed(context, '/macro_events'),
+                  child: const Icon(Icons.arrow_forward, color: Colors.grey, size: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                _buildMarketItem('情绪', marketEnv['sentiment'] ?? 'neutral', marketEnv['sentiment_score'] ?? 0.5),
+                _buildMarketItem('波动', marketEnv['volatility_state'] ?? 'medium', null),
+                _buildMarketItem('状态', marketEnv['market_state'] ?? 'oscillation', null),
+              ],
+            ),
+            if (marketEnv['hot_sectors'] != null && (marketEnv['hot_sectors'] as List).isNotEmpty) ...[
+              const Divider(color: Colors.white24),
+              const Text('热门板块', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                children: (marketEnv['hot_sectors'] as List).map((s) => Chip(
+                  label: Text(s.toString(), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  backgroundColor: Colors.white10,
+                )).toList(),
+              ),
+            ],
+            if (marketEnv['ipo_upcoming'] != null && (marketEnv['ipo_upcoming'] as List).isNotEmpty) ...[
+              const Divider(color: Colors.white24),
+              InkWell(
+                onTap: () => Navigator.pushNamed(context, '/ipo_list'),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('IPO提醒: ${(marketEnv['ipo_upcoming'] as List).length} 只', style: const TextStyle(color: Colors.orange)),
+                    const Icon(Icons.chevron_right, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketItem(String label, String value, double? score) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Text(value, style: const TextStyle(color: Colors.white, fontSize: 14)),
+            if (score != null) ...[
+              const SizedBox(width: 4),
+              Text('(${score.toStringAsFixed(2)})', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionItemsCard(Map<String, dynamic> todos, List<dynamic> actionItems) {
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('📋 待办跟踪', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/action_history'),
+                  child: const Text('历史', style: TextStyle(color: Color(0xFFD4AF37))),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildTodoStat('昨日完成', todos['yesterday_completed']?.toString() ?? '0'),
+                _buildTodoStat('今日待办', todos['today_pending']?.toString() ?? '0'),
+              ],
+            ),
+            if (actionItems.isNotEmpty) ...[
+              const Divider(color: Colors.white24),
+              ...actionItems.take(3).map((item) => _buildActionItemTile(item)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodoStat(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItemTile(Map<String, dynamic> item) {
+    final priority = item['priority'] ?? 'medium';
+    Color priorityColor;
+    if (priority == 'high') priorityColor = Colors.red;
+    else if (priority == 'medium') priorityColor = Colors.orange;
+    else priorityColor = Colors.green;
+
+    return ListTile(
+      dense: true,
+      leading: Container(width: 4, height: 20, color: priorityColor),
+      title: Text(item['title'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 14)),
+      subtitle: Text(item['description'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12), maxLines: 1),
+      trailing: item['status'] == 'pending'
+          ? ElevatedButton(
+              onPressed: () => _completeActionItem(item['id']),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+              ),
+              child: const Text('完成', style: TextStyle(fontSize: 12)),
+            )
+          : const Icon(Icons.check_circle, color: Colors.green),
+    );
+  }
+
   Widget _buildReportCard(Map<String, dynamic>? report, String type, bool loading, String error) {
     if (loading) {
       return const Center(child: CircularProgressIndicator());
@@ -228,251 +687,7 @@ class _ReportCenterPageState extends State<ReportCenterPage>
       return const Center(child: Text('暂无数据', style: TextStyle(color: Colors.grey)));
     }
 
-    final stats = report['stats'] ?? {};
-    final poolStats = report['pool_stats'] ?? {};
-    final aiEvolution = report['ai_evolution'] ?? {};
-    final marketEnv = report['market_environment'] ?? {};
-    final health = report['system_health'] ?? {};
-    final infrastructure = report['infrastructure'] ?? {};
-    final todos = report['todos'] ?? {};
-    final trends = report['trends'] ?? {};
-    final summary = report['summary'] ?? '';
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 报告摘要
-          Card(
-            color: const Color(0xFF2A2A2A),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('报告摘要', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Text(summary.isNotEmpty ? summary : '暂无摘要', style: const TextStyle(color: Colors.white70)),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 系统健康度总览（新增）
-          if (health.isNotEmpty) ...[
-            Card(
-              color: const Color(0xFF2A2A2A),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('系统健康度', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('心跳状态', health['heartbeat'] ?? '未知'),
-                    _buildInfoRow('模块健康分', health['module_health_score']?.toString() ?? '暂无'),
-                    _buildInfoRow('数据源健康分', health['data_source_health']?.toString() ?? '暂无'),
-                    _buildInfoRow('网络延迟', health['network_latency_ms'] != null ? '${health['network_latency_ms']}ms' : '暂无'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // 交易绩效
-          Card(
-            color: const Color(0xFF2A2A2A),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('交易绩效', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  _buildInfoRow('总交易次数', stats['total_trades']?.toString() ?? '暂无'),
-                  _buildInfoRow('胜率', stats['win_rate'] != null ? '${(stats['win_rate'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                  _buildInfoRow('总盈亏', stats['total_pnl'] != null ? '¥${stats['total_pnl']}' : '暂无'),
-                  _buildInfoRow('最大回撤', stats['max_drawdown'] != null ? '${(stats['max_drawdown'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                  _buildInfoRow('夏普比率', stats['sharpe_ratio']?.toStringAsFixed(2) ?? '暂无'),
-                  // 趋势对比（新增）
-                  if (trends['win_rate_vs_baseline'] != null) ...[
-                    const SizedBox(height: 8),
-                    const Divider(color: Colors.grey),
-                    Text('较15日基线', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    _buildInfoRow('胜率变化', trends['win_rate_vs_baseline'] != null ? '${trends['win_rate_vs_baseline'] > 0 ? '+' : ''}${(trends['win_rate_vs_baseline'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                    _buildInfoRow('回撤变化', trends['drawdown_vs_baseline'] != null ? '${trends['drawdown_vs_baseline'] > 0 ? '+' : ''}${(trends['drawdown_vs_baseline'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 五层池
-          Card(
-            color: const Color(0xFF2A2A2A),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('五层池', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  _buildInfoRow('交易池 (1-50)', poolStats['trade_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('影子池 (51-100)', poolStats['shadow_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('观察池 (101-250)', poolStats['watch_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('研究池 (251-500)', poolStats['research_pool']?['count']?.toString() ?? '暂无'),
-                  _buildInfoRow('备选池 (501-866)', poolStats['backup_pool']?['count']?.toString() ?? '暂无'),
-                  if (poolStats['trade_pool']?['avg_score'] != null) ...[
-                    const SizedBox(height: 8),
-                    const Divider(color: Colors.grey),
-                    _buildInfoRow('交易池平均得分', poolStats['trade_pool']['avg_score'].toStringAsFixed(2)),
-                    _buildInfoRow('跑赢基准比例', poolStats['trade_pool']['beat_benchmark_ratio'] != null ? '${(poolStats['trade_pool']['beat_benchmark_ratio'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // AI进化
-          Card(
-            color: const Color(0xFF2A2A2A),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('AI进化', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  _buildInfoRow('右脑信号数', aiEvolution['right_brain']?['today_signals']?.toString() ?? '暂无'),
-                  _buildInfoRow('左脑通过率', aiEvolution['left_brain']?['pass_rate'] != null ? '${(aiEvolution['left_brain']['pass_rate'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                  _buildInfoRow('仲裁冲突数', aiEvolution['arbitration']?['conflicts_today']?.toString() ?? '暂无'),
-                  _buildInfoRow('待审核规则', aiEvolution['outer_brain']?['pending_rules_count']?.toString() ?? '暂无'),
-                  _buildInfoRow('外脑今日产出', aiEvolution['outer_brain']?['today_generated']?.toString() ?? '暂无'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 市场环境
-          Card(
-            color: const Color(0xFF2A2A2A),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('市场环境', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  _buildInfoRow('市场情绪', marketEnv['sentiment'] ?? '暂无'),
-                  _buildInfoRow('波动率状态', marketEnv['volatility_state'] ?? '暂无'),
-                  _buildInfoRow('市场状态', marketEnv['market_state'] ?? '暂无'),
-                  _buildInfoRow('板块轮动信号', marketEnv['sector_rotation']?.join(', ') ?? '暂无'),
-                  _buildInfoRow('IPO提醒', marketEnv['ipo_alerts']?.join(', ') ?? '暂无'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 数据与基础设施层（新增）
-          if (infrastructure.isNotEmpty) ...[
-            Card(
-              color: const Color(0xFF2A2A2A),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('基础设施', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('数据源切换次数', infrastructure['source_switches']?.toString() ?? '暂无'),
-                    _buildInfoRow('日志异常数', infrastructure['log_errors']?.toString() ?? '暂无'),
-                    _buildInfoRow('缓存命中率', infrastructure['cache_hit_rate'] != null ? '${(infrastructure['cache_hit_rate'] * 100).toStringAsFixed(1)}%' : '暂无'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // 待办闭环跟踪（新增）
-          if (todos.isNotEmpty) ...[
-            Card(
-              color: const Color(0xFF2A2A2A),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('待办事项', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('昨日完成', todos['yesterday_completed']?.toString() ?? '暂无'),
-                    _buildInfoRow('今日待办', todos['today_pending']?.toString() ?? '暂无'),
-                    if (todos['top_items'] != null && (todos['top_items'] as List).isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      const Divider(color: Colors.grey),
-                      const Text('高优待办', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      ...(todos['top_items'] as List).map((item) => Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle, size: 6, color: Color(0xFFD4AF37)),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(item.toString(), style: const TextStyle(color: Colors.white70))),
-                          ],
-                        ),
-                      )),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // AI分析按钮
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _analyzeReport(report, type),
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('AI分析'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4AF37),
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white),
-              textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
+    return _buildReportView(report, type);
   }
 
   @override

@@ -20,11 +20,16 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
   bool _isWarGameExpanded = false;
   bool _isStressTestExpanded = false;
   bool _isPendingRulesExpanded = false;
+  bool _isShadowPositionsExpanded = false;
+  bool _isShadowOrdersExpanded = false;
+
   Map<String, dynamic> _shadowStatus = {};
   Map<String, dynamic> _lightWarGame = {};
   Map<String, dynamic> _deepWarGame = {};
   Map<String, dynamic> _stressTest = {};
   List<dynamic> _pendingRules = [];
+  List<dynamic> _shadowPositions = [];
+  List<dynamic> _shadowOrders = [];
   String _errorMessage = '';
 
   @override
@@ -44,14 +49,17 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
         ApiService.getShadowStatus(),
         ApiService.getLatestLightWarGame(),
         ApiService.getLatestDeepWarGame(),
-        ApiService.getStressTestLatest(), // 使用 getStressTestLatest
+        ApiService.getStressTestLatest(),
         ApiService.getPendingRules(),
+        ApiService.getShadowOrders(), // 新增：影子虚拟成交
       ]);
 
-      // 1. 影子账户状态
+      // 1. 影子账户状态（包含持仓）
       if (results[0] != null && results[0] is Map<String, dynamic>) {
+        final shadowData = results[0] as Map<String, dynamic>;
         setState(() {
-          _shadowStatus = results[0] as Map<String, dynamic>;
+          _shadowStatus = shadowData;
+          _shadowPositions = shadowData['shadow_positions'] ?? [];
         });
       }
 
@@ -81,6 +89,13 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
         final pendingMap = results[4] as Map<String, dynamic>;
         setState(() {
           _pendingRules = pendingMap['rules'] ?? [];
+        });
+      }
+
+      // 6. 影子虚拟成交
+      if (results[5] != null && results[5] is List) {
+        setState(() {
+          _shadowOrders = results[5] as List<dynamic>;
         });
       }
     } catch (e) {
@@ -152,7 +167,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('轻量对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
           );
-          // 延迟刷新，等待后端计算完成
           Future.delayed(const Duration(seconds: 3), () {
             _loadData();
           });
@@ -283,6 +297,134 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                         ),
 
                         const SizedBox(height: 16),
+
+                        // ========== 新增：影子持仓列表 ==========
+                        if (_shadowPositions.isNotEmpty) ...[
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isShadowPositionsExpanded = !_isShadowPositionsExpanded;
+                              });
+                            },
+                            child: Card(
+                              color: const Color(0xFF2A2A2A),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.account_balance_wallet,
+                                          color: Color(0xFFD4AF37),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Expanded(
+                                          child: Text(
+                                            '影子持仓',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.purple.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            '${_shadowPositions.length}',
+                                            style: const TextStyle(color: Colors.purpleAccent, fontSize: 10),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          _isShadowPositionsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                          color: Colors.grey,
+                                        ),
+                                      ],
+                                    ),
+                                    if (_isShadowPositionsExpanded) ...[
+                                      const SizedBox(height: 12),
+                                      ..._shadowPositions.map((pos) => _buildShadowPositionItem(pos)),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        // =====================================
+
+                        // ========== 新增：影子虚拟成交明细 ==========
+                        if (_shadowOrders.isNotEmpty) ...[
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isShadowOrdersExpanded = !_isShadowOrdersExpanded;
+                              });
+                            },
+                            child: Card(
+                              color: const Color(0xFF2A2A2A),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.history,
+                                          color: Color(0xFFD4AF37),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Expanded(
+                                          child: Text(
+                                            '虚拟成交明细',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            '${_shadowOrders.length}',
+                                            style: const TextStyle(color: Colors.blue, fontSize: 10),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          _isShadowOrdersExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                          color: Colors.grey,
+                                        ),
+                                      ],
+                                    ),
+                                    if (_isShadowOrdersExpanded) ...[
+                                      const SizedBox(height: 12),
+                                      ..._shadowOrders.take(10).map((order) => _buildShadowOrderItem(order)),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        // =========================================
 
                         // 红蓝军轻量对抗（白天每小时结果）
                         if (_lightWarGame.isNotEmpty)
@@ -657,6 +799,124 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     );
   }
 
+  Widget _buildShadowPositionItem(dynamic pos) {
+    final code = pos['code'] ?? '';
+    final name = pos['name'] ?? code;
+    final shares = pos['shares'] ?? 0;
+    final price = pos['price'] ?? pos['avg_price'] ?? 0.0;
+    final value = pos['value'] ?? (shares * price);
+    final pnl = pos['pnl'] ?? 0.0;
+    final pnlPct = pos['pnl_pct'] ?? 0.0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                Text(code, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('$shares 股', style: const TextStyle(color: Colors.white70)),
+                Text('¥${price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('¥${value.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white)),
+                Text(
+                  '${pnl >= 0 ? '+' : ''}${pnl.toStringAsFixed(2)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%)',
+                  style: TextStyle(
+                    color: pnl >= 0 ? Colors.green : Colors.red,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShadowOrderItem(dynamic order) {
+    final code = order['code'] ?? '';
+    final name = order['name'] ?? code;
+    final action = order['action'] ?? '';
+    final price = order['price'] ?? 0.0;
+    final shares = order['shares'] ?? 0;
+    final timestamp = order['timestamp'] ?? '';
+
+    final isBuy = action == 'buy' || action == '买入';
+    final actionColor = isBuy ? Colors.green : Colors.red;
+    final actionText = isBuy ? '买入' : '卖出';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: actionColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              actionText,
+              style: TextStyle(color: actionColor, fontSize: 10, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(name, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                    const SizedBox(width: 6),
+                    Text(code, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  ],
+                ),
+                Text(
+                  '$shares 股 × ¥${price.toStringAsFixed(2)}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            timestamp.length > 10 ? timestamp.substring(11, 16) : timestamp,
+            style: const TextStyle(color: Colors.grey, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _applySuggestion(Map<String, dynamic> deepReport) async {
     if (deepReport.isEmpty) return;
 
@@ -686,7 +946,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     if (confirmed != true) return;
 
     try {
-      // 修复：applyWarGameSuggestion 返回 bool
       final success = await ApiService.applyWarGameSuggestion(deepReport['id'] ?? '');
       if (success == true) {
         if (mounted) {

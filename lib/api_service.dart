@@ -1303,4 +1303,75 @@ class ApiService {
   static Future<Map<String, dynamic>?> getDailyReportByDate(String date) async {
     return await httpGet('/reports/daily/$date');
   }
+
+  // ========== 日报/周报/月报完整接口（补充） ==========
+  /// 获取最新日报（兼容旧命名，返回完整数据）
+  static Future<Map<String, dynamic>?> getDailyReport() async {
+    final result = await httpGet('/reports/latest');
+    if (result != null && result is Map && result['success'] == true) {
+      return result['data'] as Map<String, dynamic>?;
+    }
+    return null;
+  }
+
+  /// 获取最新周报
+  static Future<Map<String, dynamic>?> getWeeklyReport() async {
+    final result = await httpGet('/reports/weekly/latest');
+    if (result != null && result is Map && result['success'] == true) {
+      return result['data'] as Map<String, dynamic>?;
+    }
+    return null;
+  }
+
+  /// 获取最新月报
+  static Future<Map<String, dynamic>?> getMonthlyReport() async {
+    final result = await httpGet('/reports/monthly/latest');
+    if (result != null && result is Map && result['success'] == true) {
+      return result['data'] as Map<String, dynamic>?;
+    }
+    return null;
+  }
+
+  /// 获取指定日期的日报（格式 YYYY-MM-DD）
+  static Future<Map<String, dynamic>?> getDailyReportByDate(String date) async {
+    final result = await httpGet('/reports/daily/$date');
+    if (result != null && result is Map && result['success'] == true) {
+      return result['data'] as Map<String, dynamic>?;
+    }
+    return null;
+  }
+
+  // ========== 待办事项接口 ==========
+  /// 获取当前待办事项列表
+  static Future<List<dynamic>> getActionItems() async {
+    final result = await httpGet('/reports/action_items');
+    if (result != null && result is Map && result['success'] == true) {
+      return result['data'] as List<dynamic>? ?? [];
+    }
+    return [];
+  }
+
+  /// 标记待办事项为已完成（需指纹验证）
+  static Future<bool> completeActionItem(String itemId) async {
+    final result = await httpPost('/reports/action_items/$itemId/complete');
+    return result?['success'] ?? false;
+  }
+
+  // ========== 交易池操作接口（补充降级） ==========
+  /// 将股票从交易池降级到影子池（需指纹验证）
+  static Future<Map<String, dynamic>> demoteToShadowPool(String stockCode) async {
+    final result = await httpPost('/trading_signals/demote', body: {'stock_code': stockCode});
+    return result ?? {'success': false, 'message': '请求失败'};
+  }
+
+  // ========== 影子账户接口 ==========
+  /// 获取影子账户今日虚拟成交记录
+  static Future<List<dynamic>> getShadowOrders({int limit = 50}) async {
+    final result = await httpGet('/shadow/orders?limit=$limit');
+    if (result != null && result is List) return result;
+    if (result != null && result is Map && result['orders'] is List) {
+      return result['orders'] as List;
+    }
+    return [];
+  }
 }

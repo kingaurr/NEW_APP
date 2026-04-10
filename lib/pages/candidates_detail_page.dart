@@ -19,11 +19,24 @@ class _CandidatesDetailPageState extends State<CandidatesDetailPage> {
   Map<String, dynamic> _detail = {};
   final TextEditingController _sharesController = TextEditingController();
   String _errorMessage = '';
+  // ========== 新增：池类型参数 ==========
+  String _poolType = 'trade';
+  // ====================================
 
   @override
   void initState() {
     super.initState();
     _loadDetail();
+    // ========== 新增：从路由参数读取池类型 ==========
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && args is Map<String, dynamic>) {
+        setState(() {
+          _poolType = args['poolType'] ?? 'trade';
+        });
+      }
+    });
+    // ==============================================
   }
 
   @override
@@ -136,7 +149,6 @@ class _CandidatesDetailPageState extends State<CandidatesDetailPage> {
     });
 
     try {
-      // 修复：ApiService.buyStock 需要三个位置参数，返回 bool
       final success = await ApiService.buyStock(
         widget.stock['code'],
         shares,
@@ -179,7 +191,29 @@ class _CandidatesDetailPageState extends State<CandidatesDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('$name ($code)'),
+        title: Row(
+          children: [
+            Text('$name ($code)'),
+            const SizedBox(width: 8),
+            // ========== 新增：池类型标签 ==========
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getPoolColor(_poolType).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _getPoolName(_poolType),
+                style: TextStyle(
+                  color: _getPoolColor(_poolType),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            // ====================================
+          ],
+        ),
         backgroundColor: const Color(0xFF1E1E1E),
         actions: [
           IconButton(
@@ -485,4 +519,28 @@ class _CandidatesDetailPageState extends State<CandidatesDetailPage> {
       ),
     );
   }
+
+  // ========== 新增：辅助方法 ==========
+  String _getPoolName(String type) {
+    const names = {
+      'trade': '交易池',
+      'shadow': '影子池',
+      'watch': '观察池',
+      'research': '研究池',
+      'backup': '备选池',
+    };
+    return names[type] ?? type;
+  }
+
+  Color _getPoolColor(String type) {
+    const colors = {
+      'trade': Color(0xFFD4AF37),
+      'shadow': Colors.purpleAccent,
+      'watch': Colors.blue,
+      'research': Colors.grey,
+      'backup': Colors.brown,
+    };
+    return colors[type] ?? Colors.grey;
+  }
+  // ====================================
 }

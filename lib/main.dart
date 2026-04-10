@@ -50,6 +50,18 @@ import 'pages/trading_signals_page.dart';
 import 'pages/evolution_report_page.dart';
 // ===== 新增报告中心页面 =====
 import 'pages/report_center_page.dart';
+// ===== 新增9个骨架页面（日报下钻及功能扩展） =====
+import 'pages/fund_curve_page.dart';
+import 'pages/data_source_health_page.dart';
+import 'pages/arbitration_history_page.dart';
+import 'pages/cost_detail_page.dart';
+import 'pages/sector_detail_page.dart';
+import 'pages/ipo_list_page.dart';
+import 'pages/macro_events_page.dart';
+import 'pages/action_history_page.dart';
+import 'pages/backtest_report_page.dart';
+// ===== 新增交易监控页面 =====
+import 'pages/trade_monitor_page.dart';
 // ============================================
 
 void main() {
@@ -400,7 +412,51 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const ReportCenterPage(),
           );
         }
-        // ==========================================
+        // ===== 新增9个骨架页面路由（日报下钻及功能扩展） =====
+        else if (settings.name == '/fund_curve') {
+          return MaterialPageRoute(
+            builder: (context) => const FundCurvePage(),
+          );
+        } else if (settings.name == '/data_source_health') {
+          return MaterialPageRoute(
+            builder: (context) => const DataSourceHealthPage(),
+          );
+        } else if (settings.name == '/arbitration_history') {
+          return MaterialPageRoute(
+            builder: (context) => const ArbitrationHistoryPage(),
+          );
+        } else if (settings.name == '/cost_detail') {
+          return MaterialPageRoute(
+            builder: (context) => const CostDetailPage(),
+          );
+        } else if (settings.name == '/sector_detail') {
+          return MaterialPageRoute(
+            builder: (context) => const SectorDetailPage(),
+          );
+        } else if (settings.name == '/ipo_list') {
+          return MaterialPageRoute(
+            builder: (context) => const IpoListPage(),
+          );
+        } else if (settings.name == '/macro_events') {
+          return MaterialPageRoute(
+            builder: (context) => const MacroEventsPage(),
+          );
+        } else if (settings.name == '/action_history') {
+          return MaterialPageRoute(
+            builder: (context) => const ActionHistoryPage(),
+          );
+        } else if (settings.name == '/backtest_report') {
+          return MaterialPageRoute(
+            builder: (context) => const BacktestReportPage(),
+          );
+        }
+        // ===== 交易监控路由 =====
+        else if (settings.name == '/trade_monitor') {
+          return MaterialPageRoute(
+            builder: (context) => const TradeMonitorPage(),
+          );
+        }
+        // ==================================================
         
         return null;
       },

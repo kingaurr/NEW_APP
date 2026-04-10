@@ -80,6 +80,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "cross_file",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/cross_file-0.3.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
       "name": "crypto",
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/crypto-3.0.7",
       "packageUri": "lib/",
@@ -111,9 +117,9 @@
     },
     {
       "name": "file_picker",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/file_picker-5.5.0",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/file_picker-8.3.7",
       "packageUri": "lib/",
-      "languageVersion": "2.17"
+      "languageVersion": "3.4"
     },
     {
       "name": "fixnum",
@@ -356,42 +362,6 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "record",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/record-4.4.4",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
-      "name": "record_linux",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/record_linux-0.4.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
-      "name": "record_macos",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/record_macos-0.2.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
-      "name": "record_platform_interface",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/record_platform_interface-0.5.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
-      "name": "record_web",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/record_web-0.5.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
-      "name": "record_windows",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/record_windows-0.7.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
       "name": "shared_preferences",
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/shared_preferences-2.5.3",
       "packageUri": "lib/",
@@ -447,19 +417,19 @@
     },
     {
       "name": "speech_to_text",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text-6.6.0",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text-7.3.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "speech_to_text_macos",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text_macos-1.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.3"
     },
     {
       "name": "speech_to_text_platform_interface",
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text_platform_interface-2.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "speech_to_text_windows",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text_windows-1.0.0+beta.8",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -548,7 +518,7 @@
       "languageVersion": "2.19"
     }
   ],
-  "generated": "2026-03-27T18:05:39.499033Z",
+  "generated": "2026-04-10T15:36:23.533348Z",
   "generator": "pub",
   "generatorVersion": "3.7.0",
   "flutterRoot": "file:///D:/srx/flutter",

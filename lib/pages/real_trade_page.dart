@@ -28,6 +28,13 @@ class RealTradePageState extends State<RealTradePage> {
   Map<String, dynamic> _shadowCompare = {};
   String _errorMessage = '';
 
+  // ========== 新增：交易池摘要数据 ==========
+  Map<String, dynamic> _tradePoolSummary = {
+    'count': 0,
+    'avgScore': 0.0,
+  };
+  // =======================================
+
   @override
   void initState() {
     super.initState();
@@ -201,6 +208,8 @@ class RealTradePageState extends State<RealTradePage> {
         ApiService.getPositions(),
         ApiService.getSignalHistory(),
         ApiService.getShadowRealtimeCompare(),
+        // ========== 新增：获取交易池数据 ==========
+        ApiService.getTradingSignals(),
       ]);
 
       if (!mounted) return;
@@ -237,12 +246,28 @@ class RealTradePageState extends State<RealTradePage> {
         shadowCompareMap = results[3] as Map<String, dynamic>;
       }
 
+      // ========== 新增：处理交易池摘要 ==========
+      Map<String, dynamic> tradePoolSummary = {'count': 0, 'avgScore': 0.0};
+      if (results[4] != null && results[4] is Map<String, dynamic>) {
+        final tpData = results[4] as Map<String, dynamic>;
+        final tradePool = tpData['trade_pool'] as List<dynamic>? ?? [];
+        double totalScore = 0.0;
+        for (var stock in tradePool) {
+          totalScore += (stock['total_score'] ?? stock['score'] ?? 0).toDouble();
+        }
+        tradePoolSummary = {
+          'count': tradePool.length,
+          'avgScore': tradePool.isEmpty ? 0.0 : totalScore / tradePool.length,
+        };
+      }
+
       setState(() {
         _fund = fund;
         _positionValue = positionValue;
         _positions = positionsList;
         _signals = signalsList;
         _shadowCompare = shadowCompareMap;
+        _tradePoolSummary = tradePoolSummary; // 新增
       });
     } catch (e, stack) {
       debugPrint('加载实盘数据失败: $e\n$stack');
@@ -402,6 +427,47 @@ class RealTradePageState extends State<RealTradePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        // ========== 新增：交易池摘要卡片 ==========
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/trading_signals'),
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFD4AF37).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('今日交易池', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${_tradePoolSummary['count']} 只股票 · 平均得分 ${_tradePoolSummary['avgScore'].toStringAsFixed(1)}',
+                                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: Colors.grey),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // =====================================
 
                         // ========== 新增：一键平仓按钮（仅当有持仓时显示） ==========
                         if (_positions.isNotEmpty)

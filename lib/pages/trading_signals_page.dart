@@ -41,6 +41,7 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
     if (!mounted) return;
     setState(() {
       _isLoading = true;
+      _error = '';
     });
     try {
       final data = await ApiService.getTradingSignals();
@@ -66,6 +67,7 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
     if (_isRefreshing) return;
     setState(() {
       _isRefreshing = true;
+      _error = '';
     });
     try {
       final data = await ApiService.getTradingSignals();
@@ -223,6 +225,9 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
       if (mounted) {
         if (result['success'] == true) {
           await _refresh();
+          if (_tabController.index != 0) {
+            _tabController.animateTo(0); // 自动切换到交易池Tab
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('已提升 $stockName 到交易池'),
@@ -243,6 +248,69 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('提升失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  // ===== 新增：降级到影子池 =====
+  Future<void> _demoteToShadowPool(Map<String, dynamic> stock) async {
+    final authenticated = await BiometricsHelper.authenticateForOperation(
+      operation: 'demote_stock',
+      operationDesc: '降级到影子池',
+    );
+    if (!authenticated) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('验证失败，无法降级'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final stockCode = stock['code'] ?? stock['symbol'] ?? '';
+    final stockName = stock['name'] ?? stockCode;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      final result = await ApiService.demoteToShadowPool(stockCode);
+      if (mounted) {
+        if (result['success'] == true) {
+          await _refresh();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已降级 $stockName 到影子池'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? '降级失败'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('降级失败: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -311,7 +379,6 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
     final totalScore = (stock['total_score'] ?? stock['score'] ?? 0).toDouble();
     final isHeld = stock['is_held'] ?? false;
     final isGray = stock['is_gray'] ?? false;
-    // 增加默认理由，避免因空字符串导致不显示
     final reason = (stock['reason'] ?? stock['selected_reason'] ?? '');
     final displayReason = reason.isEmpty ? 'AI选股' : reason;
     final ruleId = stock['rule_id'] ?? '';
@@ -319,6 +386,12 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: const Color(0xFF2A2A2A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: !isTradePool
+            ? const BorderSide(color: Colors.orange, width: 1)
+            : BorderSide.none,
+      ),
       child: InkWell(
         onTap: () => _showStockDetail(stock),
         onLongPress: () => _showStockOptions(stock, isTradePool),
@@ -361,7 +434,9 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
                 ],
               ),
               const SizedBox(height: 8),
-              Row(
+              // 标签行：已持仓、灰度中、影子专属
+              Wrap(
+                spacing: 8,
                 children: [
                   if (isHeld)
                     Container(
@@ -375,8 +450,7 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
                         style: TextStyle(fontSize: 10, color: Colors.green),
                       ),
                     ),
-                  if (isGray) ...[
-                    const SizedBox(width: 8),
+                  if (isGray)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -388,14 +462,26 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
                         style: TextStyle(fontSize: 10, color: Colors.orange),
                       ),
                     ),
-                  ],
+                  if (!isTradePool)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '影子池',
+                        style: TextStyle(fontSize: 10, color: Colors.purpleAccent),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
               _buildScoreRow(stock),
-              // 理由区域：始终显示，使用 displayReason
               const SizedBox(height: 8),
+              // 选股理由 + 关联规则
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.info_outline, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
@@ -410,25 +496,43 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
                   if (ruleId.isNotEmpty)
                     GestureDetector(
                       onTap: () => _showRuleDetail(ruleId),
-                      child: const Icon(Icons.menu_book, size: 14, color: Color(0xFFD4AF37)),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.menu_book, size: 12, color: Color(0xFFD4AF37)),
+                            const SizedBox(width: 2),
+                            Text(
+                              ruleId.length > 8 ? '${ruleId.substring(0, 8)}...' : ruleId,
+                              style: const TextStyle(fontSize: 10, color: Color(0xFFD4AF37)),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               ),
+              // 影子池专属操作按钮
               if (!isTradePool) ...[
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => _promoteToTradePool(stock),
-                      icon: const Icon(Icons.arrow_upward, size: 16),
-                      label: const Text('提升到交易池'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFD4AF37),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _promoteToTradePool(stock),
+                    icon: const Icon(Icons.arrow_upward, size: 16),
+                    label: const Text('提升到交易池'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      textStyle: const TextStyle(fontSize: 12),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ],
@@ -448,12 +552,21 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
           children: [
             ListTile(
               leading: const Icon(Icons.remove_circle_outline, color: Colors.red),
-              title: const Text('剔除股票'),
+              title: const Text('从交易池剔除'),
               onTap: () {
                 Navigator.pop(context);
                 _removeStock(stock);
               },
             ),
+            if (isTradePool)
+              ListTile(
+                leading: const Icon(Icons.arrow_downward, color: Colors.orange),
+                title: const Text('降级到影子池'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _demoteToShadowPool(stock);
+                },
+              ),
             if (!isTradePool)
               ListTile(
                 leading: const Icon(Icons.arrow_upward, color: Color(0xFFD4AF37)),
@@ -470,11 +583,10 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
   }
 
   void _showRuleDetail(String ruleId) {
-    // 跳转到规则详情页
     Navigator.pushNamed(
       context,
       '/rule_detail',
-      arguments: {'rule_id': ruleId},
+      arguments: {'id': ruleId},
     );
   }
 
@@ -566,9 +678,9 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
                                 dropdownColor: const Color(0xFF2A2A2A),
                                 style: const TextStyle(color: Colors.white),
                                 items: [
-                                  const DropdownMenuItem(value: null, child: Text('全部行业')),
+                                  const DropdownMenuItem<String>(value: '', child: Text('全部行业')),
                                   ..._industries.map((industry) {
-                                    return DropdownMenuItem(value: industry, child: Text(industry));
+                                    return DropdownMenuItem<String>(value: industry, child: Text(industry));
                                   }),
                                 ],
                                 onChanged: (value) {
@@ -585,15 +697,22 @@ class _TradingSignalsPageState extends State<TradingSignalsPage>
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: _refresh,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _getCurrentPool().length,
-                          itemBuilder: (context, index) {
-                            final stock = _getCurrentPool()[index];
-                            final isTradePool = _tabController.index == 0;
-                            return _buildStockItem(stock, isTradePool);
-                          },
-                        ),
+                        child: _getCurrentPool().isEmpty
+                            ? const Center(
+                                child: Text(
+                                  '暂无数据',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(12),
+                                itemCount: _getCurrentPool().length,
+                                itemBuilder: (context, index) {
+                                  final stock = _getCurrentPool()[index];
+                                  final isTradePool = _tabController.index == 0;
+                                  return _buildStockItem(stock, isTradePool);
+                                },
+                              ),
                       ),
                     ),
                   ],

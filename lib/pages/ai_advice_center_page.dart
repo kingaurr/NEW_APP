@@ -12,7 +12,8 @@ class AiAdviceCenterPage extends StatefulWidget {
   State<AiAdviceCenterPage> createState() => _AiAdviceCenterPageState();
 }
 
-class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTickerProviderStateMixin {
+class _AiAdviceCenterPageState extends State<AiAdviceCenterPage>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   List<dynamic> _strategies = [];
   List<dynamic> _pendingRules = [];
@@ -41,7 +42,11 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
   void _showErrorSnackbar(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 2)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -56,6 +61,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
     List<dynamic> pendingRules = [];
     List<dynamic> guardianSuggestions = [];
     List<dynamic> codeFixSuggestions = [];
+    String? firstError;
 
     // 1. 策略列表
     try {
@@ -67,7 +73,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       }
     } catch (e) {
       debugPrint('getStrategies 错误: $e');
-      strategies = [];
+      firstError ??= '策略列表加载失败';
     }
 
     // 2. 待审核规则
@@ -78,7 +84,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       }
     } catch (e) {
       debugPrint('getPendingRules 错误: $e');
-      _showErrorSnackbar('待审核规则加载失败');
+      firstError ??= '待审核规则加载失败';
     }
 
     // 3. 守门员建议
@@ -89,7 +95,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       }
     } catch (e) {
       debugPrint('getPendingSuggestions 错误: $e');
-      _showErrorSnackbar('守门员建议加载失败');
+      firstError ??= '守门员建议加载失败';
     }
 
     // 4. 代码修改建议
@@ -100,7 +106,7 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
       }
     } catch (e) {
       debugPrint('getPendingAdviceByType(code_fix) 错误: $e');
-      _showErrorSnackbar('代码修改建议加载失败');
+      firstError ??= '代码修改建议加载失败';
     }
 
     if (mounted) {
@@ -112,9 +118,14 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
         _suggestionCount = _guardianSuggestions.length;
         _codeFixSuggestions = codeFixSuggestions;
         _codeFixCount = _codeFixSuggestions.length;
+        _errorMessage = firstError ?? '';
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadData();
   }
 
   @override
@@ -146,67 +157,89 @@ class _AiAdviceCenterPageState extends State<AiAdviceCenterPage> with SingleTick
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const Icon(Icons.error_outline,
+                          color: Colors.red, size: 48),
                       const SizedBox(height: 16),
-                      Text(_errorMessage, style: const TextStyle(color: Colors.grey)),
+                      Text(_errorMessage,
+                          style: const TextStyle(color: Colors.grey)),
                       const SizedBox(height: 16),
-                      ElevatedButton(onPressed: _loadData, child: const Text('重试')),
+                      ElevatedButton(
+                          onPressed: _loadData, child: const Text('重试')),
                     ],
                   ),
                 )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildStrategiesTab(),
-                          _buildPendingRulesTab(),
-                          _buildGuardianSuggestionsTab(),
-                          _buildCodeFixTab(),
-                        ],
-                      ),
-                    ),
-                  ],
+              : RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildStrategiesTab(),
+                      _buildPendingRulesTab(),
+                      _buildGuardianSuggestionsTab(),
+                      _buildCodeFixTab(),
+                    ],
+                  ),
                 ),
     );
   }
 
   Widget _buildStrategiesTab() {
-    if (_strategies.isEmpty) return const Center(child: Text('暂无策略', style: TextStyle(color: Colors.grey)));
+    if (_strategies.isEmpty) {
+      return const Center(
+          child: Text('暂无策略', style: TextStyle(color: Colors.grey)));
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _strategies.length,
-      itemBuilder: (context, index) => StrategyItem(strategy: _strategies[index], onStrategyChanged: _loadData),
+      itemBuilder: (context, index) => StrategyItem(
+        strategy: _strategies[index],
+        onStrategyChanged: _loadData,
+      ),
     );
   }
 
   Widget _buildPendingRulesTab() {
-    if (_pendingRules.isEmpty) return const Center(child: Text('暂无待审核规则', style: TextStyle(color: Colors.grey)));
+    if (_pendingRules.isEmpty) {
+      return const Center(
+          child: Text('暂无待审核规则', style: TextStyle(color: Colors.grey)));
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _pendingRules.length,
-      itemBuilder: (context, index) => PendingRuleItem(rule: _pendingRules[index], onStatusChanged: _loadData),
+      itemBuilder: (context, index) => PendingRuleItem(
+        rule: _pendingRules[index],
+        onStatusChanged: _loadData,
+      ),
     );
   }
 
   Widget _buildGuardianSuggestionsTab() {
-    if (_guardianSuggestions.isEmpty) return const Center(child: Text('暂无守门员建议', style: TextStyle(color: Colors.grey)));
+    if (_guardianSuggestions.isEmpty) {
+      return const Center(
+          child: Text('暂无守门员建议', style: TextStyle(color: Colors.grey)));
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _guardianSuggestions.length,
-      itemBuilder: (context, index) => guardian.GuardianSuggestionItem(suggestion: _guardianSuggestions[index], onStatusChanged: _loadData),
+      itemBuilder: (context, index) => guardian.GuardianSuggestionItem(
+        suggestion: _guardianSuggestions[index],
+        onStatusChanged: _loadData,
+      ),
     );
   }
 
   Widget _buildCodeFixTab() {
     if (_codeFixSuggestions.isEmpty) {
-      return const Center(child: Text('暂无代码修改请求', style: TextStyle(color: Colors.grey)));
+      return const Center(
+          child: Text('暂无代码修改请求', style: TextStyle(color: Colors.grey)));
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _codeFixSuggestions.length,
-      itemBuilder: (context, index) => guardian.GuardianSuggestionItem(suggestion: _codeFixSuggestions[index], onStatusChanged: _loadData),
+      itemBuilder: (context, index) => guardian.GuardianSuggestionItem(
+        suggestion: _codeFixSuggestions[index],
+        onStatusChanged: _loadData,
+      ),
     );
   }
 }
