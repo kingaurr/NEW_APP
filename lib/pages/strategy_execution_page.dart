@@ -607,6 +607,7 @@ ${_strategicAdvice ?? '无'}
     );
   }
 
+  // ===== 修改：资产卡片添加点击跳转到资金曲线页面 =====
   Widget _buildAssetCard() {
     final totalAsset = _asset['total_asset'] ?? 0.0;
     final availableCash = _asset['available_cash'] ?? 0.0;
@@ -614,24 +615,37 @@ ${_strategicAdvice ?? '无'}
     final todayPnl = _asset['today_pnl'] ?? 0.0;
     final todayReturnPct = _asset['today_return_pct'] ?? 0.0;
 
-    return Card(
-      color: const Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFFD4AF37), width: 1)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(children: [Icon(Icons.account_balance, color: Color(0xFFD4AF37), size: 20), SizedBox(width: 8), Text('实盘资产', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 16, fontWeight: FontWeight.bold))]),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('¥${totalAsset.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))]),
-            const SizedBox(height: 8),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('可用资金', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('¥${availableCash.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white70, fontSize: 14))]),
-            const SizedBox(height: 8),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('持仓市值', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('¥${positionValue.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white70, fontSize: 14))]),
-            const SizedBox(height: 8),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('${todayPnl >= 0 ? '+' : ''}¥${todayPnl.toStringAsFixed(2)} (${todayReturnPct >= 0 ? '+' : ''}${todayReturnPct.toStringAsFixed(2)}%)', style: TextStyle(color: todayPnl >= 0 ? Colors.green : Colors.red, fontSize: 14, fontWeight: FontWeight.w500))]),
-          ],
+    return InkWell(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/fund_curve',
+          arguments: {
+            'asset': _asset,
+            'fund_curve': _asset['fund_curve'] ?? [],
+          },
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        color: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFFD4AF37), width: 1)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(children: [Icon(Icons.account_balance, color: Color(0xFFD4AF37), size: 20), SizedBox(width: 8), Text('实盘资产', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 16, fontWeight: FontWeight.bold))]),
+              const SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('¥${totalAsset.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))]),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('可用资金', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('¥${availableCash.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white70, fontSize: 14))]),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('持仓市值', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('¥${positionValue.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white70, fontSize: 14))]),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)), Text('${todayPnl >= 0 ? '+' : ''}¥${todayPnl.toStringAsFixed(2)} (${todayReturnPct >= 0 ? '+' : ''}${todayReturnPct.toStringAsFixed(2)}%)', style: TextStyle(color: todayPnl >= 0 ? Colors.green : Colors.red, fontSize: 14, fontWeight: FontWeight.w500))]),
+            ],
+          ),
         ),
       ),
     );
@@ -693,7 +707,6 @@ ${_strategicAdvice ?? '无'}
             ]),
             const Divider(color: Colors.white24),
             Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              // ===== 修改：仲裁冲突添加点击跳转 =====
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, '/arbitration_history'),
                 child: _buildAIStat('仲裁冲突', arbitration['conflicts_today']?.toString() ?? '0'),

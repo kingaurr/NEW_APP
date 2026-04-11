@@ -63,6 +63,8 @@ import 'pages/trade_monitor_page.dart';
 // ===== 新增战略规划与战略执行页面 =====
 import 'pages/strategy_planning_page.dart';
 import 'pages/strategy_execution_page.dart';
+// ===== 新增决策树独立页面 =====
+import 'pages/decision_tree_page.dart';
 // ============================================
 
 void main() {
@@ -464,6 +466,18 @@ class _MyAppState extends State<MyApp> {
         else if (settings.name == '/trade_monitor') {
           return MaterialPageRoute(
             builder: (context) => const TradeMonitorPage(),
+          );
+        }
+        // ===== 决策树独立页面路由（新增） =====
+        else if (settings.name == '/decision_tree') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          final decisionTree = args['decisionTree'] as Map<String, dynamic>? ?? {};
+          final strategyName = args['strategyName'] as String? ?? '';
+          return MaterialPageRoute(
+            builder: (context) => DecisionTreePage(
+              decisionTree: decisionTree,
+              strategyName: strategyName,
+            ),
           );
         }
         // ==================================================

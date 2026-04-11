@@ -17,7 +17,6 @@ class StrategyDetailPage extends StatefulWidget {
 
 class _StrategyDetailPageState extends State<StrategyDetailPage> {
   bool _isLoading = true;
-  bool _isDecisionTreeExpanded = false;
   bool _isComparisonExpanded = false;
   Map<String, dynamic> _detail = {};
   Map<String, dynamic> _decisionTree = {};
@@ -101,90 +100,6 @@ class _StrategyDetailPageState extends State<StrategyDetailPage> {
     if (score >= 0.6) return Colors.lightBlue;
     if (score >= 0.4) return Colors.orange;
     return Colors.red;
-  }
-
-  Widget _buildDecisionTreeNode(Map<String, dynamic> node, int level) {
-    final children = node['children'] as List? ?? [];
-    final indent = level * 16.0;
-
-    return Padding(
-      padding: EdgeInsets.only(left: indent),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            margin: const EdgeInsets.only(bottom: 4),
-            decoration: BoxDecoration(
-              color: node['is_critical_path'] == true
-                  ? Colors.orange.withOpacity(0.2)
-                  : Colors.grey[800],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: node['is_critical_path'] == true
-                    ? Colors.orange
-                    : Colors.grey,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      _getNodeIcon(node['type']),
-                      size: 16,
-                      color: node['type'] == 'condition' && node['metadata']?['result'] == true
-                          ? Colors.green
-                          : (node['type'] == 'condition' ? Colors.red : Colors.grey),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        node['name'] ?? '',
-                        style: TextStyle(
-                          color: node['is_critical_path'] == true
-                              ? Colors.orange
-                              : Colors.white,
-                          fontSize: 13,
-                          fontWeight: node['is_critical_path'] == true
-                              ? FontWeight.w500
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (node['explanation'] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      node['explanation'],
-                      style: const TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          ...children.map((child) => _buildDecisionTreeNode(child, level + 1)),
-        ],
-      ),
-    );
-  }
-
-  IconData _getNodeIcon(String type) {
-    switch (type) {
-      case 'decision':
-        return Icons.play_arrow;
-      case 'condition':
-        return Icons.rule;
-      case 'result':
-        return Icons.check_circle;
-      case 'data':
-        return Icons.data_usage;
-      default:
-        return Icons.circle;
-    }
   }
 
   @override
@@ -391,44 +306,40 @@ class _StrategyDetailPageState extends State<StrategyDetailPage> {
 
                       const SizedBox(height: 16),
 
-                      // 决策树（新增）
+                      // 决策树入口卡片（改为跳转独立页面）
                       if (_decisionTree.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isDecisionTreeExpanded = !_isDecisionTreeExpanded;
-                            });
-                          },
-                          child: Card(
-                            color: const Color(0xFF2A2A2A),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        Card(
+                          color: const Color(0xFF2A2A2A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/decision_tree',
+                                arguments: {
+                                  'decisionTree': _decisionTree,
+                                  'strategyName': name,
+                                },
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
-                              child: Column(
+                              child: Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.account_tree, color: Color(0xFFD4AF37), size: 20),
-                                      const SizedBox(width: 8),
-                                      const Text(
-                                        '决策树',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                  const Icon(Icons.account_tree, color: Color(0xFFD4AF37), size: 20),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      '决策树',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                      const Spacer(),
-                                      Icon(
-                                        _isDecisionTreeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                        color: Colors.grey,
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                  if (_isDecisionTreeExpanded) ...[
-                                    const SizedBox(height: 16),
-                                    _buildDecisionTreeNode(_decisionTree, 0),
-                                  ],
+                                  const Icon(Icons.chevron_right, color: Colors.grey),
                                 ],
                               ),
                             ),
@@ -437,7 +348,7 @@ class _StrategyDetailPageState extends State<StrategyDetailPage> {
 
                       const SizedBox(height: 16),
 
-                      // 对比分析（新增）
+                      // 对比分析（保留原有展开逻辑）
                       if (_comparison.isNotEmpty)
                         GestureDetector(
                           onTap: () {
