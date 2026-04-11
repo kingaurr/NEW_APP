@@ -323,7 +323,7 @@ ${_strategicAdvice ?? '无'}
       }
       final jsonStr = response.substring(jsonStart, jsonEnd + 1);
       final parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
-      
+     
       _deepAnalysis = parsed['analysis'] as String? ?? '';
       final tasksList = parsed['tasks'] as List<dynamic>? ?? [];
       _tasks = tasksList.map((t) => t as Map<String, dynamic>).toList();
@@ -693,7 +693,11 @@ ${_strategicAdvice ?? '无'}
             ]),
             const Divider(color: Colors.white24),
             Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              _buildAIStat('仲裁冲突', arbitration['conflicts_today']?.toString() ?? '0'),
+              // ===== 修改：仲裁冲突添加点击跳转 =====
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/arbitration_history'),
+                child: _buildAIStat('仲裁冲突', arbitration['conflicts_today']?.toString() ?? '0'),
+              ),
               _buildAIStat('守门员建议', guardian['suggestions_today']?.toString() ?? '0'),
               _buildAIStat('待审核规则', outerBrain['pending_rules_count']?.toString() ?? '0'),
             ]),

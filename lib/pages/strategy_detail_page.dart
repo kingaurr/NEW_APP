@@ -47,10 +47,15 @@ class _StrategyDetailPageState extends State<StrategyDetailPage> {
       // 1. 策略详情
       if (results[0] != null && results[0] is Map<String, dynamic>) {
         final detail = results[0] as Map<String, dynamic>;
+        // 安全转换绩效曲线
+        final curveData = detail['performance_curve'] ?? detail['curve'] ?? [];
+        List<double> performanceData = [];
+        if (curveData is List) {
+          performanceData = curveData.map((e) => (e as num).toDouble()).toList();
+        }
         setState(() {
           _detail = detail;
-          // 获取绩效曲线，注意字段名可能是 'performance_curve' 或 'curve'
-          _performanceData = (detail['performance_curve'] ?? detail['curve'] ?? []) as List<double>;
+          _performanceData = performanceData;
         });
       }
 

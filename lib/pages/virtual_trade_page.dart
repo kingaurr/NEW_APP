@@ -39,10 +39,23 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+    // 仅在加载开始时设置 loading 状态
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = '';
+      });
+    }
+
+    // 临时变量存储结果，避免在异步操作中直接 setState
+    Map<String, dynamic> shadowStatus = {};
+    Map<String, dynamic> lightWarGame = {};
+    Map<String, dynamic> deepWarGame = {};
+    Map<String, dynamic> stressTest = {};
+    List<dynamic> pendingRules = [];
+    List<dynamic> shadowPositions = [];
+    List<dynamic> shadowOrders = [];
+    String? error;
 
     try {
       final results = await Future.wait([
@@ -51,64 +64,66 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
         ApiService.getLatestDeepWarGame(),
         ApiService.getStressTestLatest(),
         ApiService.getPendingRules(),
-        ApiService.getShadowOrders(), // 新增：影子虚拟成交
+        ApiService.getShadowOrders(),
       ]);
 
-      // 1. 影子账户状态（包含持仓）
+      // 1. 影子账户状态
       if (results[0] != null && results[0] is Map<String, dynamic>) {
-        final shadowData = results[0] as Map<String, dynamic>;
-        setState(() {
-          _shadowStatus = shadowData;
-          _shadowPositions = shadowData['shadow_positions'] ?? [];
-        });
+        shadowStatus = results[0] as Map<String, dynamic>;
+        final positions = shadowStatus['shadow_positions'];
+        if (positions is List) {
+          shadowPositions = positions;
+        } else {
+          shadowPositions = [];
+        }
       }
 
       // 2. 轻量红蓝军
       if (results[1] != null && results[1] is Map<String, dynamic>) {
-        setState(() {
-          _lightWarGame = results[1] as Map<String, dynamic>;
-        });
+        lightWarGame = results[1] as Map<String, dynamic>;
       }
 
       // 3. 深度红蓝军
       if (results[2] != null && results[2] is Map<String, dynamic>) {
-        setState(() {
-          _deepWarGame = results[2] as Map<String, dynamic>;
-        });
+        deepWarGame = results[2] as Map<String, dynamic>;
       }
 
-      // 4. 压力测试报告
+      // 4. 压力测试
       if (results[3] != null && results[3] is Map<String, dynamic>) {
-        setState(() {
-          _stressTest = results[3] as Map<String, dynamic>;
-        });
+        stressTest = results[3] as Map<String, dynamic>;
       }
 
       // 5. 待验证规则
       if (results[4] != null && results[4] is Map<String, dynamic>) {
         final pendingMap = results[4] as Map<String, dynamic>;
-        setState(() {
-          _pendingRules = pendingMap['rules'] ?? [];
-        });
+        final rules = pendingMap['rules'];
+        if (rules is List) {
+          pendingRules = rules;
+        }
       }
 
       // 6. 影子虚拟成交
       if (results[5] != null && results[5] is List) {
-        setState(() {
-          _shadowOrders = results[5] as List<dynamic>;
-        });
+        shadowOrders = results[5] as List<dynamic>;
       }
     } catch (e) {
       debugPrint('加载虚拟交易数据失败: $e');
+      error = '加载失败: $e';
+    }
+
+    // 统一更新状态，确保 mounted
+    if (mounted) {
       setState(() {
-        _errorMessage = '加载失败: $e';
+        _shadowStatus = shadowStatus;
+        _lightWarGame = lightWarGame;
+        _deepWarGame = deepWarGame;
+        _stressTest = stressTest;
+        _pendingRules = pendingRules;
+        _shadowPositions = shadowPositions;
+        _shadowOrders = shadowOrders;
+        _errorMessage = error ?? '';
+        _isLoading = false;
       });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -128,7 +143,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     return '平局';
   }
 
-  // ========== 新增：手动触发红蓝军对抗的方法 ==========
   Future<void> _runLightWarGame() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -157,9 +171,9 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     );
     if (confirm != true) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
     try {
       final result = await ApiService.runLightWarGame();
       if (mounted) {
@@ -168,7 +182,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
             const SnackBar(content: Text('轻量对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
           );
           Future.delayed(const Duration(seconds: 3), () {
-            _loadData();
+            if (mounted) _loadData();
           });
         } else {
           throw Exception(result['message'] ?? '启动失败');
@@ -182,9 +196,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -217,9 +229,9 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     );
     if (confirm != true) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
     try {
       final result = await ApiService.runDeepWarGame();
       if (mounted) {
@@ -228,7 +240,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
             const SnackBar(content: Text('深度对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
           );
           Future.delayed(const Duration(seconds: 5), () {
-            _loadData();
+            if (mounted) _loadData();
           });
         } else {
           throw Exception(result['message'] ?? '启动失败');
@@ -242,13 +254,10 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
-  // ====================================================
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +291,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 影子账户摘要
                         const Text(
                           '影子账户',
                           style: TextStyle(
@@ -295,10 +303,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                         ShadowSummary(
                           onApplySuggestion: _loadData,
                         ),
-
                         const SizedBox(height: 16),
-
-                        // ========== 新增：影子持仓列表 ==========
                         if (_shadowPositions.isNotEmpty) ...[
                           GestureDetector(
                             onTap: () {
@@ -360,9 +365,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                           ),
                           const SizedBox(height: 16),
                         ],
-                        // =====================================
-
-                        // ========== 新增：影子虚拟成交明细 ==========
                         if (_shadowOrders.isNotEmpty) ...[
                           GestureDetector(
                             onTap: () {
@@ -424,9 +426,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                           ),
                           const SizedBox(height: 16),
                         ],
-                        // =========================================
-
-                        // 红蓝军轻量对抗（白天每小时结果）
                         if (_lightWarGame.isNotEmpty)
                           Card(
                             color: const Color(0xFF2A2A2A),
@@ -489,10 +488,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               ),
                             ),
                           ),
-
                         const SizedBox(height: 16),
-
-                        // 红蓝军深度报告（昨夜）
                         if (_deepWarGame.isNotEmpty)
                           GestureDetector(
                             onTap: () {
@@ -574,8 +570,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               ),
                             ),
                           ),
-
-                        // ========== 新增：手动运行红蓝军对抗按钮 ==========
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -607,9 +601,6 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // =================================================
-
-                        // 压力测试报告
                         if (_stressTest.isNotEmpty)
                           GestureDetector(
                             onTap: () {
@@ -696,10 +687,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               ),
                             ),
                           ),
-
                         const SizedBox(height: 16),
-
-                        // 待验证规则
                         if (_pendingRules.isNotEmpty)
                           GestureDetector(
                             onTap: () {

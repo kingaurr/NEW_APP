@@ -75,8 +75,8 @@ class _StrategyPlanningPageState extends State<StrategyPlanningPage> {
       _isAnalyzing = true;
     });
 
-    // 构建战略分析上下文
-    final context = '''
+    // 构建战略分析上下文（纯文本提示）
+    final prompt = '''
 【战略规划上下文】
 一、核心大脑状态
 - 心脏：模式=${_heartStatus['system']?['mode'] ?? '未知'}，熔断=${_heartStatus['fuse']?['triggered'] == true ? '已触发' : '正常'}
@@ -89,21 +89,17 @@ class _StrategyPlanningPageState extends State<StrategyPlanningPage> {
 - 今日盈亏：¥${_statusData['today_pnl'] ?? 0}
 - 胜率：${_statusData['win_rate'] != null ? (_statusData['win_rate'] * 100).toStringAsFixed(1) : '0'}%
 
-请作为Quant 4.0战略分析师，完成以下任务：
-1. 评估四大核心模块是否健康运行。
-2. 给出一句话战略总结（不超过100字）。
-3. 如果有需要优化的问题，生成一个可执行的战术任务清单，格式为：
-   - [ ] 任务类型: 具体操作 (例如: 调整策略权重、批准规则、检查数据源)
-如果系统运行完美，则写"无需战术任务"。
+请作为Quant 4.0战略分析师，给出简要战略评估和战术建议（直接返回纯文本即可）。
 ''';
 
     try {
-      final result = await ApiService.voiceAsk(context);
+      final result = await ApiService.voiceAsk(prompt);
       if (mounted) {
         setState(() {
           _isAnalyzing = false;
         });
-        _showAnalysisDialog(result['answer'] ?? '暂无分析结果');
+        final answer = result['answer'] ?? '暂无分析结果';
+        _showAnalysisDialog(answer);
       }
     } catch (e) {
       if (mounted) {

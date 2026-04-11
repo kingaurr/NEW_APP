@@ -207,7 +207,6 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  // ========== 战略规划与战略执行入口 ==========
   void _openStrategyPlanning() {
     Navigator.push(
       context,
@@ -221,7 +220,8 @@ class _MyPageState extends State<MyPage> {
       MaterialPageRoute(builder: (context) => const StrategyExecutionPage()),
     );
   }
-  // =========================================
+
+  // =================================
 
   @override
   Widget build(BuildContext context) {
@@ -384,11 +384,10 @@ class _MyPageState extends State<MyPage> {
                                       onTap: _showAlerts,
                                       badge: _unreadAlerts > 0 ? '$_unreadAlerts' : null,
                                     ),
-                                    // 原“报告中心”改为“战略规划”
                                     _buildGridItem(
-                                      icon: Icons.insights,
-                                      label: '战略规划',
-                                      onTap: _openStrategyPlanning,
+                                      icon: Icons.description,
+                                      label: '报告中心',
+                                      onTap: _showReports,
                                     ),
                                     _buildGridItem(
                                       icon: Icons.history,
@@ -426,17 +425,15 @@ class _MyPageState extends State<MyPage> {
                                       label: '外脑进化报告',
                                       onTap: _openEvolutionReport,
                                     ),
-                                    // 新增“战略执行”
+                                    _buildGridItem(
+                                      icon: Icons.insights,
+                                      label: '战略规划',
+                                      onTap: _openStrategyPlanning,
+                                    ),
                                     _buildGridItem(
                                       icon: Icons.assignment_turned_in,
                                       label: '战略执行',
                                       onTap: _openStrategyExecution,
-                                    ),
-                                    // 保留原“系统报告”入口（若需要）
-                                    _buildGridItem(
-                                      icon: Icons.assessment,
-                                      label: '系统报告',
-                                      onTap: _openReportCenter,
                                     ),
                                     // ===================================
                                   ],
@@ -510,10 +507,4 @@ class _MyPageState extends State<MyPage> {
       ),
     );
   }
-
-  // ========== 新增报告中心跳转方法 ==========
-  void _openReportCenter() {
-    Navigator.pushNamed(context, '/report_center');
-  }
-  // =========================================
 }
