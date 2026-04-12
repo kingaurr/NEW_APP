@@ -1242,14 +1242,42 @@ class ApiService {
 
   // ========== 获取指定类型的待审批建议 ==========
   static Future<List<dynamic>> getPendingAdviceByType(String type) async {
-    final result = await httpGet('/advice/pending?type=$type');
-    if (result != null && result is List) {
-      return result;
+    try {
+      final result = await httpGet('/advice/pending?type=$type');
+      
+      // 直接返回数组的情况
+      if (result is List) {
+        debugPrint('getPendingAdviceByType($type): 返回数组，长度 ${result.length}');
+        return result;
+      }
+      
+      // 返回对象且包含 advices 字段的情况
+      if (result is Map) {
+        final advices = result['advices'];
+        if (advices is List) {
+          debugPrint('getPendingAdviceByType($type): 从 advices 字段提取数组，长度 ${advices.length}');
+          return advices;
+        }
+        // 兼容其他可能的字段名
+        final items = result['items'];
+        if (items is List) {
+          debugPrint('getPendingAdviceByType($type): 从 items 字段提取数组，长度 ${items.length}');
+          return items;
+        }
+        final data = result['data'];
+        if (data is List) {
+          debugPrint('getPendingAdviceByType($type): 从 data 字段提取数组，长度 ${data.length}');
+          return data;
+        }
+      }
+      
+      // 请求失败或格式未知
+      debugPrint('getPendingAdviceByType($type): 返回格式未知或为空，返回空数组');
+      return [];
+    } catch (e) {
+      debugPrint('getPendingAdviceByType($type): 异常 $e');
+      return [];
     }
-    if (result != null && result is Map && result['advices'] is List) {
-      return result['advices'] as List;
-    }
-    return [];
   }
 
   // ========== 获取待审批代码修改数量 ==========
