@@ -1,6 +1,7 @@
 // lib/widgets/guardian_suggestion_item.dart
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import '../utils/biometrics_helper.dart';
 import '../pages/rule_detail_page.dart';
 import 'evidence_viewer.dart';
 
@@ -25,6 +26,14 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
   bool _showEvidence = false;
 
   Future<void> _approve() async {
+    // ===== 新增：指纹验证 =====
+    final auth = await BiometricsHelper.authenticateForOperation(
+      operation: 'approve_rule',
+      operationDesc: '批准规则 "${widget.rule['name']}"',
+    );
+    if (!auth) return;
+    // =========================
+
     final confirmed = await _showConfirmDialog(
       title: '批准规则',
       content: '确定要批准规则 "${widget.rule['name']}" 吗？\n批准后规则将立即生效。',
@@ -76,6 +85,14 @@ class _PendingRuleItemState extends State<PendingRuleItem> {
   }
 
   Future<void> _reject() async {
+    // ===== 新增：指纹验证 =====
+    final auth = await BiometricsHelper.authenticateForOperation(
+      operation: 'reject_rule',
+      operationDesc: '拒绝规则 "${widget.rule['name']}"',
+    );
+    if (!auth) return;
+    // =========================
+
     final reason = await _showReasonDialog();
     if (reason == null) return;
 
@@ -469,6 +486,14 @@ class GuardianSuggestionItem extends StatelessWidget {
   }
 
   Future<void> _handleApprove(BuildContext context) async {
+    // ===== 新增：指纹验证 =====
+    final auth = await BiometricsHelper.authenticateForOperation(
+      operation: 'approve_advice',
+      operationDesc: '批准建议 "${suggestion['title'] ?? '建议'}"',
+    );
+    if (!auth) return;
+    // =========================
+
     try {
       final result = await ApiService.approveSuggestion(suggestion['id']);
       if (result != null && result['success'] == true) {
@@ -487,6 +512,14 @@ class GuardianSuggestionItem extends StatelessWidget {
   }
 
   Future<void> _handleReject(BuildContext context) async {
+    // ===== 新增：指纹验证 =====
+    final auth = await BiometricsHelper.authenticateForOperation(
+      operation: 'reject_advice',
+      operationDesc: '拒绝建议 "${suggestion['title'] ?? '建议'}"',
+    );
+    if (!auth) return;
+    // =========================
+
     try {
       final result = await ApiService.rejectSuggestion(suggestion['id']);
       if (result != null && result['success'] == true) {
