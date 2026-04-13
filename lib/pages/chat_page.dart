@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../api_service.dart';
+import '../utils/shared_preferences_helper.dart';  // [新增] 导入本地存储工具类
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -25,17 +26,7 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     _initSpeech();
-    _addSystemMessage('你好，我是千寻。你可以输入文字、语音提问，或上传文本文件（.txt, .log, .md）。点击右上角切换回答模式。');
-  }
-
-  void _addSystemMessage(String content) {
-    _messages.add({
-      'role': 'system',
-      'content': content,
-      'timestamp': DateTime.now(),
-      'mode': 'system',
-    });
-    _scrollToBottom();
+    _loadMessages();  // [修改] 调用加载方法
   }
 
   Future<void> _initSpeech() async {
@@ -57,6 +48,49 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  // [修改] 保存消息到本地，调用 Helper
+  Future<void> _saveMessages() async {
+    await SharedPreferencesHelper.saveChatHistory(_messages);
+  }
+
+  // [修改] 从本地加载消息，调用 Helper
+  Future<void> _loadMessages() async {
+    final loadedMessages = await SharedPreferencesHelper.loadChatHistory();
+    if (mounted) {
+      setState(() {
+        _messages.clear();
+        _messages.addAll(loadedMessages);
+      });
+      _scrollToBottom();
+    }
+    // 如果加载后消息为空，添加欢迎消息
+    if (_messages.isEmpty) {
+      _addWelcomeMessage();
+    }
+  }
+
+  void _addWelcomeMessage() {
+    _messages.add({
+      'role': 'system',
+      'content': '你好，我是千寻。你可以输入文字、语音提问，或上传文本文件（.txt, .log, .md）。点击右上角切换回答模式。',
+      'timestamp': DateTime.now(),
+      'mode': 'system',
+    });
+    if (mounted) setState(() {});
+  }
+
+  void _addSystemMessage(String content) {
+    _messages.add({
+      'role': 'system',
+      'content': content,
+      'timestamp': DateTime.now(),
+      'mode': 'system',
+    });
+    _saveMessages();
+    _scrollToBottom();
+    if (mounted) setState(() {});
+  }
+
   void _addMessage({
     required String role,
     required String content,
@@ -70,6 +104,7 @@ class _ChatPageState extends State<ChatPage> {
         'mode': mode,
       });
     });
+    _saveMessages();
     _scrollToBottom();
   }
 

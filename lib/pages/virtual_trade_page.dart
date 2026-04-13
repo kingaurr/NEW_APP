@@ -67,44 +67,47 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
         ApiService.getShadowOrders(),
       ]);
 
-      // 1. 影子账户状态
-      if (results[0] != null && results[0] is Map<String, dynamic>) {
-        shadowStatus = results[0] as Map<String, dynamic>;
+      // 1. 影子账户状态（安全类型转换：使用 is 判断）
+      final shadowResult = results[0];
+      if (shadowResult is Map) {
+        shadowStatus = Map<String, dynamic>.from(shadowResult);
         final positions = shadowStatus['shadow_positions'];
         if (positions is List) {
           shadowPositions = positions;
-        } else {
-          shadowPositions = [];
         }
       }
 
       // 2. 轻量红蓝军
-      if (results[1] != null && results[1] is Map<String, dynamic>) {
-        lightWarGame = results[1] as Map<String, dynamic>;
+      final lightResult = results[1];
+      if (lightResult is Map) {
+        lightWarGame = Map<String, dynamic>.from(lightResult);
       }
 
       // 3. 深度红蓝军
-      if (results[2] != null && results[2] is Map<String, dynamic>) {
-        deepWarGame = results[2] as Map<String, dynamic>;
+      final deepResult = results[2];
+      if (deepResult is Map) {
+        deepWarGame = Map<String, dynamic>.from(deepResult);
       }
 
       // 4. 压力测试
-      if (results[3] != null && results[3] is Map<String, dynamic>) {
-        stressTest = results[3] as Map<String, dynamic>;
+      final stressResult = results[3];
+      if (stressResult is Map) {
+        stressTest = Map<String, dynamic>.from(stressResult);
       }
 
       // 5. 待验证规则
-      if (results[4] != null && results[4] is Map<String, dynamic>) {
-        final pendingMap = results[4] as Map<String, dynamic>;
-        final rules = pendingMap['rules'];
+      final pendingResult = results[4];
+      if (pendingResult is Map) {
+        final rules = pendingResult['rules'];
         if (rules is List) {
           pendingRules = rules;
         }
       }
 
       // 6. 影子虚拟成交
-      if (results[5] != null && results[5] is List) {
-        shadowOrders = results[5] as List<dynamic>;
+      final ordersResult = results[5];
+      if (ordersResult is List) {
+        shadowOrders = ordersResult;
       }
     } catch (e) {
       debugPrint('加载虚拟交易数据失败: $e');
@@ -171,29 +174,26 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     );
     if (confirm != true) return;
 
-    if (mounted) {
-      setState(() => _isLoading = true);
-    }
+    if (!mounted) return; // 新增 mounted 检查
+    setState(() => _isLoading = true);
     try {
       final result = await ApiService.runLightWarGame();
-      if (mounted) {
-        if (result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('轻量对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
-          );
-          Future.delayed(const Duration(seconds: 3), () {
-            if (mounted) _loadData();
-          });
-        } else {
-          throw Exception(result['message'] ?? '启动失败');
-        }
+      if (!mounted) return;
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('轻量对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
+        );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) _loadData();
+        });
+      } else {
+        throw Exception(result['message'] ?? '启动失败');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('启动轻量对抗失败: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('启动轻量对抗失败: $e'), backgroundColor: Colors.red),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -229,29 +229,26 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
     );
     if (confirm != true) return;
 
-    if (mounted) {
-      setState(() => _isLoading = true);
-    }
+    if (!mounted) return; // 新增 mounted 检查
+    setState(() => _isLoading = true);
     try {
       final result = await ApiService.runDeepWarGame();
-      if (mounted) {
-        if (result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('深度对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
-          );
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) _loadData();
-          });
-        } else {
-          throw Exception(result['message'] ?? '启动失败');
-        }
+      if (!mounted) return;
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('深度对抗已启动，稍后刷新查看结果'), backgroundColor: Colors.green),
+        );
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted) _loadData();
+        });
+      } else {
+        throw Exception(result['message'] ?? '启动失败');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('启动深度对抗失败: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('启动深度对抗失败: $e'), backgroundColor: Colors.red),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -299,139 +296,159 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8), // 间距优化
                         ShadowSummary(
                           onApplySuggestion: _loadData,
                         ),
-                        const SizedBox(height: 16),
-                        if (_shadowPositions.isNotEmpty) ...[
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isShadowPositionsExpanded = !_isShadowPositionsExpanded;
-                              });
-                            },
-                            child: Card(
-                              color: const Color(0xFF2A2A2A),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.account_balance_wallet,
-                                          color: Color(0xFFD4AF37),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Expanded(
-                                          child: Text(
-                                            '影子持仓',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                        const SizedBox(height: 8), // 间距优化
+
+                        // 影子持仓
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isShadowPositionsExpanded = !_isShadowPositionsExpanded;
+                            });
+                          },
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12), // 内边距优化
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.account_balance_wallet,
+                                        color: Color(0xFFD4AF37),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          '影子持仓',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.purple.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Text(
-                                            '${_shadowPositions.length}',
-                                            style: const TextStyle(color: Colors.purpleAccent, fontSize: 10),
-                                          ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purple.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
-                                        const SizedBox(width: 8),
-                                        Icon(
-                                          _isShadowPositionsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                          color: Colors.grey,
+                                        child: Text(
+                                          '${_shadowPositions.length}',
+                                          style: const TextStyle(color: Colors.purpleAccent, fontSize: 10),
                                         ),
-                                      ],
-                                    ),
-                                    if (_isShadowPositionsExpanded) ...[
-                                      const SizedBox(height: 12),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        _isShadowPositionsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                  if (_isShadowPositionsExpanded) ...[
+                                    const SizedBox(height: 12),
+                                    if (_shadowPositions.isEmpty)
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 16),
+                                        child: Text(
+                                          '暂无影子持仓',
+                                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                                        ),
+                                      )
+                                    else
                                       ..._shadowPositions.map((pos) => _buildShadowPositionItem(pos)),
-                                    ],
                                   ],
-                                ),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (_shadowOrders.isNotEmpty) ...[
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isShadowOrdersExpanded = !_isShadowOrdersExpanded;
-                              });
-                            },
-                            child: Card(
-                              color: const Color(0xFF2A2A2A),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.history,
-                                          color: Color(0xFFD4AF37),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Expanded(
-                                          child: Text(
-                                            '虚拟成交明细',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                        ),
+                        const SizedBox(height: 8), // 间距优化
+
+                        // 虚拟成交明细
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isShadowOrdersExpanded = !_isShadowOrdersExpanded;
+                            });
+                          },
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12), // 内边距优化
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.history,
+                                        color: Color(0xFFD4AF37),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          '虚拟成交明细',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Text(
-                                            '${_shadowOrders.length}',
-                                            style: const TextStyle(color: Colors.blue, fontSize: 10),
-                                          ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
-                                        const SizedBox(width: 8),
-                                        Icon(
-                                          _isShadowOrdersExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                          color: Colors.grey,
+                                        child: Text(
+                                          '${_shadowOrders.length}',
+                                          style: const TextStyle(color: Colors.blue, fontSize: 10),
                                         ),
-                                      ],
-                                    ),
-                                    if (_isShadowOrdersExpanded) ...[
-                                      const SizedBox(height: 12),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        _isShadowOrdersExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                  if (_isShadowOrdersExpanded) ...[
+                                    const SizedBox(height: 12),
+                                    if (_shadowOrders.isEmpty)
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 16),
+                                        child: Text(
+                                          '暂无成交记录',
+                                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                                        ),
+                                      )
+                                    else
                                       ..._shadowOrders.take(10).map((order) => _buildShadowOrderItem(order)),
-                                    ],
                                   ],
-                                ),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (_lightWarGame.isNotEmpty)
+                        ),
+                        const SizedBox(height: 8), // 间距优化
+
+                        // 轻量红蓝军（仅当有数据时显示）
+                        if (_lightWarGame.isNotEmpty && (_lightWarGame['blue_return'] != null || _lightWarGame['red_return'] != null))
                           Card(
                             color: const Color(0xFF2A2A2A),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             child: Padding(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(12), // 内边距优化
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -453,7 +470,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                                       ),
                                       const Spacer(),
                                       Text(
-                                        _lightWarGame['timestamp']?.substring(5, 16) ?? '',
+                                        _lightWarGame['timestamp']?.toString().substring(5, 16) ?? '',
                                         style: const TextStyle(color: Colors.grey, fontSize: 11),
                                       ),
                                     ],
@@ -488,8 +505,11 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 16),
-                        if (_deepWarGame.isNotEmpty)
+                        if (_lightWarGame.isNotEmpty && (_lightWarGame['blue_return'] != null || _lightWarGame['red_return'] != null))
+                          const SizedBox(height: 8), // 间距优化
+
+                        // 深度红蓝军（仅当有数据时显示）
+                        if (_deepWarGame.isNotEmpty && (_deepWarGame['blue_return'] != null || _deepWarGame['red_return'] != null))
                           GestureDetector(
                             onTap: () {
                               setState(() {
@@ -500,7 +520,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               color: const Color(0xFF2A2A2A),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(12), // 内边距优化
                                 child: Column(
                                   children: [
                                     Row(
@@ -570,7 +590,10 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 8),
+                        if (_deepWarGame.isNotEmpty && (_deepWarGame['blue_return'] != null || _deepWarGame['red_return'] != null))
+                          const SizedBox(height: 8), // 间距优化
+
+                        // 运行对抗按钮
                         Row(
                           children: [
                             Expanded(
@@ -600,8 +623,10 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        if (_stressTest.isNotEmpty)
+                        const SizedBox(height: 8), // 间距优化
+
+                        // 压力测试报告（仅当有数据时显示）
+                        if (_stressTest.isNotEmpty && (_stressTest['pass_rate'] != null || _stressTest['extreme_loss'] != null))
                           GestureDetector(
                             onTap: () {
                               setState(() {
@@ -612,7 +637,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               color: const Color(0xFF2A2A2A),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(12), // 内边距优化
                                 child: Column(
                                   children: [
                                     Row(
@@ -649,7 +674,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                                             style: TextStyle(color: Colors.grey, fontSize: 12),
                                           ),
                                           Text(
-                                            '${(_stressTest['pass_rate'] ?? 0) * 100}%',
+                                            '${((_stressTest['pass_rate'] ?? 0) * 100).toStringAsFixed(1)}%',
                                             style: const TextStyle(
                                               color: Color(0xFFD4AF37),
                                               fontSize: 16,
@@ -667,7 +692,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                                             style: TextStyle(color: Colors.grey, fontSize: 12),
                                           ),
                                           Text(
-                                            '${(_stressTest['extreme_loss'] ?? 0) * 100}%',
+                                            '${((_stressTest['extreme_loss'] ?? 0) * 100).toStringAsFixed(1)}%',
                                             style: TextStyle(
                                               color: (_stressTest['extreme_loss'] ?? 0) < -0.2 ? Colors.red : Colors.orange,
                                               fontSize: 14,
@@ -687,7 +712,10 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 16),
+                        if (_stressTest.isNotEmpty && (_stressTest['pass_rate'] != null || _stressTest['extreme_loss'] != null))
+                          const SizedBox(height: 8), // 间距优化
+
+                        // 待验证规则
                         if (_pendingRules.isNotEmpty)
                           GestureDetector(
                             onTap: () {
@@ -699,7 +727,7 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
                               color: const Color(0xFF2A2A2A),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(12), // 内边距优化
                                 child: Column(
                                   children: [
                                     Row(
@@ -935,22 +963,20 @@ class _VirtualTradePageState extends State<VirtualTradePage> {
 
     try {
       final success = await ApiService.applyWarGameSuggestion(deepReport['id'] ?? '');
+      if (!mounted) return;
       if (success == true) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),
-          );
-          _loadData();
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('建议已应用'), backgroundColor: Colors.green),
+        );
+        _loadData();
       } else {
         throw Exception('应用失败');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('应用失败: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('应用失败: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 }

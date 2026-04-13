@@ -49,10 +49,13 @@ class RealTradePageState extends State<RealTradePage> {
   Future<void> _loadMode() async {
     try {
       final result = await ApiService.getMode();
-      if (mounted && result != null && result['mode'] != null) {
-        setState(() {
-          _currentMode = result['mode'];
-        });
+      if (result != null) {
+        final mode = result['mode'];
+        if (mode != null && mounted) {
+          setState(() {
+            _currentMode = mode.toString();
+          });
+        }
       }
     } catch (e) {
       debugPrint('加载模式失败: $e');
@@ -97,16 +100,15 @@ class RealTradePageState extends State<RealTradePage> {
 
     try {
       final result = await ApiService.setMode(newMode);
-      if (mounted) {
-        if (result != null && result['success'] == true) {
-          setState(() {
-            _currentMode = newMode;
-          });
-          _showMessage('已切换到${newMode == 'real' ? '实盘' : '模拟'}模式');
-          _loadData();
-        } else {
-          throw Exception('切换失败');
-        }
+      if (!mounted) return;
+      if (result != null && result['success'] == true) {
+        setState(() {
+          _currentMode = newMode;
+        });
+        _showMessage('已切换到${newMode == 'real' ? '实盘' : '模拟'}模式');
+        _loadData();
+      } else {
+        throw Exception('切换失败');
       }
     } catch (e) {
       _showMessage('切换失败: $e', isError: true);
@@ -175,13 +177,12 @@ class RealTradePageState extends State<RealTradePage> {
 
     try {
       final result = await ApiService.clearAllPositions();
-      if (mounted) {
-        if (result == true) {
-          _showMessage('一键平仓成功');
-          await _loadData();
-        } else {
-          throw Exception('平仓请求失败');
-        }
+      if (!mounted) return;
+      if (result == true) {
+        _showMessage('一键平仓成功');
+        await _loadData();
+      } else {
+        throw Exception('平仓请求失败');
       }
     } catch (e) {
       _showMessage('平仓失败: $e', isError: true);
@@ -214,21 +215,22 @@ class RealTradePageState extends State<RealTradePage> {
 
       if (!mounted) return;
 
+      // 安全类型转换：使用 is 判断，禁止 as 强制转换
       double fund = 0.0;
-      if (results[0] != null && results[0] is Map<String, dynamic>) {
-        final fd = results[0] as Map<String, dynamic>;
-        fund = (fd['available_fund'] ?? fd['current_fund'] ?? 0.0).toDouble();
+      final fundResult = results[0];
+      if (fundResult is Map) {
+        fund = (fundResult['available_fund'] ?? fundResult['current_fund'] ?? 0.0).toDouble();
       }
 
       double positionValue = 0.0;
       List<dynamic> positionsList = [];
-      if (results[1] != null && results[1] is Map<String, dynamic>) {
-        final pm = results[1] as Map<String, dynamic>;
-        for (var entry in pm.entries) {
+      final positionsResult = results[1];
+      if (positionsResult is Map) {
+        for (var entry in positionsResult.entries) {
           final code = entry.key;
           final pos = entry.value;
           if (pos is Map) {
-            final value = pos['value']?.toDouble() ?? 0.0;
+            final value = (pos['value'] ?? 0.0).toDouble();
             positionValue += value;
             positionsList.add({'code': code, ...pos});
           }
@@ -236,42 +238,57 @@ class RealTradePageState extends State<RealTradePage> {
       }
 
       List<dynamic> signalsList = [];
-      if (results[2] != null && results[2] is Map<String, dynamic>) {
-        final sm = results[2] as Map<String, dynamic>;
-        signalsList = sm['signals'] ?? [];
+      final signalsResult = results[2];
+      if (signalsResult is Map) {
+        final sm = signalsResult;
+        final sigs = sm['signals'];
+        if (sigs is List) {
+          signalsList = sigs;
+        }
       }
 
       Map<String, dynamic> shadowCompareMap = {};
-      if (results[3] != null && results[3] is Map<String, dynamic>) {
-        shadowCompareMap = results[3] as Map<String, dynamic>;
+      final shadowResult = results[3];
+      if (shadowResult is Map) {
+        shadowCompareMap = Map<String, dynamic>.from(shadowResult);
       }
 
       // ========== 新增：处理交易池摘要 ==========
       Map<String, dynamic> tradePoolSummary = {'count': 0, 'avgScore': 0.0};
-      if (results[4] != null && results[4] is Map<String, dynamic>) {
-        final tpData = results[4] as Map<String, dynamic>;
-        final tradePool = tpData['trade_pool'] as List<dynamic>? ?? [];
-        double totalScore = 0.0;
-        for (var stock in tradePool) {
-          totalScore += (stock['total_score'] ?? stock['score'] ?? 0).toDouble();
+      final tradingSignalsResult = results[4];
+      if (tradingSignalsResult is Map) {
+        final tradePool = tradingSignalsResult['trade_pool'];
+        if (tradePool is List) {
+          double totalScore = 0.0;
+          for (var stock in tradePool) {
+            if (stock is Map) {
+              totalScore += (stock['total_score'] ?? stock['score'] ?? 0).toDouble();
+            }
+          }
+          tradePoolSummary = {
+            'count': tradePool.length,
+            'avgScore': tradePool.isEmpty ? 0.0 : totalScore / tradePool.length,
+          };
         }
-        tradePoolSummary = {
-          'count': tradePool.length,
-          'avgScore': tradePool.isEmpty ? 0.0 : totalScore / tradePool.length,
-        };
       }
 
+      if (!mounted) return;
       setState(() {
         _fund = fund;
         _positionValue = positionValue;
         _positions = positionsList;
         _signals = signalsList;
         _shadowCompare = shadowCompareMap;
-        _tradePoolSummary = tradePoolSummary; // 新增
+        _tradePoolSummary = tradePoolSummary;
       });
     } catch (e, stack) {
       debugPrint('加载实盘数据失败: $e\n$stack');
-      if (mounted) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '加载失败: $e';
+      });
+      // 仅当错误信息非空时弹窗，避免空错误弹窗
+      if (_errorMessage.isNotEmpty) {
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -284,12 +301,11 @@ class RealTradePageState extends State<RealTradePage> {
           ),
         );
       }
-      if (mounted) {
-        setState(() => _errorMessage = '加载失败: $e');
-      }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -325,7 +341,7 @@ class RealTradePageState extends State<RealTradePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 资金卡片
+                        // 资金卡片（排版优化：紧凑双列布局）
                         Card(
                           color: const Color(0xFF2A2A2A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -333,6 +349,7 @@ class RealTradePageState extends State<RealTradePage> {
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
+                                // 账户标识行
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -363,70 +380,70 @@ class RealTradePageState extends State<RealTradePage> {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
+                                // 双列布局：左列（总资产/今日盈亏），右列（仓位/风控/交易次数）
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Text('¥${_formatNumber(_fund + _positionValue)}',
-                                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    const Text('¥0.00', style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500)),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('仓位比例', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Row(
-                                      children: [
-                                        Text('${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
-                                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                                        const SizedBox(width: 8),
-                                        SizedBox(
-                                          width: 80,
-                                          child: LinearProgressIndicator(
-                                            value: _positionValue / (_fund > 0 ? _fund : 1),
-                                            backgroundColor: Colors.grey[800],
-                                            color: (_positionValue / (_fund > 0 ? _fund : 1)) > 0.8 ? Colors.orange : Colors.green,
-                                            borderRadius: BorderRadius.circular(2),
+                                    // 左列
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('总资产', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                          const SizedBox(height: 4),
+                                          Text('¥${_formatNumber(_fund + _positionValue)}',
+                                              style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
+                                          const SizedBox(height: 12),
+                                          const Text('今日盈亏', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                          const SizedBox(height: 4),
+                                          const Text('¥0.00', style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.w500)),
+                                        ],
+                                      ),
+                                    ),
+                                    // 右列
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('仓位比例', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Text('${(_positionValue / (_fund > 0 ? _fund : 1) * 100).toInt()}%',
+                                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: LinearProgressIndicator(
+                                                  value: _positionValue / (_fund > 0 ? _fund : 1),
+                                                  backgroundColor: Colors.grey[800],
+                                                  color: (_positionValue / (_fund > 0 ? _fund : 1)) > 0.8 ? Colors.orange : Colors.green,
+                                                  borderRadius: BorderRadius.circular(2),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 12),
+                                          const Text('风控状态', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                                            child: const Text('正常', style: TextStyle(color: Colors.green, fontSize: 12)),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const Text('今日交易次数', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                          const SizedBox(height: 4),
+                                          const Text('0', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                        ],
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('风控状态', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                                      child: const Text('正常', style: TextStyle(color: Colors.green, fontSize: 12)),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('今日交易次数', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    const Text('0', style: TextStyle(color: Colors.white, fontSize: 14)),
                                   ],
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
                         // ========== 新增：交易池摘要卡片 ==========
                         GestureDetector(
@@ -466,13 +483,13 @@ class RealTradePageState extends State<RealTradePage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         // =====================================
 
                         // ========== 新增：一键平仓按钮（仅当有持仓时显示） ==========
                         if (_positions.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.only(bottom: 8),
                             child: SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -494,16 +511,23 @@ class RealTradePageState extends State<RealTradePage> {
                         // 当前持仓
                         if (_positions.isNotEmpty) ...[
                           const Text('当前持仓', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           ..._positions.map((position) => PositionItem(
                                 position: position,
                                 onPositionChanged: _loadData,
                               )),
+                        ] else ...[
+                          // 新增：无持仓占位提示
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            alignment: Alignment.center,
+                            child: const Text('暂无持仓', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                          ),
                         ],
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                        // 最近信号记录
+                        // 最近信号记录（只展示最近3条，符合计划书）
                         if (_signals.isNotEmpty) ...[
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -515,11 +539,11 @@ class RealTradePageState extends State<RealTradePage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          ..._signals.take(5).map((signal) => SignalItem(signal: signal, onExecuted: _loadData)),
+                          const SizedBox(height: 8),
+                          ..._signals.take(3).map((signal) => SignalItem(signal: signal, onExecuted: _loadData)),
                         ],
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
                         // 虚拟对比栏
                         GestureDetector(
