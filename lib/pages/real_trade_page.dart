@@ -215,18 +215,21 @@ class RealTradePageState extends State<RealTradePage> {
 
       if (!mounted) return;
 
-      // 安全类型转换：使用 is 判断，禁止 as 强制转换
+      // 安全类型转换：使用 is 判断，处理可空类型
       double fund = 0.0;
       final fundResult = results[0];
       if (fundResult is Map) {
-        fund = (fundResult['available_fund'] ?? fundResult['current_fund'] ?? 0.0).toDouble();
+        // 先转为 Map<dynamic, dynamic>，再安全取值
+        final map = Map<String, dynamic>.from(fundResult);
+        fund = (map['available_fund'] ?? map['current_fund'] ?? 0.0).toDouble();
       }
 
       double positionValue = 0.0;
       List<dynamic> positionsList = [];
       final positionsResult = results[1];
       if (positionsResult is Map) {
-        for (var entry in positionsResult.entries) {
+        final map = Map<String, dynamic>.from(positionsResult);
+        for (var entry in map.entries) {
           final code = entry.key;
           final pos = entry.value;
           if (pos is Map) {
@@ -240,8 +243,8 @@ class RealTradePageState extends State<RealTradePage> {
       List<dynamic> signalsList = [];
       final signalsResult = results[2];
       if (signalsResult is Map) {
-        final sm = signalsResult;
-        final sigs = sm['signals'];
+        final map = Map<String, dynamic>.from(signalsResult);
+        final sigs = map['signals'];
         if (sigs is List) {
           signalsList = sigs;
         }
@@ -257,7 +260,8 @@ class RealTradePageState extends State<RealTradePage> {
       Map<String, dynamic> tradePoolSummary = {'count': 0, 'avgScore': 0.0};
       final tradingSignalsResult = results[4];
       if (tradingSignalsResult is Map) {
-        final tradePool = tradingSignalsResult['trade_pool'];
+        final map = Map<String, dynamic>.from(tradingSignalsResult);
+        final tradePool = map['trade_pool'];
         if (tradePool is List) {
           double totalScore = 0.0;
           for (var stock in tradePool) {
