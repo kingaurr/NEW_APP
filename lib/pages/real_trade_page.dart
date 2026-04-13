@@ -215,12 +215,11 @@ class RealTradePageState extends State<RealTradePage> {
 
       if (!mounted) return;
 
-      // 安全类型转换：使用 is 判断，处理可空类型
+      // 安全类型转换：使用 is 判断，并显式转换
       double fund = 0.0;
       final fundResult = results[0];
       if (fundResult is Map) {
-        // 先转为 Map<dynamic, dynamic>，再安全取值
-        final map = Map<String, dynamic>.from(fundResult);
+        final map = Map<String, dynamic>.from(fundResult as Map<String, dynamic>);
         fund = (map['available_fund'] ?? map['current_fund'] ?? 0.0).toDouble();
       }
 
@@ -228,7 +227,7 @@ class RealTradePageState extends State<RealTradePage> {
       List<dynamic> positionsList = [];
       final positionsResult = results[1];
       if (positionsResult is Map) {
-        final map = Map<String, dynamic>.from(positionsResult);
+        final map = Map<String, dynamic>.from(positionsResult as Map<String, dynamic>);
         for (var entry in map.entries) {
           final code = entry.key;
           final pos = entry.value;
@@ -243,7 +242,7 @@ class RealTradePageState extends State<RealTradePage> {
       List<dynamic> signalsList = [];
       final signalsResult = results[2];
       if (signalsResult is Map) {
-        final map = Map<String, dynamic>.from(signalsResult);
+        final map = Map<String, dynamic>.from(signalsResult as Map<String, dynamic>);
         final sigs = map['signals'];
         if (sigs is List) {
           signalsList = sigs;
@@ -253,14 +252,14 @@ class RealTradePageState extends State<RealTradePage> {
       Map<String, dynamic> shadowCompareMap = {};
       final shadowResult = results[3];
       if (shadowResult is Map) {
-        shadowCompareMap = Map<String, dynamic>.from(shadowResult);
+        shadowCompareMap = Map<String, dynamic>.from(shadowResult as Map<String, dynamic>);
       }
 
       // ========== 新增：处理交易池摘要 ==========
       Map<String, dynamic> tradePoolSummary = {'count': 0, 'avgScore': 0.0};
       final tradingSignalsResult = results[4];
       if (tradingSignalsResult is Map) {
-        final map = Map<String, dynamic>.from(tradingSignalsResult);
+        final map = Map<String, dynamic>.from(tradingSignalsResult as Map<String, dynamic>);
         final tradePool = map['trade_pool'];
         if (tradePool is List) {
           double totalScore = 0.0;
