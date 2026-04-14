@@ -142,10 +142,10 @@ class _MiyazakiDetailPageState extends State<MiyazakiDetailPage> {
 
       if (!mounted) return;
 
-      // 空判断修复：确保 result 非空再调用 fromJson
+      // 修复：显式非空断言
       if (result != null && result.isNotEmpty) {
         setState(() {
-          _report = DiagnosisReport.fromJson(result);
+          _report = DiagnosisReport.fromJson(result!);
           _isLoading = false;
         });
       } else {
