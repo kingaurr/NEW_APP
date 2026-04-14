@@ -130,6 +130,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: const Color(0xFF2A2A2A),                              // 深色卡片背景
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
@@ -186,14 +187,14 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
         // 标题行
         Row(
           children: [
-            const Icon(Icons.compare_arrows, size: 20, color: Colors.blueGrey),
+            const Icon(Icons.compare_arrows, size: 20, color: Colors.lightBlueAccent),
             const SizedBox(width: 8),
             const Text(
               '实盘 vs 虚拟',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Colors.white,
               ),
             ),
             const Spacer(),
@@ -201,10 +202,10 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: data.conclusion.contains('实盘')
-                    ? Colors.green.withOpacity(0.1)
+                    ? Colors.green.withOpacity(0.2)
                     : (data.conclusion.contains('影子')
-                        ? Colors.orange.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.1)),
+                        ? Colors.orange.withOpacity(0.2)
+                        : Colors.grey.withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -213,10 +214,10 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: data.conclusion.contains('实盘')
-                      ? Colors.green[700]
+                      ? Colors.greenAccent
                       : (data.conclusion.contains('影子')
-                          ? Colors.orange[700]
-                          : Colors.grey[700]),
+                          ? Colors.orangeAccent
+                          : Colors.grey[400]),
                 ),
               ),
             ),
@@ -231,7 +232,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: diffColor.withOpacity(0.1),
+                color: diffColor.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -239,14 +240,14 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
                 children: [
                   Icon(
                     isRealLeading ? Icons.arrow_upward : Icons.arrow_downward,
-                    size: 16,
+                    size: 14,
                     color: diffColor,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '$diffText (${data.diffPct.toStringAsFixed(2)}%)',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,                                 // 调小百分比字号
                       fontWeight: FontWeight.w600,
                       color: diffColor,
                     ),
@@ -262,7 +263,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: Colors.grey[850],                                // 深色建议背景
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -274,7 +275,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
                   data.suggestion,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Colors.black87,
+                    color: Colors.white70,
                   ),
                 ),
               ),
@@ -290,7 +291,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
               '点击查看详情',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Colors.grey[500],
               ),
             ),
             const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
@@ -308,7 +309,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: Colors.grey[500],
           ),
         ),
         const SizedBox(height: 4),
@@ -317,7 +318,7 @@ class _ShadowSummaryCardState extends State<ShadowSummaryCard> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Colors.white,
           ),
         ),
       ],

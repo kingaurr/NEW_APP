@@ -109,6 +109,8 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         backgroundColor: const Color(0xFF1E1E1E),
         activeColor: const Color(0xFFD4AF37),
         color: Colors.grey,
+        iconSize: 22.0,                        // 新增：调小图标
+        textStyle: const TextStyle(fontSize: 10), // 新增：调小文字
         items: [
           const TabItem(icon: Icons.dashboard_outlined, title: '首页'),
           const TabItem(icon: Icons.trending_up_outlined, title: '实盘'),

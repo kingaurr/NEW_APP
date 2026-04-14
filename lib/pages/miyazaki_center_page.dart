@@ -108,8 +108,10 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('触发全面诊断'),
-        content: const Text('将调用宫崎骏导演层进行一次全面的系统诊断，可能需要几十秒。确定继续吗？'),
+        backgroundColor: const Color(0xFF2A2A2A),
+        title: const Text('触发全面诊断', style: TextStyle(color: Colors.white)),
+        content: const Text('将调用宫崎骏导演层进行一次全面的系统诊断，可能需要几十秒。确定继续吗？',
+            style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -117,6 +119,10 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+            ),
             child: const Text('确定'),
           ),
         ],
@@ -150,14 +156,15 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // 深色背景
       appBar: AppBar(
         title: const Text('宫崎骏 · 稽查中心'),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? const Color(0xFF1E1E1E),
+        foregroundColor: const Color(0xFFD4AF37),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -167,8 +174,8 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFF2196F3),
-          labelColor: Colors.black87,
+          indicatorColor: const Color(0xFFD4AF37),
+          labelColor: const Color(0xFFD4AF37),
           unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(text: '编导·把关'),
@@ -188,7 +195,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
                       children: [
                         const Icon(Icons.error_outline, color: Colors.grey, size: 48),
                         const SizedBox(height: 16),
-                        Text(_errorMessage!),
+                        Text(_errorMessage!, style: const TextStyle(color: Colors.grey)),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _fetchDashboardData,
@@ -234,6 +241,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
   Widget _buildDataSourceCard() {
     final dataSources = _dashboardData?['data_sources'] as List? ?? [];
     return Card(
+      color: const Color(0xFF2A2A2A),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -243,7 +251,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
           children: [
             const Text(
               '数据源健康',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
             ),
             const SizedBox(height: 12),
             if (dataSources.isEmpty)
@@ -257,7 +265,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Expanded(child: Text(name)),
+                      Expanded(child: Text(name, style: const TextStyle(color: Colors.white70))),
                       const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -283,6 +291,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
   Widget _buildModuleStatusCard() {
     final modules = _dashboardData?['modules'] as List? ?? [];
     return Card(
+      color: const Color(0xFF2A2A2A),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -292,7 +301,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
           children: [
             const Text(
               '核心模块状态',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
             ),
             const SizedBox(height: 12),
             if (modules.isEmpty)
@@ -310,7 +319,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
                       size: 18,
                       color: online ? Colors.green : Colors.red,
                     ),
-                    label: Text(name),
+                    label: Text(name, style: const TextStyle(color: Colors.white70)),
                     backgroundColor: online ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
                   );
                 }).toList(),
@@ -325,6 +334,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
     final logSummary = _dashboardData?['log_summary'] as Map<String, dynamic>? ?? {};
     final errorCount = logSummary['error_count'] ?? 0;
     return Card(
+      color: const Color(0xFF2A2A2A),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -336,7 +346,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
               children: [
                 const Text(
                   '日志ERROR摘要',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                 ),
                 const Spacer(),
                 if (errorCount > 0)
@@ -359,7 +369,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
             else
               Text(
                 logSummary['latest_error'] ?? '暂无详细信息',
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                style: const TextStyle(fontSize: 13, color: Colors.white70),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -372,6 +382,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
   Widget _buildStrategyHealthCard() {
     final strategies = _dashboardData?['strategies'] as List? ?? [];
     return Card(
+      color: const Color(0xFF2A2A2A),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -381,7 +392,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
           children: [
             const Text(
               '策略健康速览',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
             ),
             const SizedBox(height: 12),
             if (strategies.isEmpty)
@@ -395,7 +406,7 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Expanded(child: Text(name)),
+                      Expanded(child: Text(name, style: const TextStyle(color: Colors.white70))),
                       Text(
                         '${(winRate * 100).toStringAsFixed(1)}%',
                         style: TextStyle(color: color, fontWeight: FontWeight.w600),

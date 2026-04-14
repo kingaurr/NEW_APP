@@ -337,6 +337,7 @@ class _HomePageState extends State<HomePage> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor, // 新增：显式使用深色主题背景
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage.isNotEmpty
