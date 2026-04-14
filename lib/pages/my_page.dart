@@ -19,7 +19,9 @@ import 'trading_signals_page.dart';
 import 'evolution_report_page.dart';
 import 'strategy_planning_page.dart';
 import 'strategy_execution_page.dart';
-// ============================
+// ========== 新增虚拟交易页面导入 ==========
+import 'virtual_trade_page.dart';
+// =====================================
 
 class MyPage extends StatefulWidget {
   final bool biometricsEnabled;
@@ -221,7 +223,14 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
-  // =================================
+  // ========== 新增虚拟交易跳转方法 ==========
+  void _openVirtualTrade() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const VirtualTradePage()),
+    );
+  }
+  // =======================================
 
   @override
   Widget build(BuildContext context) {
@@ -434,6 +443,12 @@ class _MyPageState extends State<MyPage> {
                                       icon: Icons.assignment_turned_in,
                                       label: '战略执行',
                                       onTap: _openStrategyExecution,
+                                    ),
+                                    // ========== 新增虚拟交易入口 ==========
+                                    _buildGridItem(
+                                      icon: Icons.science_outlined,
+                                      label: '虚拟交易',
+                                      onTap: _openVirtualTrade,
                                     ),
                                     // ===================================
                                   ],

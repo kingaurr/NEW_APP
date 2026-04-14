@@ -5,6 +5,7 @@ import '../widgets/fund_card.dart';
 import '../widgets/ai_status_bar.dart';
 import '../widgets/alert_settings.dart';
 import '../widgets/upgrade_status_card.dart';
+import '../widgets/shadow_summary_card.dart'; // 新增：影子摘要卡片
 import '../pages/guardian_suggestions_page.dart';
 import '../pages/risk_settings_page.dart';
 // ========== 新增导入 ==========
@@ -413,6 +414,11 @@ class _HomePageState extends State<HomePage> {
                           onRefresh: _loadData,
                         ),
                         const SizedBox(height: 16),
+
+                        // ========== 新增影子摘要卡片 ==========
+                        const ShadowSummaryCard(),
+                        const SizedBox(height: 16),
+                        // =====================================
 
                         AIStatusBar(onRefresh: _loadData),
                         const SizedBox(height: 16),

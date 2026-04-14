@@ -65,6 +65,10 @@ import 'pages/strategy_planning_page.dart';
 import 'pages/strategy_execution_page.dart';
 // ===== 新增决策树独立页面 =====
 import 'pages/decision_tree_page.dart';
+// ===== 新增宫崎骏模块页面（2026-04-14） =====
+import 'pages/miyazaki_center_page.dart';
+import 'pages/miyazaki_detail_page.dart';
+import 'pages/lineage_detail_page.dart';
 // ============================================
 
 void main() {
@@ -468,7 +472,7 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => const TradeMonitorPage(),
           );
         }
-        // ===== 决策树独立页面路由（新增） =====
+        // ===== 决策树独立页面路由 =====
         else if (settings.name == '/decision_tree') {
           final args = settings.arguments as Map<String, dynamic>? ?? {};
           final decisionTree = args['decisionTree'] as Map<String, dynamic>? ?? {};
@@ -478,6 +482,22 @@ class _MyAppState extends State<MyApp> {
               decisionTree: decisionTree,
               strategyName: strategyName,
             ),
+          );
+        }
+        // ===== 宫崎骏模块路由（新增） =====
+        else if (settings.name == '/miyazaki') {
+          return MaterialPageRoute(
+            builder: (context) => const MiyazakiCenterPage(),
+          );
+        } else if (settings.name == '/miyazaki_detail') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          return MaterialPageRoute(
+            builder: (context) => MiyazakiDetailPage(args: args),
+          );
+        } else if (settings.name == '/lineage_detail') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          return MaterialPageRoute(
+            builder: (context) => LineageDetailPage(args: args),
           );
         }
         // ==================================================

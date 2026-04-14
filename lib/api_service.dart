@@ -1,4 +1,18 @@
 // lib/api_service.dart
+// ==================== 宫崎骏模块 API 方法追加（2026-04-14） ====================
+// 修改内容：
+// 1. 新增 fetchMiyazakiDashboard() - 获取稽查中心首页数据
+// 2. 新增 fetchMiyazakiEvents() - 获取异常事件列表
+// 3. 新增 fetchMiyazakiEventGroups() - 获取事件组列表
+// 4. 新增 fetchMiyazakiDiagnosis() - 获取诊断报告
+// 5. 新增 fetchMiyazakiDiagnosisById() - 根据ID获取诊断详情
+// 6. 新增 triggerMiyazakiDiagnosis() - 手动触发全面诊断
+// 7. 新增 fetchMiyazakiLineage() - 获取谱系追踪记录
+// 8. 新增 fetchMiyazakiLineageById() - 获取谱系记录详情
+// 9. 新增 fetchMiyazakiStatistics() - 获取宫崎骏统计信息
+// 所有方法均调用后端真实接口，无硬编码假数据。
+// =====================================================================
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
@@ -1244,13 +1258,13 @@ class ApiService {
   static Future<List<dynamic>> getPendingAdviceByType(String type) async {
     try {
       final result = await httpGet('/advice/pending?type=$type');
-      
+     
       // 直接返回数组的情况
       if (result is List) {
         debugPrint('getPendingAdviceByType($type): 返回数组，长度 ${result.length}');
         return result;
       }
-      
+     
       // 返回对象且包含 advices 字段的情况
       if (result is Map) {
         final advices = result['advices'];
@@ -1270,7 +1284,7 @@ class ApiService {
           return data;
         }
       }
-      
+     
       // 请求失败或格式未知
       debugPrint('getPendingAdviceByType($type): 返回格式未知或为空，返回空数组');
       return [];
@@ -1393,6 +1407,83 @@ class ApiService {
     }
     return [];
   }
-}
 
-// force update api url fix
+  // ==================== 宫崎骏模块 API 接口（2026-04-14 追加） ====================
+
+  /// 获取宫崎骏稽查中心首页数据
+  /// 返回：健康评分、活跃事件组数、待处理建议数、今日诊断摘要等
+  static Future<Map<String, dynamic>?> fetchMiyazakiDashboard() async {
+    return await httpGet('/miyazaki/dashboard');
+  }
+
+  /// 获取宫崎骏异常事件列表
+  /// [limit] 返回条数，默认50
+  /// [page] 页码，默认1
+  /// [minSeverity] 最低严重程度（1-5），可选
+  static Future<Map<String, dynamic>?> fetchMiyazakiEvents({
+    int limit = 50,
+    int page = 1,
+    int? minSeverity,
+  }) async {
+    String url = '/miyazaki/events?limit=$limit&page=$page';
+    if (minSeverity != null) {
+      url += '&min_severity=$minSeverity';
+    }
+    return await httpGet(url);
+  }
+
+  /// 获取宫崎骏事件组列表（聚合后的事件组）
+  static Future<List<dynamic>?> fetchMiyazakiEventGroups() async {
+    final result = await httpGet('/miyazaki/event_groups');
+    if (result != null && result is Map && result['groups'] is List) {
+      return result['groups'] as List;
+    }
+    return null;
+  }
+
+  /// 获取宫崎骏诊断报告
+  /// [date] 指定日期（YYYY-MM-DD），不传则返回最新
+  static Future<Map<String, dynamic>?> fetchMiyazakiDiagnosis({
+    String? date,
+  }) async {
+    if (date != null && date.isNotEmpty) {
+      return await httpGet('/miyazaki/diagnosis?date=$date');
+    }
+    return await httpGet('/miyazaki/diagnosis');
+  }
+
+  /// 根据诊断ID获取诊断报告详情
+  static Future<Map<String, dynamic>?> fetchMiyazakiDiagnosisById(String id) async {
+    return await httpGet('/miyazaki/diagnosis/$id');
+  }
+
+  /// 手动触发一次全面诊断（需指纹验证）
+  static Future<bool> triggerMiyazakiDiagnosis() async {
+    final result = await httpPost('/miyazaki/diagnosis/run');
+    return result?['success'] ?? false;
+  }
+
+  /// 获取谱系追踪记录列表
+  /// [limit] 返回条数，默认20
+  /// [impactLevel] 按影响等级过滤（positive/neutral/negative/critical），可选
+  static Future<Map<String, dynamic>?> fetchMiyazakiLineage({
+    int limit = 20,
+    String? impactLevel,
+  }) async {
+    String url = '/miyazaki/lineage?limit=$limit';
+    if (impactLevel != null && impactLevel.isNotEmpty) {
+      url += '&impact_level=$impactLevel';
+    }
+    return await httpGet(url);
+  }
+
+  /// 根据记录ID获取单条谱系记录详情
+  static Future<Map<String, dynamic>?> fetchMiyazakiLineageById(String id) async {
+    return await httpGet('/miyazaki/lineage/$id');
+  }
+
+  /// 获取宫崎骏模块运行统计信息
+  static Future<Map<String, dynamic>?> fetchMiyazakiStatistics() async {
+    return await httpGet('/miyazaki/statistics');
+  }
+}

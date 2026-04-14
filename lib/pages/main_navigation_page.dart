@@ -1,11 +1,16 @@
 // lib/pages/main_navigation_page.dart
 import 'package:flutter/material.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart'; // 新增：凸起底部导航栏
 import 'home_page.dart';
 import 'real_trade_page.dart';
-import 'virtual_trade_page.dart';
+// import 'virtual_trade_page.dart'; // 虚拟页降级为“我的”页面内入口，不再作为独立Tab
 import 'ai_advice_center_page.dart';
 import 'my_page.dart';
 import '../api_service.dart';
+
+// ===== 新增宫崎骏页面导入 =====
+import 'miyazaki_center_page.dart';
+// ===============================
 
 class MainNavigationPage extends StatefulWidget {
   final bool biometricsEnabled;
@@ -16,8 +21,8 @@ class MainNavigationPage extends StatefulWidget {
 }
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
-  int _currentIndex = 0;
-  int _pendingCodeFixCount = 0; // 待审批代码修改数量
+  int _currentIndex = 2; // 默认选中宫崎骏（中间凸起按钮索引为2）
+  int _pendingCodeFixCount = 0;
 
   final GlobalKey<RealTradePageState> _realTradeKey = GlobalKey<RealTradePageState>();
   late final List<Widget> _pages;
@@ -25,10 +30,11 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   @override
   void initState() {
     super.initState();
+    // 页面列表：首页(0)、实盘(1)、宫崎骏(2)、AI(3)、我的(4)
     _pages = [
       const HomePage(),
       RealTradePage(key: _realTradeKey),
-      const VirtualTradePage(),
+      const MiyazakiCenterPage(),   // 新增：宫崎骏稽查中心
       const AiAdviceCenterPage(),
       MyPage(biometricsEnabled: widget.biometricsEnabled),
     ];
@@ -52,17 +58,17 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     setState(() {
       _currentIndex = index;
     });
-    // 切换到 AI 页面时刷新数量
+    // 切换到 AI 页面时刷新待审批数量
     if (index == 3) {
       _loadPendingCount();
     }
-    // 刷新实盘页面（可选）
+    // 刷新实盘页面
     if (index == 1) {
       _realTradeKey.currentState?.refresh();
     }
   }
 
-  // 构建带徽章的图标
+  // 构建AI页图标（带待审批徽章）
   Widget _buildAIcon() {
     return Stack(
       clipBehavior: Clip.none,
@@ -98,52 +104,20 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.grey.withOpacity(0.3),
-              width: 0.5,
-            ),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF1E1E1E),
-          selectedItemColor: const Color(0xFFD4AF37),
-          unselectedItemColor: Colors.grey,
-          selectedLabelStyle: const TextStyle(fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: '首页',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.trending_up_outlined),
-              activeIcon: Icon(Icons.trending_up),
-              label: '实盘',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.science_outlined),
-              activeIcon: Icon(Icons.science),
-              label: '虚拟',
-            ),
-            BottomNavigationBarItem(
-              icon: _buildAIcon(),
-              activeIcon: _buildAIcon(), // 选中时同样显示徽章
-              label: 'AI',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: '我的',
-            ),
-          ],
-        ),
+      bottomNavigationBar: ConvexAppBar(
+        style: TabStyle.reactCircle,           // 中间凸起圆形样式
+        backgroundColor: const Color(0xFF1E1E1E),
+        activeColor: const Color(0xFFD4AF37),
+        color: Colors.grey,
+        items: [
+          const TabItem(icon: Icons.dashboard_outlined, title: '首页'),
+          const TabItem(icon: Icons.trending_up_outlined, title: '实盘'),
+          const TabItem(icon: Icons.movie_outlined, title: '宫崎骏'),   // 凸起项
+          TabItem(icon: _buildAIcon(), title: 'AI'),                  // 自定义图标
+          const TabItem(icon: Icons.person_outline, title: '我的'),
+        ],
+        initialActiveIndex: _currentIndex,
+        onTap: _onTabTapped,
       ),
     );
   }
