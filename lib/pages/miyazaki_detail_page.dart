@@ -91,7 +91,10 @@ class DiagnosisReport {
 
 /// 诊断详情页
 class MiyazakiDetailPage extends StatefulWidget {
-  const MiyazakiDetailPage({Key? key}) : super(key: key);
+  final Map<String, dynamic>? args; // 新增：用于接收路由参数
+
+  const MiyazakiDetailPage({Key? key}) : args = null, super(key: key);
+  const MiyazakiDetailPage.withArgs({Key? key, this.args}) : super(key: key); // 新增：带参数的构造函数
 
   @override
   State<MiyazakiDetailPage> createState() => _MiyazakiDetailPageState();
@@ -112,7 +115,8 @@ class _MiyazakiDetailPageState extends State<MiyazakiDetailPage> {
   }
 
   void _parseArguments() {
-    final args = ModalRoute.of(context)?.settings.arguments;
+    // 优先从 widget.args 获取，兼容旧的路由 arguments 方式
+    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
     if (args is Map) {
       _diagnosisId = args['diagnosis_id'] as String?;
       _date = args['date'] as String?;
@@ -138,6 +142,7 @@ class _MiyazakiDetailPageState extends State<MiyazakiDetailPage> {
 
       if (!mounted) return;
 
+      // 空判断修复：确保 result 非空再调用 fromJson
       if (result != null && result.isNotEmpty) {
         setState(() {
           _report = DiagnosisReport.fromJson(result);

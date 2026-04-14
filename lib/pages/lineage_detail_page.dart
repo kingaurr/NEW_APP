@@ -132,7 +132,10 @@ class LineageRecord {
 
 /// 谱系详情页
 class LineageDetailPage extends StatefulWidget {
-  const LineageDetailPage({Key? key}) : super(key: key);
+  final Map<String, dynamic>? args; // 新增：用于接收路由参数
+
+  const LineageDetailPage({Key? key}) : args = null, super(key: key);
+  const LineageDetailPage.withArgs({Key? key, this.args}) : super(key: key); // 新增：带参数的构造函数
 
   @override
   State<LineageDetailPage> createState() => _LineageDetailPageState();
@@ -152,7 +155,8 @@ class _LineageDetailPageState extends State<LineageDetailPage> {
   }
 
   void _parseArguments() {
-    final args = ModalRoute.of(context)?.settings.arguments;
+    // 优先从 widget.args 获取，兼容旧的路由 arguments 方式
+    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
     if (args is Map) {
       _recordId = args['record_id'] as String?;
     }

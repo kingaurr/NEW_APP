@@ -1486,4 +1486,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> fetchMiyazakiStatistics() async {
     return await httpGet('/miyazaki/statistics');
   }
+
+  // ==================== 影子账户别名方法（兼容 fetchShadowRealtimeCompare） ====================
+   /// 获取影子与实盘实时对比（别名，兼容 fetchShadowRealtimeCompare 调用）
+  static Future<Map<String, dynamic>?> fetchShadowRealtimeCompare() async {
+    return await getShadowRealtimeCompare();
+  }
 }

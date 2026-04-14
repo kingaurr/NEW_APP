@@ -492,12 +492,12 @@ class _MyAppState extends State<MyApp> {
         } else if (settings.name == '/miyazaki_detail') {
           final args = settings.arguments as Map<String, dynamic>? ?? {};
           return MaterialPageRoute(
-            builder: (context) => MiyazakiDetailPage(args: args),
+            builder: (context) => MiyazakiDetailPage.withArgs(args: args),
           );
         } else if (settings.name == '/lineage_detail') {
           final args = settings.arguments as Map<String, dynamic>? ?? {};
           return MaterialPageRoute(
-            builder: (context) => LineageDetailPage(args: args),
+            builder: (context) => LineageDetailPage.withArgs(args: args),
           );
         }
         // ==================================================
