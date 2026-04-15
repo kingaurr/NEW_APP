@@ -106,7 +106,8 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
 
     // 1. 指纹验证，参数名改为 operationDesc
     final token = await BiometricsHelper.authenticateForOperation(
-      operationDesc: 'miyazaki_diagnosis',
+      operation: 'miyazaki_diagnosis',
+      operationDesc: '宫崎骏全面诊断',
     );
     if (token == null) {
       if (mounted) {
