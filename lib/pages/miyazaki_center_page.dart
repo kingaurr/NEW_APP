@@ -1,5 +1,5 @@
 // lib/pages/miyazaki_center_page.dart
-// ==================== 宫崎骏模块：稽查中心主页面（2026-04-15 最终修订） ====================
+// ==================== 宫崎骏模块：稽查中心主页面（2026-04-15 编译修复版） ====================
 // 功能描述：
 // 1. 顶部展示健康评分仪表盘（HealthScoreDashboard）。
 // 2. 下方TabBar包含三个Tab：编导·素材把关、导演·主动优化、胶片·诊断历史。
@@ -39,7 +39,6 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
   String? _errorMessage;
   Map<String, dynamic>? _dashboardData;
   List<OptimizationAdvice> _pendingAdvices = [];
-  // ignore: unused_field
   List<MiyazakiEvent> _recentEvents = [];
 
   @override
@@ -101,11 +100,14 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
     await _fetchDashboardData();
   }
 
+  // 【修复】一键诊断：传入 operation 参数，triggerMiyazakiDiagnosis 无参
   Future<void> _triggerDiagnosis() async {
     HapticFeedback.mediumImpact();
 
-    // 1. 指纹验证，获取 token（修正参数）
-    final token = await BiometricsHelper.authenticateForOperation();
+    // 1. 指纹验证，需传入 operation 参数
+    final token = await BiometricsHelper.authenticateForOperation(
+      operation: 'miyazaki_diagnosis',
+    );
     if (token == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -151,7 +153,8 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
     }
 
     try {
-      final success = await ApiService.triggerMiyazakiDiagnosis(token);
+      // 【修复】triggerMiyazakiDiagnosis 无需参数，token 已通过请求头携带
+      final success = await ApiService.triggerMiyazakiDiagnosis();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -425,10 +428,10 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
   }
 
   Widget _buildFilmTab() {
-    return EventTimeline(
-      events: _recentEvents,
+    // 【修复】移除不存在的 events 参数
+    return const EventTimeline(
       minSeverity: 1,
-      onEventTap: (event) {},
+      onEventTap: null,
     );
   }
 }
