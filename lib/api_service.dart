@@ -10,6 +10,7 @@
 // 7. 新增 fetchMiyazakiLineage() - 获取谱系追踪记录
 // 8. 新增 fetchMiyazakiLineageById() - 获取谱系记录详情
 // 9. 新增 fetchMiyazakiStatistics() - 获取宫崎骏统计信息
+// 10. 新增 fetchSystemMonitor() - 获取系统监控数据（右心房模块状态）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -1485,6 +1486,13 @@ class ApiService {
   /// 获取宫崎骏模块运行统计信息
   static Future<Map<String, dynamic>?> fetchMiyazakiStatistics() async {
     return await httpGet('/miyazaki/statistics');
+  }
+
+  // ==================== 系统监控接口（右心房数据） ====================
+  /// 获取系统监控数据，包含右心房采集的所有模块状态
+  /// 返回的 module_health 字段中动态包含所有已注入模块的健康数据
+  static Future<Map<String, dynamic>?> fetchSystemMonitor() async {
+    return await httpGet('/system/monitor');
   }
 
   // ==================== 影子账户别名方法（兼容 fetchShadowRealtimeCompare） ====================
