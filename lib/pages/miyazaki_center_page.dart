@@ -100,13 +100,13 @@ class _MiyazakiCenterPageState extends State<MiyazakiCenterPage>
     await _fetchDashboardData();
   }
 
-  // 【修复】一键诊断：传入 operation 参数，triggerMiyazakiDiagnosis 无参
+  // 【修复】一键诊断：传入 operationDesc 参数
   Future<void> _triggerDiagnosis() async {
     HapticFeedback.mediumImpact();
 
-    // 1. 指纹验证，需传入 operation 参数
+    // 1. 指纹验证，参数名改为 operationDesc
     final token = await BiometricsHelper.authenticateForOperation(
-      operation: 'miyazaki_diagnosis',
+      operationDesc: 'miyazaki_diagnosis',
     );
     if (token == null) {
       if (mounted) {
