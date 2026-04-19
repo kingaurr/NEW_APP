@@ -69,6 +69,8 @@ import 'pages/decision_tree_page.dart';
 import 'pages/miyazaki_center_page.dart';
 import 'pages/miyazaki_detail_page.dart';
 import 'pages/lineage_detail_page.dart';
+// ===== 新增千寻大脑对话页面（2026-04-19） =====
+import 'pages/brain_chat_page.dart';
 // ============================================
 
 void main() {
@@ -498,6 +500,12 @@ class _MyAppState extends State<MyApp> {
           final args = settings.arguments as Map<String, dynamic>? ?? {};
           return MaterialPageRoute(
             builder: (context) => LineageDetailPage.withArgs(args: args),
+          );
+        }
+        // ===== 新增千寻大脑对话页面路由（2026-04-19） =====
+        else if (settings.name == '/brain_chat') {
+          return MaterialPageRoute(
+            builder: (context) => const BrainChatPage(),
           );
         }
         // ==================================================

@@ -1,20 +1,20 @@
 // lib/widgets/health_score_dashboard.dart
-// ==================== 宫崎骏模块：健康评分仪表盘（2026-04-14） ====================
+// ==================== 宫崎骏模块：健康评分仪表盘（2026-04-19 深色适配版） ====================
 // 功能描述：
-//   1. 环形进度条展示系统健康评分（0-100分）。
-//   2. 评分根据数值变化颜色（绿≥80、黄60-79、橙40-59、红<40）。
-//   3. 中央显示大号评分数字，下方显示状态一句话。
-//   4. 支持点击触发刷新或跳转诊断详情。
-//   5. 数据完全来自后端真实 API：/api/miyazaki/dashboard。
-//   6. 包含加载状态、错误处理、空状态展示。
+// 1. 环形进度条展示系统健康评分（0-100分）。
+// 2. 评分根据数值变化颜色（绿≥80、黄60-79、橙40-59、红<40）。
+// 3. 中央显示大号评分数字，下方显示状态一句话。
+// 4. 支持点击触发刷新或跳转诊断详情。
+// 5. 数据完全来自后端真实 API：/api/miyazaki/dashboard。
+// 6. 包含加载状态、错误处理、空状态展示。
 // 美学设计：
-//   - 对称居中布局，环形图与文字比例协调。
-//   - 柔和的阴影与圆角，提升卡片质感。
-//   - 留白充分，呼吸感强。
+// - 对称居中布局，环形图与文字比例协调。
+// - 柔和的阴影与圆角，提升卡片质感。
+// - 留白充分，呼吸感强。
 // 遵循规范：
-//   - P0 真实数据原则：无硬编码假数据。
-//   - P3 安全类型转换：使用 is 判断，禁用 as。
-//   - P5 生命周期检查：setState 前检查 mounted。
+// - P0 真实数据原则：无硬编码假数据。
+// - P3 安全类型转换：使用 is 判断，禁用 as。
+// - P5 生命周期检查：setState 前检查 mounted。
 // =====================================================================
 
 import 'dart:math' as math;
@@ -79,7 +79,7 @@ class HealthScoreData {
 class HealthScoreDashboard extends StatefulWidget {
   final VoidCallback? onTap;
 
-  const HealthScoreDashboard({Key? key, this.onTap}) : super(key: key);
+  const HealthScoreDashboard({super.key, this.onTap});
 
   @override
   State<HealthScoreDashboard> createState() => _HealthScoreDashboardState();
@@ -145,6 +145,7 @@ class _HealthScoreDashboardState extends State<HealthScoreDashboard> {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: const Color(0xFF2A2A2A), // 深色卡片背景
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
@@ -212,7 +213,7 @@ class _HealthScoreDashboardState extends State<HealthScoreDashboard> {
                 painter: _RingPainter(
                   progress: data.score / 100,
                   color: scoreColor,
-                  backgroundColor: scoreColor.withOpacity(0.15),
+                  backgroundColor: scoreColor.withValues(alpha: 0.15),
                   strokeWidth: 10,
                 ),
               ),
@@ -255,7 +256,7 @@ class _HealthScoreDashboardState extends State<HealthScoreDashboard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: Colors.grey[850], // 深色背景
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -267,7 +268,7 @@ class _HealthScoreDashboardState extends State<HealthScoreDashboard> {
                   data.latestDiagnosis,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: Colors.white70,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -290,7 +291,7 @@ class _HealthScoreDashboardState extends State<HealthScoreDashboard> {
             Container(
               width: 1,
               height: 30,
-              color: Colors.grey[300],
+              color: Colors.grey[700], // 深色分割线
             ),
             _buildStatItem(
               icon: Icons.assignment_outlined,
@@ -309,7 +310,7 @@ class _HealthScoreDashboardState extends State<HealthScoreDashboard> {
               '点击查看完整诊断',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Colors.grey[500],
               ),
             ),
             const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
@@ -404,5 +405,17 @@ class _RingPainter extends CustomPainter {
         oldDelegate.color != color ||
         oldDelegate.backgroundColor != backgroundColor ||
         oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
+// === 右心房健康上报（自动注入占位） ===
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+
+void _reportDashboardHealth() {
+  if (kReleaseMode) {
+    Future.microtask(() {
+      // 预留右心房上报接口
+    });
   }
 }

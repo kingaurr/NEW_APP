@@ -1,19 +1,19 @@
 // lib/widgets/event_timeline.dart
-// ==================== 宫崎骏模块：事件时间线组件（2026-04-14） ====================
+// ==================== 宫崎骏模块：事件时间线组件（2026-04-19 配色适配版） ====================
 // 功能描述：
-//   1. 按时间倒序展示宫崎骏编导层推送的异常事件。
-//   2. 每条事件显示时间、类型、严重程度标签、摘要描述。
-//   3. 支持下拉刷新、上拉加载更多（分页）。
-//   4. 支持按严重程度过滤（P0/P1/P2）。
-//   5. 点击事件可跳转详情页（预留接口）。
+// 1. 按时间倒序展示宫崎骏编导层推送的异常事件。
+// 2. 每条事件显示时间、类型、严重程度标签、摘要描述。
+// 3. 支持下拉刷新、上拉加载更多（分页）。
+// 4. 支持按严重程度过滤（P0/P1/P2）。
+// 5. 点击事件可跳转详情页（预留接口）。
 // 美学设计：
-//   - 左侧时间轴线 + 圆点，右侧卡片内容，对称且富有节奏感。
-//   - 严重程度标签配色（红/橙/蓝）语义清晰。
-//   - 卡片圆角、柔和阴影、充足留白。
+// - 左侧时间轴线 + 圆点，右侧卡片内容，对称且富有节奏感。
+// - 严重程度标签配色（红/橙/蓝）语义清晰。
+// - 卡片圆角、柔和阴影、充足留白。
 // 遵循规范：
-//   - P0 真实数据原则：所有数据来自 API。
-//   - P3 安全类型转换：使用 is 判断，禁用 as。
-//   - P5 生命周期检查：setState 前检查 mounted。
+// - P0 真实数据原则：所有数据来自 API。
+// - P3 安全类型转换：使用 is 判断，禁用 as。
+// - P5 生命周期检查：setState 前检查 mounted。
 // =====================================================================
 
 import 'package:flutter/material.dart';
@@ -96,6 +96,22 @@ class MiyazakiEvent {
         return '普通';
     }
   }
+
+  /// 获取类型的中文显示
+  String get typeLabel {
+    switch (type) {
+      case 'anomaly':
+        return '异常事件';
+      case 'warning':
+        return '预警';
+      case 'error':
+        return '错误';
+      case 'info':
+        return '信息';
+      default:
+        return type;
+    }
+  }
 }
 
 /// 事件时间线组件
@@ -103,8 +119,7 @@ class EventTimeline extends StatefulWidget {
   final int? minSeverity;
   final Function(MiyazakiEvent)? onEventTap;
 
-  const EventTimeline({Key? key, this.minSeverity, this.onEventTap})
-      : super(key: key);
+  const EventTimeline({super.key, this.minSeverity, this.onEventTap});
 
   @override
   State<EventTimeline> createState() => _EventTimelineState();
@@ -315,7 +330,7 @@ class _EventTimelineState extends State<EventTimeline> {
                     _formatTime(event.timestamp),
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -337,17 +352,17 @@ class _EventTimelineState extends State<EventTimeline> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFF2A2A2A), // 深色卡片背景
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
                   border: Border.all(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.15),
                     width: 1,
                   ),
                 ),
@@ -358,11 +373,11 @@ class _EventTimelineState extends State<EventTimeline> {
                       children: [
                         Expanded(
                           child: Text(
-                            event.type,
+                            event.typeLabel,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -372,7 +387,7 @@ class _EventTimelineState extends State<EventTimeline> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: event.priorityColor.withOpacity(0.1),
+                            color: event.priorityColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -391,7 +406,7 @@ class _EventTimelineState extends State<EventTimeline> {
                       event.summary,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white70,
                         height: 1.4,
                       ),
                       maxLines: 2,
@@ -411,7 +426,7 @@ class _EventTimelineState extends State<EventTimeline> {
                           '查看详情',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: Colors.grey[500],
                           ),
                         ),
                       ],
@@ -424,5 +439,19 @@ class _EventTimelineState extends State<EventTimeline> {
         ),
       ),
     );
+  }
+}
+
+// === 右心房健康上报（自动注入） ===
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+
+void _reportEventTimelineHealth() {
+  // 仅在生产环境且开关开启时上报
+  if (kReleaseMode) {
+    Future.microtask(() {
+      // 此处预留右心房上报接口，待 Flutter 端右心房 SDK 就绪后接入
+      // 目前仅做占位，不阻塞 UI 渲染
+    });
   }
 }

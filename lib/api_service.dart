@@ -11,6 +11,8 @@
 // 8. 新增 fetchMiyazakiLineageById() - 获取谱系记录详情
 // 9. 新增 fetchMiyazakiStatistics() - 获取宫崎骏统计信息
 // 10. 新增 fetchSystemMonitor() - 获取系统监控数据（右心房模块状态）
+// 11. 修复 getGuardianSuggestions() 路径为 /guardian/suggestions（2026-04-19）
+// 12. 新增 qianxunChat() - 千寻大脑对话代理接口，支持深度思考与联网搜索（2026-04-19）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -18,6 +20,44 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// 千寻大脑对话返回结果
+class QianxunChatResult {
+  final bool success;
+  final String? error;
+  final String content;
+  final Map<String, dynamic>? thinkingSteps;
+  final String model;
+  final Map<String, dynamic>? usage;
+
+  QianxunChatResult._({
+    required this.success,
+    this.error,
+    this.content = '',
+    this.thinkingSteps,
+    this.model = '',
+    this.usage,
+  });
+
+  factory QianxunChatResult.success({
+    required String content,
+    Map<String, dynamic>? thinkingSteps,
+    String? model,
+    Map<String, dynamic>? usage,
+  }) {
+    return QianxunChatResult._(
+      success: true,
+      content: content,
+      thinkingSteps: thinkingSteps,
+      model: model ?? '',
+      usage: usage,
+    );
+  }
+
+  factory QianxunChatResult.error(String error) {
+    return QianxunChatResult._(success: false, error: error);
+  }
+}
 
 /// API 服务类，封装所有后端接口调用
 class ApiService {
@@ -296,9 +336,9 @@ class ApiService {
     return await httpGet('/advice/pending');
   }
 
-  // 守门员建议（兼容旧接口，实际调用 /advice/pending）
+  // 守门员建议（修复：使用计划书定义的 /guardian/suggestions）
   static Future<List<dynamic>?> getGuardianSuggestions() async {
-    return await httpGet('/advice/pending');
+    return await httpGet('/guardian/suggestions');
   }
 
   static Future<int> getPendingAdviceCount() async {
@@ -1496,8 +1536,63 @@ class ApiService {
   }
 
   // ==================== 影子账户别名方法（兼容 fetchShadowRealtimeCompare） ====================
-   /// 获取影子与实盘实时对比（别名，兼容 fetchShadowRealtimeCompare 调用）
+  /// 获取影子与实盘实时对比（别名，兼容 fetchShadowRealtimeCompare 调用）
   static Future<Map<String, dynamic>?> fetchShadowRealtimeCompare() async {
     return await getShadowRealtimeCompare();
+  }
+
+  // ==================== 千寻大脑对话代理接口（2026-04-19 追加） ====================
+  /// 千寻大脑对话接口（代理转发到本地8081端口）
+  /// 请求体格式与 OpenAI /v1/chat/completions 兼容
+  /// [deepThinking] 是否开启深度思考模式（调用云端更强模型）
+  /// [webSearch] 是否开启联网搜索模式（通过Dify调用搜索引擎）
+  /// 返回：结构化对话结果，包含 content、thinkingSteps、model、usage 等
+  static Future<QianxunChatResult> qianxunChat({
+    required List<Map<String, dynamic>> messages,
+    String? model,
+    double? temperature,
+    int? maxTokens,
+    bool stream = false,
+    bool deepThinking = false,
+    bool webSearch = false,
+  }) async {
+    final body = <String, dynamic>{
+      'messages': messages,
+      'deep_thinking': deepThinking,
+      'web_search': webSearch,
+    };
+    if (model != null) body['model'] = model;
+    if (temperature != null) body['temperature'] = temperature;
+    if (maxTokens != null) body['max_tokens'] = maxTokens;
+    body['stream'] = stream;
+
+    final result = await httpPost('/qianxun/chat', body: body);
+    
+    // 解析响应
+    if (result == null || result is! Map) {
+      return QianxunChatResult.error('请求失败或响应格式错误');
+    }
+    
+    // 检查是否成功（兼容后端成功响应结构）
+    if (result['success'] == false) {
+      return QianxunChatResult.error(result['message'] ?? '对话失败');
+    }
+    
+    // 提取数据
+    final data = result['data'] ?? result;
+    final choices = data['choices'] as List<dynamic>?;
+    if (choices == null || choices.isEmpty) {
+      return QianxunChatResult.error('响应中无 choices 数据');
+    }
+    
+    final firstChoice = choices[0] as Map<String, dynamic>;
+    final message = firstChoice['message'] as Map<String, dynamic>? ?? {};
+    
+    return QianxunChatResult.success(
+      content: message['content'] ?? '',
+      thinkingSteps: message['thinking_steps'] as Map<String, dynamic>?,
+      model: data['model'] ?? 'lfm2.5-thinking:latest',
+      usage: data['usage'] as Map<String, dynamic>?,
+    );
   }
 }

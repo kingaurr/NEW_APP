@@ -21,6 +21,8 @@ import 'strategy_planning_page.dart';
 import 'strategy_execution_page.dart';
 // ========== 新增虚拟交易页面导入 ==========
 import 'virtual_trade_page.dart';
+// ========== 新增千寻大脑页面导入 ==========
+import 'brain_chat_page.dart';
 // =====================================
 
 class MyPage extends StatefulWidget {
@@ -228,6 +230,14 @@ class _MyPageState extends State<MyPage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const VirtualTradePage()),
+    );
+  }
+
+  // ========== 新增千寻大脑跳转方法 ==========
+  void _openBrainChat() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BrainChatPage()),
     );
   }
   // =======================================
@@ -449,6 +459,12 @@ class _MyPageState extends State<MyPage> {
                                       icon: Icons.science_outlined,
                                       label: '虚拟交易',
                                       onTap: _openVirtualTrade,
+                                    ),
+                                    // ========== 新增千寻大脑入口 ==========
+                                    _buildGridItem(
+                                      icon: Icons.psychology_alt,
+                                      label: '千寻大脑',
+                                      onTap: _openBrainChat,
                                     ),
                                     // ===================================
                                   ],
