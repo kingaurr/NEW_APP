@@ -441,17 +441,3 @@ class _EventTimelineState extends State<EventTimeline> {
     );
   }
 }
-
-// === 右心房健康上报（自动注入） ===
-import 'dart:async';
-import 'package:flutter/foundation.dart';
-
-void _reportEventTimelineHealth() {
-  // 仅在生产环境且开关开启时上报
-  if (kReleaseMode) {
-    Future.microtask(() {
-      // 此处预留右心房上报接口，待 Flutter 端右心房 SDK 就绪后接入
-      // 目前仅做占位，不阻塞 UI 渲染
-    });
-  }
-}

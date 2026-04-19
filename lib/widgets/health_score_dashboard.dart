@@ -407,15 +407,3 @@ class _RingPainter extends CustomPainter {
         oldDelegate.strokeWidth != strokeWidth;
   }
 }
-
-// === 右心房健康上报（自动注入占位） ===
-import 'dart:async';
-import 'package:flutter/foundation.dart';
-
-void _reportDashboardHealth() {
-  if (kReleaseMode) {
-    Future.microtask(() {
-      // 预留右心房上报接口
-    });
-  }
-}
