@@ -148,7 +148,7 @@ class _BrainChatPageState extends State<BrainChatPage> {
 
   /// 指纹验证
   Future<bool> _authenticate(String operation) async {
-    final token = await BiometricsHelper.authenticateForOperation(operationDesc: operation);
+    final token = await BiometricsHelper.authenticateForOperation(operation: operation);
     if (token != null) {
       ApiService.setFingerprintToken(token, 300);
       return true;
