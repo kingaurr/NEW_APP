@@ -147,13 +147,16 @@ class _BrainChatPageState extends State<BrainChatPage> {
   }
 
   /// 指纹验证
-  Future<bool> _authenticate(String operation) async {
-    final token = await BiometricsHelper.authenticateForOperation(operation: operation);
-    if (token != null) {
+  Future<bool> _authenticate(String operationDesc) async {
+    final token = await BiometricsHelper.authenticateForOperation(
+      operation: 'brain_chat',
+      operationDesc: operationDesc,
+   );
+   if (token != null) {
       ApiService.setFingerprintToken(token, 300);
       return true;
-    }
-    return false;
+   }
+   return false;
   }
 
   /// 处理右上角菜单操作
