@@ -13,6 +13,7 @@
 // 10. 新增 fetchSystemMonitor() - 获取系统监控数据（右心房模块状态）
 // 11. 修复 getGuardianSuggestions() 路径为 /guardian/suggestions（2026-04-19）
 // 12. 新增 qianxunChat() - 千寻大脑对话代理接口，支持深度思考与联网搜索（2026-04-19）
+// 13. 为 httpGet/httpPost 添加 600 秒超时，避免长耗时请求被意外中断（2026-04-20）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -130,11 +131,12 @@ class ApiService {
       if (fingerprintToken != null) {
         headers['X-Fingerprint-Token'] = fingerprintToken;
       }
-      final response = await _client.get(Uri.parse(url), headers: headers);
+      final response = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 600)); // 添加 10 分钟超时
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        // 统一错误返回格式
         debugPrint('HTTP GET 错误: ${response.statusCode} - ${response.body}');
         return {'success': false, 'message': 'HTTP ${response.statusCode}', 'statusCode': response.statusCode};
       }
@@ -161,11 +163,13 @@ class ApiService {
       if (fingerprintToken != null) {
         requestHeaders['X-Fingerprint-Token'] = fingerprintToken;
       }
-      final response = await _client.post(
-        Uri.parse(url),
-        headers: requestHeaders,
-        body: body != null ? jsonEncode(body) : null,
-      );
+      final response = await _client
+          .post(
+            Uri.parse(url),
+            headers: requestHeaders,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(const Duration(seconds: 600)); // 添加 10 分钟超时
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -1567,27 +1571,27 @@ class ApiService {
     body['stream'] = stream;
 
     final result = await httpPost('/qianxun/chat', body: body);
-    
+   
     // 解析响应
     if (result == null || result is! Map) {
       return QianxunChatResult.error('请求失败或响应格式错误');
     }
-    
+   
     // 检查是否成功（兼容后端成功响应结构）
     if (result['success'] == false) {
       return QianxunChatResult.error(result['message'] ?? '对话失败');
     }
-    
+   
     // 提取数据
     final data = result['data'] ?? result;
     final choices = data['choices'] as List<dynamic>?;
     if (choices == null || choices.isEmpty) {
       return QianxunChatResult.error('响应中无 choices 数据');
     }
-    
+   
     final firstChoice = choices[0] as Map<String, dynamic>;
     final message = firstChoice['message'] as Map<String, dynamic>? ?? {};
-    
+   
     return QianxunChatResult.success(
       content: message['content'] ?? '',
       thinkingSteps: message['thinking_steps'] as Map<String, dynamic>?,
