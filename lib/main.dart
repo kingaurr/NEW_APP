@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:hive_flutter/hive_flutter.dart'; // 新增：Hive 本地存储
 import 'pages/auth_page.dart';
 import 'pages/main_navigation_page.dart';
 import 'pages/ai_advice_center_page.dart';
@@ -71,12 +72,21 @@ import 'pages/miyazaki_detail_page.dart';
 import 'pages/lineage_detail_page.dart';
 // ===== 新增千寻大脑对话页面（2026-04-19） =====
 import 'pages/brain_chat_page.dart';
+// ===== 新增消息模型（用于 Hive 适配器注册） =====
+import 'models/chat_message.dart';
 // ============================================
 
 void main() {
   // 全局错误捕获，确保 Release 模式下错误可见
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // ===== 新增：初始化 Hive 本地存储 =====
+    final appDocDir = await getApplicationDocumentsDirectory();
+    await Hive.initFlutter(appDocDir.path);
+    Hive.registerAdapter(ChatMessageAdapter());
+    await Hive.openBox<String>('qianxun_chat_box');
+    // =====================================
 
     // 原有错误日志写入（保留）
     if (kReleaseMode) {

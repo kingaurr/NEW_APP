@@ -14,6 +14,7 @@
 // 11. 修复 getGuardianSuggestions() 路径为 /guardian/suggestions（2026-04-19）
 // 12. 新增 qianxunChat() - 千寻大脑对话代理接口，支持深度思考与联网搜索（2026-04-19）
 // 13. 为 httpGet/httpPost 添加 600 秒超时，避免长耗时请求被意外中断（2026-04-20）
+// 14. 千寻大脑一次性方案：引入 Dio 客户端，解决连接中止问题（2026-04-20）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -21,6 +22,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 
 /// 千寻大脑对话返回结果
 class QianxunChatResult {
@@ -64,6 +66,21 @@ class QianxunChatResult {
 class ApiService {
   // 使用同一个 Client 实例（用于自动管理 cookie，但 token 认证不依赖它）
   static final http.Client _client = http.Client();
+
+  // ===== 千寻大脑一次性方案新增：Dio 客户端（解决连接中止问题） =====
+  static final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 600), // 连接超时 10 分钟
+    receiveTimeout: const Duration(seconds: 600), // 接收超时 10 分钟
+    sendTimeout: const Duration(seconds: 600), // 发送超时 10 分钟
+  ))..interceptors.add(LogInterceptor(
+    request: true,
+    requestHeader: true,
+    requestBody: true,
+    responseHeader: true,
+    responseBody: true,
+    error: true,
+    logPrint: (obj) => debugPrint(obj.toString()),
+  ));
 
   static String _baseUrl = 'http://47.108.206.221:8080/api';
 
@@ -1545,7 +1562,7 @@ class ApiService {
     return await getShadowRealtimeCompare();
   }
 
-  // ==================== 千寻大脑对话代理接口（2026-04-19 追加） ====================
+  // ==================== 千寻大脑对话代理接口（2026-04-19 追加，2026-04-20 升级为 Dio） ====================
   /// 千寻大脑对话接口（代理转发到本地8081端口）
   /// 请求体格式与 OpenAI /v1/chat/completions 兼容
   /// [deepThinking] 是否开启深度思考模式（调用云端更强模型）
@@ -1570,33 +1587,52 @@ class ApiService {
     if (maxTokens != null) body['max_tokens'] = maxTokens;
     body['stream'] = stream;
 
-    final result = await httpPost('/qianxun/chat', body: body);
-   
-    // 解析响应
-    if (result == null || result is! Map) {
-      return QianxunChatResult.error('请求失败或响应格式错误');
+    // ===== 使用 Dio 发送请求，解决连接中止问题 =====
+    try {
+      final token = await _getToken();
+      final fingerprintToken = getFingerprintToken();
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+      if (token != null) headers['Authorization'] = 'Bearer $token';
+      if (fingerprintToken != null) headers['X-Fingerprint-Token'] = fingerprintToken;
+
+      final response = await _dio.post(
+        '$_baseUrl/qianxun/chat',
+        data: body,
+        options: Options(headers: headers),
+      );
+
+      final result = response.data;
+      if (result == null || result is! Map) {
+        return QianxunChatResult.error('请求失败或响应格式错误');
+      }
+
+      if (result['success'] == false) {
+        return QianxunChatResult.error(result['message'] ?? '对话失败');
+      }
+
+      final data = result['data'] ?? result;
+      final choices = data['choices'] as List<dynamic>?;
+      if (choices == null || choices.isEmpty) {
+        return QianxunChatResult.error('响应中无 choices 数据');
+      }
+
+      final firstChoice = choices[0] as Map<String, dynamic>;
+      final message = firstChoice['message'] as Map<String, dynamic>? ?? {};
+
+      return QianxunChatResult.success(
+        content: message['content'] ?? '',
+        thinkingSteps: message['thinking_steps'] as Map<String, dynamic>?,
+        model: data['model'] ?? 'lfm2.5-thinking:latest',
+        usage: data['usage'] as Map<String, dynamic>?,
+      );
+    } on DioException catch (e) {
+      debugPrint('千寻对话 Dio 异常: ${e.message}');
+      return QianxunChatResult.error('网络请求失败: ${e.message}');
+    } catch (e) {
+      debugPrint('千寻对话未知异常: $e');
+      return QianxunChatResult.error('请求异常: $e');
     }
-   
-    // 检查是否成功（兼容后端成功响应结构）
-    if (result['success'] == false) {
-      return QianxunChatResult.error(result['message'] ?? '对话失败');
-    }
-   
-    // 提取数据
-    final data = result['data'] ?? result;
-    final choices = data['choices'] as List<dynamic>?;
-    if (choices == null || choices.isEmpty) {
-      return QianxunChatResult.error('响应中无 choices 数据');
-    }
-   
-    final firstChoice = choices[0] as Map<String, dynamic>;
-    final message = firstChoice['message'] as Map<String, dynamic>? ?? {};
-   
-    return QianxunChatResult.success(
-      content: message['content'] ?? '',
-      thinkingSteps: message['thinking_steps'] as Map<String, dynamic>?,
-      model: data['model'] ?? 'lfm2.5-thinking:latest',
-      usage: data['usage'] as Map<String, dynamic>?,
-    );
   }
 }
