@@ -17,6 +17,7 @@
 // 14. 千寻大脑一次性方案：引入 Dio 客户端，解决连接中止问题（2026-04-20）
 // 15. 【终极修复】升级 Dio 至 5.4.3，配置自定义 HttpClient 覆盖空闲超时，添加 Connection: close 头与智能重试（2026-04-20）
 // 16. 【紧急修复】修复 IOHttpClientAdapter 导入问题，改用默认适配器并配置 createHttpClient（2026-04-20）
+// 17. 【兜底方案】强制每次请求新建连接（idleTimeout = Duration.zero + Connection: close 头），彻底绕过 Keep-Alive 冲突（2026-04-21）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -71,7 +72,7 @@ class ApiService {
   // 使用同一个 Client 实例（用于自动管理 cookie，但 token 认证不依赖它）
   static final http.Client _client = http.Client();
 
-  // ===== 千寻大脑一次性方案新增：Dio 客户端（根治连接中止问题） =====
+  // ===== 兜底方案：强制每次请求新建连接，彻底绕过 Keep-Alive 冲突 =====
   static final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 30),
     sendTimeout: const Duration(seconds: 30),
@@ -80,8 +81,8 @@ class ApiService {
     ..httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        client.idleTimeout = const Duration(seconds: 300); // 保持连接活跃5分钟
-        client.maxConnectionsPerHost = 5; // 适当提高并发连接数
+        client.idleTimeout = Duration.zero; // 连接用后即焚，强制每次新建
+        client.maxConnectionsPerHost = 5; // 允许少量并发
         return client;
       },
     )
@@ -100,7 +101,7 @@ class ApiService {
         return handler.next(e);
       },
       onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
-        options.headers['Connection'] = 'close';
+        options.headers['Connection'] = 'close'; // 明确告知服务器立即关闭连接
         return handler.next(options);
       },
     ))
