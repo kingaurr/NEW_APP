@@ -16,6 +16,7 @@
 // 13. 为 httpGet/httpPost 添加 600 秒超时，避免长耗时请求被意外中断（2026-04-20）
 // 14. 千寻大脑一次性方案：引入 Dio 客户端，解决连接中止问题（2026-04-20）
 // 15. 【终极修复】升级 Dio 至 5.4.3，配置自定义 HttpClient 覆盖空闲超时，添加 Connection: close 头与智能重试（2026-04-20）
+// 16. 【紧急修复】修复 IOHttpClientAdapter 导入问题，改用默认适配器并配置 createHttpClient（2026-04-20）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -25,6 +26,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart'; // 修复：显式导入 io 库以使用 IOHttpClientAdapter
 
 /// 千寻大脑对话返回结果
 class QianxunChatResult {
