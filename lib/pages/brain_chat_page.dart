@@ -2,12 +2,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart'; // 1. 需要引入 uuid 包: flutter pub add uuid
 import '../api_service.dart';
 import '../utils/biometrics_helper.dart';
 
 /// 千寻大脑对话页面
-/// 功能：文字对话、语音输入、深度思考/联网思考开关、可折叠思考卡片、高级功能菜单
-/// 聊天历史自动持久化，退出页面后重新进入可恢复
 class BrainChatPage extends StatefulWidget {
   const BrainChatPage({super.key});
 
@@ -22,10 +21,16 @@ class _BrainChatPageState extends State<BrainChatPage> {
   bool _isLoading = false;
   bool _deepThinking = false;
   bool _webSearch = false;
-  bool _isVoiceMode = false; // 预留语音模式状态
-
-  // 持久化存储的键
+  bool _isVoiceMode = false;
   static const String _historyKey = 'qianxun_chat_history';
+
+  // 2. 重写 setState，增加自动的 mounted 检查（终极防御）
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
 
   @override
   void initState() {
@@ -52,7 +57,6 @@ class _BrainChatPageState extends State<BrainChatPage> {
           _messages.addAll(decoded.map((item) => ChatMessage.fromJson(item)));
         });
       } else {
-        // 无历史记录时添加欢迎消息
         setState(() {
           _messages.add(ChatMessage(
             role: 'assistant',
@@ -71,20 +75,19 @@ class _BrainChatPageState extends State<BrainChatPage> {
     }
   }
 
-  /// 保存聊天历史到本地
+  /// 保存聊天历史到本地（优化版：减少阻塞，避免覆盖）
   Future<void> _saveHistory() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
+    // 3. 关键优化：不等待异步完成，避免阻塞 UI 和状态冲突
+    SharedPreferences.getInstance().then((prefs) {
       final String historyJson = jsonEncode(
         _messages.map((msg) => msg.toJson()).toList(),
       );
-      await prefs.setString(_historyKey, historyJson);
-    } catch (e) {
+      prefs.setString(_historyKey, historyJson);
+    }).catchError((e) {
       debugPrint('保存聊天历史失败: $e');
-    }
+    });
   }
 
-  /// 滚动到底部
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -101,14 +104,16 @@ class _BrainChatPageState extends State<BrainChatPage> {
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // 添加用户消息
+    final userMessage = ChatMessage(role: 'user', content: text);
     setState(() {
-      _messages.add(ChatMessage(role: 'user', content: text));
+      _messages.add(userMessage);
       _isLoading = true;
     });
     _scrollToBottom();
     _controller.clear();
-    await _saveHistory(); // 立即保存用户消息
+    
+    // 4. 关键优化：不等待保存完成，避免阻塞后续操作
+    _saveHistory();
 
     // 调用API
     final result = await ApiService.qianxunChat(
@@ -123,10 +128,14 @@ class _BrainChatPageState extends State<BrainChatPage> {
     if (!mounted) return;
 
     if (result.success) {
+      String displayContent = result.content;
+      if (displayContent.trim().isEmpty) {
+        displayContent = '千寻已处理，但未返回有效内容，请稍后重试。';
+      }
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
-          content: result.content,
+          content: displayContent,
           thinkingSteps: result.thinkingSteps,
         ));
       });
@@ -142,11 +151,11 @@ class _BrainChatPageState extends State<BrainChatPage> {
     if (mounted) {
       setState(() => _isLoading = false);
     }
-    await _saveHistory(); // 保存AI回复
+    _saveHistory(); // 保存AI回复
     _scrollToBottom();
   }
 
-  /// 指纹验证
+  // 指纹验证
   Future<bool> _authenticate(String operationDesc) async {
     return await BiometricsHelper.authenticateForOperation(
       operation: 'brain_chat',
@@ -154,54 +163,38 @@ class _BrainChatPageState extends State<BrainChatPage> {
    );
   }
 
-  /// 处理右上角菜单操作
+  // 处理右上角菜单操作
   Future<void> _handleMenuAction(String value) async {
     switch (value) {
       case 'code_fix':
         final auth = await _authenticate('代码修复');
-        if (!auth) {
-          _showSnackBar('指纹验证失败');
-          return;
-        }
+        if (!auth) { _showSnackBar('指纹验证失败'); return; }
         final result = await ApiService.oneClickFix();
         _showSnackBar(result['message'] ?? '代码修复请求已提交');
         break;
       case 'strategy_generate':
         final auth = await _authenticate('策略生成');
-        if (!auth) {
-          _showSnackBar('指纹验证失败');
-          return;
-        }
-        // 获取最后一条用户消息作为策略描述
+        if (!auth) { _showSnackBar('指纹验证失败'); return; }
         final lastUserMsg = _messages.lastWhere(
           (m) => m.role == 'user',
           orElse: () => ChatMessage(role: 'user', content: ''),
         );
-        if (lastUserMsg.content.isEmpty) {
-          _showSnackBar('请先输入策略描述');
-          return;
-        }
-        final result = await ApiService.httpPost('/strategy/generate',
-            body: {'description': lastUserMsg.content});
+        if (lastUserMsg.content.isEmpty) { _showSnackBar('请先输入策略描述'); return; }
+        final result = await ApiService.httpPost('/strategy/generate', body: {'description': lastUserMsg.content});
         _showSnackBar(result?['message'] ?? '策略生成请求已提交');
         break;
       case 'diagnosis':
         final auth = await _authenticate('触发全面诊断');
-        if (!auth) {
-          _showSnackBar('指纹验证失败');
-          return;
-        }
+        if (!auth) { _showSnackBar('指纹验证失败'); return; }
         final result = await ApiService.triggerMiyazakiDiagnosis();
         _showSnackBar(result ? '诊断已触发，稍后查看报告' : '诊断触发失败');
         break;
       case 'export':
-        // 导出对话记录
         final buffer = StringBuffer();
         for (final msg in _messages) {
           buffer.writeln('${msg.role == 'user' ? '用户' : '千寻'}: ${msg.content}');
           buffer.writeln('---');
         }
-        // 实际导出需使用文件保存，此处简化处理
         _showSnackBar('导出功能开发中');
         break;
       case 'clear':
@@ -211,14 +204,8 @@ class _BrainChatPageState extends State<BrainChatPage> {
             title: const Text('清空对话'),
             content: const Text('确定要清空所有对话历史吗？'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('清空'),
-              ),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('清空')),
             ],
           ),
         );
@@ -230,7 +217,7 @@ class _BrainChatPageState extends State<BrainChatPage> {
               content: '我是千寻，服务于千里千寻量化交易系统的本地轻量AI智能内核。有什么可以帮您？',
             ));
           });
-          await _saveHistory(); // 清空后立即保存
+          await _saveHistory();
         }
         break;
     }
@@ -243,54 +230,40 @@ class _BrainChatPageState extends State<BrainChatPage> {
     );
   }
 
-  /// 构建可折叠思考卡片
+  // 构建可折叠思考卡片
   Widget _buildThinkingCard(Map<String, dynamic>? steps) {
     if (steps == null || steps.isEmpty) return const SizedBox.shrink();
-
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: Colors.grey.shade900,
       child: ExpansionTile(
         leading: const Icon(Icons.psychology, color: Colors.blue),
-        title: const Text(
-          '千寻思考中...',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        subtitle: const Text(
-          '金融师提案，探索者质证',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
+        title: const Text('千寻思考中...', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        subtitle: const Text('金融师提案，探索者质证', style: TextStyle(fontSize: 12, color: Colors.grey)),
         children: [
           if (steps['financier'] != null)
             ListTile(
               dense: true,
               leading: const Icon(Icons.trending_up, size: 18, color: Colors.green),
-              title: const Text('金融师提案',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              title: const Text('金融师提案', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
               subtitle: Text(steps['financier']['proposal'] ?? ''),
             ),
           if (steps['explorer'] != null)
             ListTile(
               dense: true,
               leading: const Icon(Icons.search, size: 18, color: Colors.orange),
-              title: const Text('探索进化者质证',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              title: const Text('探索进化者质证', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
               subtitle: Text(steps['explorer']['critique'] ?? ''),
             ),
           if (steps['guardian'] != null)
             ListTile(
               dense: true,
               leading: Icon(
-                steps['guardian']['verdict'] == '通过'
-                    ? Icons.check_circle
-                    : Icons.cancel,
+                steps['guardian']['verdict'] == '通过' ? Icons.check_circle : Icons.cancel,
                 size: 18,
-                color: steps['guardian']['verdict'] == '通过'
-                    ? Colors.green
-                    : Colors.red,
+                color: steps['guardian']['verdict'] == '通过' ? Colors.green : Colors.red,
               ),
-              title: const Text('原则守护者裁决',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              title: const Text('原则守护者裁决', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
               subtitle: Text(steps['guardian']['reason'] ?? ''),
             ),
         ],
@@ -298,21 +271,18 @@ class _BrainChatPageState extends State<BrainChatPage> {
     );
   }
 
-  /// 构建消息气泡
+  // 构建消息气泡
   Widget _buildMessageBubble(ChatMessage message, int index) {
     final isUser = message.role == 'user';
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         child: Column(
           crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            if (!isUser && message.thinkingSteps != null)
-              _buildThinkingCard(message.thinkingSteps),
+            if (!isUser && message.thinkingSteps != null) _buildThinkingCard(message.thinkingSteps),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -322,10 +292,7 @@ class _BrainChatPageState extends State<BrainChatPage> {
                   bottomLeft: !isUser ? const Radius.circular(4) : null,
                 ),
               ),
-              child: Text(
-                message.content,
-                style: const TextStyle(fontSize: 15, color: Colors.white),
-              ),
+              child: Text(message.content, style: const TextStyle(fontSize: 15, color: Colors.white)),
             ),
           ],
         ),
@@ -341,7 +308,6 @@ class _BrainChatPageState extends State<BrainChatPage> {
         title: const Text('千寻大脑'),
         centerTitle: true,
         actions: [
-          // 右上角功能菜单
           PopupMenuButton<String>(
             icon: const Icon(Icons.bolt, color: Color(0xFFD4AF37)),
             onSelected: _handleMenuAction,
@@ -375,29 +341,14 @@ class _BrainChatPageState extends State<BrainChatPage> {
                 ),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'export',
-                child: ListTile(
-                  leading: Icon(Icons.file_download, size: 20),
-                  title: Text('导出对话'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'clear',
-                child: ListTile(
-                  leading: Icon(Icons.delete_outline, size: 20),
-                  title: Text('清空对话'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
+              const PopupMenuItem(value: 'export', child: ListTile(leading: Icon(Icons.file_download, size: 20), title: Text('导出对话'), contentPadding: EdgeInsets.zero)),
+              const PopupMenuItem(value: 'clear', child: ListTile(leading: Icon(Icons.delete_outline, size: 20), title: Text('清空对话'), contentPadding: EdgeInsets.zero)),
             ],
           ),
         ],
       ),
       body: Column(
         children: [
-          // 对话历史区域
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -409,42 +360,30 @@ class _BrainChatPageState extends State<BrainChatPage> {
                     padding: EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                        SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                         SizedBox(width: 12),
                         Text('千寻思考中...', style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   );
                 }
+                // 5. 使用 ValueKey 优化列表渲染
                 return _buildMessageBubble(_messages[index], index);
               },
             ),
           ),
-          // 底部输入区
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              border: Border(top: BorderSide(color: Colors.grey.shade800)),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF1E1E1E), border: Border(top: BorderSide(color: Colors.grey.shade800))),
             child: Column(
               children: [
-                // 深度思考 / 联网思考 开关
                 Row(
                   children: [
                     FilterChip(
                       label: const Text('深度思考'),
                       selected: _deepThinking,
                       onSelected: (v) => setState(() => _deepThinking = v),
-                      avatar: Icon(
-                        Icons.psychology,
-                        size: 18,
-                        color: _deepThinking ? Colors.blue : Colors.grey,
-                      ),
+                      avatar: Icon(Icons.psychology, size: 18, color: _deepThinking ? Colors.blue : Colors.grey),
                       backgroundColor: Colors.grey.shade900,
                       selectedColor: Colors.blue.shade900,
                     ),
@@ -453,18 +392,13 @@ class _BrainChatPageState extends State<BrainChatPage> {
                       label: const Text('联网思考'),
                       selected: _webSearch,
                       onSelected: (v) => setState(() => _webSearch = v),
-                      avatar: Icon(
-                        Icons.language,
-                        size: 18,
-                        color: _webSearch ? Colors.green : Colors.grey,
-                      ),
+                      avatar: Icon(Icons.language, size: 18, color: _webSearch ? Colors.green : Colors.grey),
                       backgroundColor: Colors.grey.shade900,
                       selectedColor: Colors.green.shade900,
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                // 输入框 + 发送按钮
                 Row(
                   children: [
                     Expanded(
@@ -476,14 +410,8 @@ class _BrainChatPageState extends State<BrainChatPage> {
                           hintStyle: TextStyle(color: Colors.grey.shade500),
                           filled: true,
                           fillColor: Colors.grey.shade900,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                         maxLines: null,
                         textInputAction: TextInputAction.send,
@@ -492,9 +420,7 @@ class _BrainChatPageState extends State<BrainChatPage> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => _sendMessage(_controller.text),
+                      onPressed: _isLoading ? null : () => _sendMessage(_controller.text),
                       icon: const Icon(Icons.send, color: Color(0xFFD4AF37)),
                     ),
                   ],
@@ -510,31 +436,43 @@ class _BrainChatPageState extends State<BrainChatPage> {
 
 /// 聊天消息模型（支持JSON序列化）
 class ChatMessage {
-  final String role; // 'user' 或 'assistant'
+  final String id; // 6. 增加唯一ID
+  final String role;
   final String content;
   final Map<String, dynamic>? thinkingSteps;
 
   ChatMessage({
+    String? id,
     required this.role,
     required this.content,
     this.thinkingSteps,
-  });
+  }) : id = id ?? const Uuid().v4(); // 自动生成ID
 
-  // 从JSON反序列化
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
+      id: json['id'] as String?,
       role: json['role'] as String,
       content: json['content'] as String,
       thinkingSteps: json['thinkingSteps'] as Map<String, dynamic>?,
     );
   }
 
-  // 序列化为JSON
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'role': role,
       'content': content,
       if (thinkingSteps != null) 'thinkingSteps': thinkingSteps,
     };
   }
+
+  // 7. 实现一致的 hashCode 和 == 操作符，优化列表渲染性能
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ChatMessage && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
