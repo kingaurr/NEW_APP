@@ -15,10 +15,12 @@
 // 12. 新增 qianxunChat() - 千寻大脑对话代理接口，支持深度思考与联网搜索（2026-04-19）
 // 13. 为 httpGet/httpPost 添加 600 秒超时，避免长耗时请求被意外中断（2026-04-20）
 // 14. 千寻大脑一次性方案：引入 Dio 客户端，解决连接中止问题（2026-04-20）
+// 15. 【终极修复】升级 Dio 至 5.4.3，配置自定义 HttpClient 覆盖空闲超时，添加 Connection: close 头与智能重试（2026-04-20）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,20 +69,54 @@ class ApiService {
   // 使用同一个 Client 实例（用于自动管理 cookie，但 token 认证不依赖它）
   static final http.Client _client = http.Client();
 
-  // ===== 千寻大脑一次性方案新增：Dio 客户端（解决连接中止问题） =====
+  // ===== 千寻大脑一次性方案新增：Dio 客户端（根治连接中止问题） =====
   static final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 600), // 连接超时 10 分钟
-    receiveTimeout: const Duration(seconds: 600), // 接收超时 10 分钟
-    sendTimeout: const Duration(seconds: 600), // 发送超时 10 分钟
-  ))..interceptors.add(LogInterceptor(
-    request: true,
-    requestHeader: true,
-    requestBody: true,
-    responseHeader: true,
-    responseBody: true,
-    error: true,
-    logPrint: (obj) => debugPrint(obj.toString()),
-  ));
+    connectTimeout: const Duration(seconds: 30),
+    sendTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+  ))
+    ..httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.idleTimeout = const Duration(seconds: 300); // 保持连接活跃5分钟
+        client.maxConnectionsPerHost = 5; // 适当提高并发连接数
+        return client;
+      },
+    )
+    ..interceptors.add(InterceptorsWrapper(
+      onError: (DioException e, ErrorInterceptorHandler handler) async {
+        if (_shouldRetry(e) && e.requestOptions.extra['retried'] == null) {
+          debugPrint('检测到连接问题，正在尝试重试一次...');
+          e.requestOptions.extra['retried'] = true;
+          try {
+            final response = await _dio.fetch(e.requestOptions);
+            return handler.resolve(response);
+          } catch (_) {
+            return handler.next(e);
+          }
+        }
+        return handler.next(e);
+      },
+      onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
+        options.headers['Connection'] = 'close';
+        return handler.next(options);
+      },
+    ))
+    ..interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+      logPrint: (obj) => debugPrint(obj.toString()),
+    ));
+
+  static bool _shouldRetry(DioException error) {
+    return error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.connectionTimeout ||
+        (error.error is SocketException);
+  }
 
   static String _baseUrl = 'http://47.108.206.221:8080/api';
 
@@ -1629,7 +1665,13 @@ class ApiService {
       );
     } on DioException catch (e) {
       debugPrint('千寻对话 Dio 异常: ${e.message}');
-      return QianxunChatResult.error('网络请求失败: ${e.message}');
+      String errorMsg = '网络请求失败';
+      if (e.type == DioExceptionType.connectionTimeout) {
+        errorMsg = '连接超时，请检查网络';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = '网络连接异常，请稍后重试';
+      }
+      return QianxunChatResult.error(errorMsg);
     } catch (e) {
       debugPrint('千寻对话未知异常: $e');
       return QianxunChatResult.error('请求异常: $e');
