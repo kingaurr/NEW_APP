@@ -1,3 +1,5 @@
+// lib/providers/chat_provider.dart
+import 'dart:convert';  // 修复：补充缺失的导入
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../api_service.dart';
