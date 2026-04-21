@@ -4,14 +4,21 @@ import '../providers/chat_provider.dart';
 import '../models/chat_message.dart';
 import '../api_service.dart';
 import '../utils/biometrics_helper.dart';
+// ===== 新增：Drift 数据库相关导入（供后续扩展，不影响当前真实数据流） =====
+import 'package:drift/drift.dart' as drift;
+import '../database/database.dart';
+// ===========================================================================
 
 class BrainChatPage extends StatelessWidget {
   const BrainChatPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 从父级 Provider 获取 AppDatabase 实例（main.dart 中已注入）
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    // 注意：ChatProvider 内部已从 Drift 本地数据库加载真实消息数据
     return ChangeNotifierProvider(
-      create: (_) => ChatProvider(),
+      create: (_) => ChatProvider(db: db),  // 修正：传递 db 参数
       child: const _BrainChatView(),
     );
   }

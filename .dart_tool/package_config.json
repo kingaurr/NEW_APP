@@ -20,6 +20,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "analyzer_plugin",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/analyzer_plugin-0.11.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "args",
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/args-2.7.0",
       "packageUri": "lib/",
@@ -134,10 +140,22 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "charcode",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/charcode-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "checked_yaml",
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/checked_yaml-2.0.3",
       "packageUri": "lib/",
       "languageVersion": "2.19"
+    },
+    {
+      "name": "cli_util",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/cli_util-0.4.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "clock",
@@ -198,6 +216,18 @@
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/dio_web_adapter-2.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "drift",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/drift-2.14.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "drift_dev",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/drift_dev-2.14.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "equatable",
@@ -518,12 +548,6 @@
       "languageVersion": "3.2"
     },
     {
-      "name": "pedantic",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/pedantic-1.11.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "platform",
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/platform-3.1.6",
       "packageUri": "lib/",
@@ -558,6 +582,12 @@
       "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/pubspec_parse-1.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.6"
+    },
+    {
+      "name": "recase",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/recase-4.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "shared_preferences",
@@ -638,20 +668,20 @@
       "languageVersion": "3.1"
     },
     {
-      "name": "speech_to_text",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text-7.3.0",
+      "name": "sqlite3",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/sqlite3-2.9.4",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.5"
     },
     {
-      "name": "speech_to_text_platform_interface",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text_platform_interface-2.3.0",
+      "name": "sqlite3_flutter_libs",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/sqlite3_flutter_libs-0.5.42",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "2.12"
     },
     {
-      "name": "speech_to_text_windows",
-      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/speech_to_text_windows-1.0.0+beta.8",
+      "name": "sqlparser",
+      "rootUri": "file:///C:/Users/Administrator/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/sqlparser-0.33.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -776,7 +806,7 @@
       "languageVersion": "2.19"
     }
   ],
-  "generated": "2026-04-20T14:21:38.227358Z",
+  "generated": "2026-04-21T19:40:48.406880Z",
   "generator": "pub",
   "generatorVersion": "3.7.0",
   "flutterRoot": "file:///D:/srx/flutter",

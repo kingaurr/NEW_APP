@@ -1,0 +1,1651 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'database.dart';
+
+// ignore_for_file: type=lint
+class $ChatConversationsTable extends ChatConversations
+    with TableInfo<$ChatConversationsTable, ChatConversation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatConversationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 200),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isArchivedMeta =
+      const VerificationMeta('isArchived');
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+      'is_archived', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_archived" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, title, createdAt, updatedAt, isArchived];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_conversations';
+  @override
+  VerificationContext validateIntegrity(Insertable<ChatConversation> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+          _isArchivedMeta,
+          isArchived.isAcceptableOrUnknown(
+              data['is_archived']!, _isArchivedMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ChatConversation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatConversation(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      isArchived: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_archived'])!,
+    );
+  }
+
+  @override
+  $ChatConversationsTable createAlias(String alias) {
+    return $ChatConversationsTable(attachedDatabase, alias);
+  }
+}
+
+class ChatConversation extends DataClass
+    implements Insertable<ChatConversation> {
+  final int id;
+  final String title;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isArchived;
+  const ChatConversation(
+      {required this.id,
+      required this.title,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.isArchived});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['title'] = Variable<String>(title);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_archived'] = Variable<bool>(isArchived);
+    return map;
+  }
+
+  ChatConversationsCompanion toCompanion(bool nullToAbsent) {
+    return ChatConversationsCompanion(
+      id: Value(id),
+      title: Value(title),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isArchived: Value(isArchived),
+    );
+  }
+
+  factory ChatConversation.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatConversation(
+      id: serializer.fromJson<int>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'title': serializer.toJson<String>(title),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isArchived': serializer.toJson<bool>(isArchived),
+    };
+  }
+
+  ChatConversation copyWith(
+          {int? id,
+          String? title,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          bool? isArchived}) =>
+      ChatConversation(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        isArchived: isArchived ?? this.isArchived,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('ChatConversation(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isArchived: $isArchived')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, title, createdAt, updatedAt, isArchived);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatConversation &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isArchived == this.isArchived);
+}
+
+class ChatConversationsCompanion extends UpdateCompanion<ChatConversation> {
+  final Value<int> id;
+  final Value<String> title;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isArchived;
+  const ChatConversationsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isArchived = const Value.absent(),
+  });
+  ChatConversationsCompanion.insert({
+    this.id = const Value.absent(),
+    required String title,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isArchived = const Value.absent(),
+  })  : title = Value(title),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<ChatConversation> custom({
+    Expression<int>? id,
+    Expression<String>? title,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isArchived,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isArchived != null) 'is_archived': isArchived,
+    });
+  }
+
+  ChatConversationsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? title,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<bool>? isArchived}) {
+    return ChatConversationsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isArchived: isArchived ?? this.isArchived,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatConversationsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isArchived: $isArchived')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ChatMessagesTable extends ChatMessages
+    with TableInfo<$ChatMessagesTable, ChatMessageDrift> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _conversationIdMeta =
+      const VerificationMeta('conversationId');
+  @override
+  late final GeneratedColumn<int> conversationId = GeneratedColumn<int>(
+      'conversation_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES chat_conversations (id)'));
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+      'role', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 20),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _contentMeta =
+      const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+      'content', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isQualityMeta =
+      const VerificationMeta('isQuality');
+  @override
+  late final GeneratedColumn<bool> isQuality = GeneratedColumn<bool>(
+      'is_quality', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_quality" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _syncStatusMeta =
+      const VerificationMeta('syncStatus');
+  @override
+  late final GeneratedColumnWithTypeConverter<SyncStatus, int> syncStatus =
+      GeneratedColumn<int>('sync_status', aliasedName, false,
+              type: DriftSqlType.int,
+              requiredDuringInsert: false,
+              defaultValue: const Constant(0))
+          .withConverter<SyncStatus>($ChatMessagesTable.$convertersyncStatus);
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        conversationId,
+        role,
+        content,
+        createdAt,
+        isQuality,
+        syncStatus,
+        serverId
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_messages';
+  @override
+  VerificationContext validateIntegrity(Insertable<ChatMessageDrift> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+          _conversationIdMeta,
+          conversationId.isAcceptableOrUnknown(
+              data['conversation_id']!, _conversationIdMeta));
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+          _roleMeta, role.isAcceptableOrUnknown(data['role']!, _roleMeta));
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta,
+          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('is_quality')) {
+      context.handle(_isQualityMeta,
+          isQuality.isAcceptableOrUnknown(data['is_quality']!, _isQualityMeta));
+    }
+    context.handle(_syncStatusMeta, const VerificationResult.success());
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ChatMessageDrift map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatMessageDrift(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      conversationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}conversation_id'])!,
+      role: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}role'])!,
+      content: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      isQuality: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_quality'])!,
+      syncStatus: $ChatMessagesTable.$convertersyncStatus.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.int, data['${effectivePrefix}sync_status'])!),
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id']),
+    );
+  }
+
+  @override
+  $ChatMessagesTable createAlias(String alias) {
+    return $ChatMessagesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<SyncStatus, int, int> $convertersyncStatus =
+      const EnumIndexConverter<SyncStatus>(SyncStatus.values);
+}
+
+class ChatMessageDrift extends DataClass
+    implements Insertable<ChatMessageDrift> {
+  final int id;
+  final int conversationId;
+  final String role;
+  final String content;
+  final DateTime createdAt;
+  final bool isQuality;
+  final SyncStatus syncStatus;
+  final String? serverId;
+  const ChatMessageDrift(
+      {required this.id,
+      required this.conversationId,
+      required this.role,
+      required this.content,
+      required this.createdAt,
+      required this.isQuality,
+      required this.syncStatus,
+      this.serverId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['conversation_id'] = Variable<int>(conversationId);
+    map['role'] = Variable<String>(role);
+    map['content'] = Variable<String>(content);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['is_quality'] = Variable<bool>(isQuality);
+    {
+      map['sync_status'] = Variable<int>(
+          $ChatMessagesTable.$convertersyncStatus.toSql(syncStatus));
+    }
+    if (!nullToAbsent || serverId != null) {
+      map['server_id'] = Variable<String>(serverId);
+    }
+    return map;
+  }
+
+  ChatMessagesCompanion toCompanion(bool nullToAbsent) {
+    return ChatMessagesCompanion(
+      id: Value(id),
+      conversationId: Value(conversationId),
+      role: Value(role),
+      content: Value(content),
+      createdAt: Value(createdAt),
+      isQuality: Value(isQuality),
+      syncStatus: Value(syncStatus),
+      serverId: serverId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverId),
+    );
+  }
+
+  factory ChatMessageDrift.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatMessageDrift(
+      id: serializer.fromJson<int>(json['id']),
+      conversationId: serializer.fromJson<int>(json['conversationId']),
+      role: serializer.fromJson<String>(json['role']),
+      content: serializer.fromJson<String>(json['content']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      isQuality: serializer.fromJson<bool>(json['isQuality']),
+      syncStatus: $ChatMessagesTable.$convertersyncStatus
+          .fromJson(serializer.fromJson<int>(json['syncStatus'])),
+      serverId: serializer.fromJson<String?>(json['serverId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'conversationId': serializer.toJson<int>(conversationId),
+      'role': serializer.toJson<String>(role),
+      'content': serializer.toJson<String>(content),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'isQuality': serializer.toJson<bool>(isQuality),
+      'syncStatus': serializer.toJson<int>(
+          $ChatMessagesTable.$convertersyncStatus.toJson(syncStatus)),
+      'serverId': serializer.toJson<String?>(serverId),
+    };
+  }
+
+  ChatMessageDrift copyWith(
+          {int? id,
+          int? conversationId,
+          String? role,
+          String? content,
+          DateTime? createdAt,
+          bool? isQuality,
+          SyncStatus? syncStatus,
+          Value<String?> serverId = const Value.absent()}) =>
+      ChatMessageDrift(
+        id: id ?? this.id,
+        conversationId: conversationId ?? this.conversationId,
+        role: role ?? this.role,
+        content: content ?? this.content,
+        createdAt: createdAt ?? this.createdAt,
+        isQuality: isQuality ?? this.isQuality,
+        syncStatus: syncStatus ?? this.syncStatus,
+        serverId: serverId.present ? serverId.value : this.serverId,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('ChatMessageDrift(')
+          ..write('id: $id, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('role: $role, ')
+          ..write('content: $content, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('isQuality: $isQuality, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverId: $serverId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, conversationId, role, content, createdAt,
+      isQuality, syncStatus, serverId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatMessageDrift &&
+          other.id == this.id &&
+          other.conversationId == this.conversationId &&
+          other.role == this.role &&
+          other.content == this.content &&
+          other.createdAt == this.createdAt &&
+          other.isQuality == this.isQuality &&
+          other.syncStatus == this.syncStatus &&
+          other.serverId == this.serverId);
+}
+
+class ChatMessagesCompanion extends UpdateCompanion<ChatMessageDrift> {
+  final Value<int> id;
+  final Value<int> conversationId;
+  final Value<String> role;
+  final Value<String> content;
+  final Value<DateTime> createdAt;
+  final Value<bool> isQuality;
+  final Value<SyncStatus> syncStatus;
+  final Value<String?> serverId;
+  const ChatMessagesCompanion({
+    this.id = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.content = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.isQuality = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverId = const Value.absent(),
+  });
+  ChatMessagesCompanion.insert({
+    this.id = const Value.absent(),
+    required int conversationId,
+    required String role,
+    required String content,
+    required DateTime createdAt,
+    this.isQuality = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverId = const Value.absent(),
+  })  : conversationId = Value(conversationId),
+        role = Value(role),
+        content = Value(content),
+        createdAt = Value(createdAt);
+  static Insertable<ChatMessageDrift> custom({
+    Expression<int>? id,
+    Expression<int>? conversationId,
+    Expression<String>? role,
+    Expression<String>? content,
+    Expression<DateTime>? createdAt,
+    Expression<bool>? isQuality,
+    Expression<int>? syncStatus,
+    Expression<String>? serverId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (role != null) 'role': role,
+      if (content != null) 'content': content,
+      if (createdAt != null) 'created_at': createdAt,
+      if (isQuality != null) 'is_quality': isQuality,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (serverId != null) 'server_id': serverId,
+    });
+  }
+
+  ChatMessagesCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? conversationId,
+      Value<String>? role,
+      Value<String>? content,
+      Value<DateTime>? createdAt,
+      Value<bool>? isQuality,
+      Value<SyncStatus>? syncStatus,
+      Value<String?>? serverId}) {
+    return ChatMessagesCompanion(
+      id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
+      role: role ?? this.role,
+      content: content ?? this.content,
+      createdAt: createdAt ?? this.createdAt,
+      isQuality: isQuality ?? this.isQuality,
+      syncStatus: syncStatus ?? this.syncStatus,
+      serverId: serverId ?? this.serverId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<int>(conversationId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (isQuality.present) {
+      map['is_quality'] = Variable<bool>(isQuality.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(
+          $ChatMessagesTable.$convertersyncStatus.toSql(syncStatus.value));
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatMessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('role: $role, ')
+          ..write('content: $content, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('isQuality: $isQuality, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverId: $serverId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TradingSignalsTable extends TradingSignals
+    with TableInfo<$TradingSignalsTable, TradingSignal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TradingSignalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _symbolMeta = const VerificationMeta('symbol');
+  @override
+  late final GeneratedColumn<String> symbol = GeneratedColumn<String>(
+      'symbol', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 20),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _signalTypeMeta =
+      const VerificationMeta('signalType');
+  @override
+  late final GeneratedColumn<String> signalType = GeneratedColumn<String>(
+      'signal_type', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 20),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _priceMeta = const VerificationMeta('price');
+  @override
+  late final GeneratedColumn<double> price = GeneratedColumn<double>(
+      'price', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _quantityMeta =
+      const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+      'quantity', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _signalTimeMeta =
+      const VerificationMeta('signalTime');
+  @override
+  late final GeneratedColumn<DateTime> signalTime = GeneratedColumn<DateTime>(
+      'signal_time', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _strategyIdMeta =
+      const VerificationMeta('strategyId');
+  @override
+  late final GeneratedColumn<String> strategyId = GeneratedColumn<String>(
+      'strategy_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _confidenceMeta =
+      const VerificationMeta('confidence');
+  @override
+  late final GeneratedColumn<double> confidence = GeneratedColumn<double>(
+      'confidence', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _isExecutedMeta =
+      const VerificationMeta('isExecuted');
+  @override
+  late final GeneratedColumn<bool> isExecuted = GeneratedColumn<bool>(
+      'is_executed', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_executed" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        symbol,
+        signalType,
+        price,
+        quantity,
+        signalTime,
+        strategyId,
+        confidence,
+        isExecuted,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'trading_signals';
+  @override
+  VerificationContext validateIntegrity(Insertable<TradingSignal> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('symbol')) {
+      context.handle(_symbolMeta,
+          symbol.isAcceptableOrUnknown(data['symbol']!, _symbolMeta));
+    } else if (isInserting) {
+      context.missing(_symbolMeta);
+    }
+    if (data.containsKey('signal_type')) {
+      context.handle(
+          _signalTypeMeta,
+          signalType.isAcceptableOrUnknown(
+              data['signal_type']!, _signalTypeMeta));
+    } else if (isInserting) {
+      context.missing(_signalTypeMeta);
+    }
+    if (data.containsKey('price')) {
+      context.handle(
+          _priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
+    } else if (isInserting) {
+      context.missing(_priceMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta,
+          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    if (data.containsKey('signal_time')) {
+      context.handle(
+          _signalTimeMeta,
+          signalTime.isAcceptableOrUnknown(
+              data['signal_time']!, _signalTimeMeta));
+    } else if (isInserting) {
+      context.missing(_signalTimeMeta);
+    }
+    if (data.containsKey('strategy_id')) {
+      context.handle(
+          _strategyIdMeta,
+          strategyId.isAcceptableOrUnknown(
+              data['strategy_id']!, _strategyIdMeta));
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+          _confidenceMeta,
+          confidence.isAcceptableOrUnknown(
+              data['confidence']!, _confidenceMeta));
+    }
+    if (data.containsKey('is_executed')) {
+      context.handle(
+          _isExecutedMeta,
+          isExecuted.isAcceptableOrUnknown(
+              data['is_executed']!, _isExecutedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TradingSignal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TradingSignal(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      symbol: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}symbol'])!,
+      signalType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}signal_type'])!,
+      price: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
+      quantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}quantity'])!,
+      signalTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}signal_time'])!,
+      strategyId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}strategy_id']),
+      confidence: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}confidence']),
+      isExecuted: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_executed'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $TradingSignalsTable createAlias(String alias) {
+    return $TradingSignalsTable(attachedDatabase, alias);
+  }
+}
+
+class TradingSignal extends DataClass implements Insertable<TradingSignal> {
+  final int id;
+  final String symbol;
+  final String signalType;
+  final double price;
+  final int quantity;
+  final DateTime signalTime;
+  final String? strategyId;
+  final double? confidence;
+  final bool isExecuted;
+  final DateTime createdAt;
+  const TradingSignal(
+      {required this.id,
+      required this.symbol,
+      required this.signalType,
+      required this.price,
+      required this.quantity,
+      required this.signalTime,
+      this.strategyId,
+      this.confidence,
+      required this.isExecuted,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['symbol'] = Variable<String>(symbol);
+    map['signal_type'] = Variable<String>(signalType);
+    map['price'] = Variable<double>(price);
+    map['quantity'] = Variable<int>(quantity);
+    map['signal_time'] = Variable<DateTime>(signalTime);
+    if (!nullToAbsent || strategyId != null) {
+      map['strategy_id'] = Variable<String>(strategyId);
+    }
+    if (!nullToAbsent || confidence != null) {
+      map['confidence'] = Variable<double>(confidence);
+    }
+    map['is_executed'] = Variable<bool>(isExecuted);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TradingSignalsCompanion toCompanion(bool nullToAbsent) {
+    return TradingSignalsCompanion(
+      id: Value(id),
+      symbol: Value(symbol),
+      signalType: Value(signalType),
+      price: Value(price),
+      quantity: Value(quantity),
+      signalTime: Value(signalTime),
+      strategyId: strategyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(strategyId),
+      confidence: confidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(confidence),
+      isExecuted: Value(isExecuted),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TradingSignal.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TradingSignal(
+      id: serializer.fromJson<int>(json['id']),
+      symbol: serializer.fromJson<String>(json['symbol']),
+      signalType: serializer.fromJson<String>(json['signalType']),
+      price: serializer.fromJson<double>(json['price']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      signalTime: serializer.fromJson<DateTime>(json['signalTime']),
+      strategyId: serializer.fromJson<String?>(json['strategyId']),
+      confidence: serializer.fromJson<double?>(json['confidence']),
+      isExecuted: serializer.fromJson<bool>(json['isExecuted']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'symbol': serializer.toJson<String>(symbol),
+      'signalType': serializer.toJson<String>(signalType),
+      'price': serializer.toJson<double>(price),
+      'quantity': serializer.toJson<int>(quantity),
+      'signalTime': serializer.toJson<DateTime>(signalTime),
+      'strategyId': serializer.toJson<String?>(strategyId),
+      'confidence': serializer.toJson<double?>(confidence),
+      'isExecuted': serializer.toJson<bool>(isExecuted),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TradingSignal copyWith(
+          {int? id,
+          String? symbol,
+          String? signalType,
+          double? price,
+          int? quantity,
+          DateTime? signalTime,
+          Value<String?> strategyId = const Value.absent(),
+          Value<double?> confidence = const Value.absent(),
+          bool? isExecuted,
+          DateTime? createdAt}) =>
+      TradingSignal(
+        id: id ?? this.id,
+        symbol: symbol ?? this.symbol,
+        signalType: signalType ?? this.signalType,
+        price: price ?? this.price,
+        quantity: quantity ?? this.quantity,
+        signalTime: signalTime ?? this.signalTime,
+        strategyId: strategyId.present ? strategyId.value : this.strategyId,
+        confidence: confidence.present ? confidence.value : this.confidence,
+        isExecuted: isExecuted ?? this.isExecuted,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('TradingSignal(')
+          ..write('id: $id, ')
+          ..write('symbol: $symbol, ')
+          ..write('signalType: $signalType, ')
+          ..write('price: $price, ')
+          ..write('quantity: $quantity, ')
+          ..write('signalTime: $signalTime, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('confidence: $confidence, ')
+          ..write('isExecuted: $isExecuted, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, symbol, signalType, price, quantity,
+      signalTime, strategyId, confidence, isExecuted, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TradingSignal &&
+          other.id == this.id &&
+          other.symbol == this.symbol &&
+          other.signalType == this.signalType &&
+          other.price == this.price &&
+          other.quantity == this.quantity &&
+          other.signalTime == this.signalTime &&
+          other.strategyId == this.strategyId &&
+          other.confidence == this.confidence &&
+          other.isExecuted == this.isExecuted &&
+          other.createdAt == this.createdAt);
+}
+
+class TradingSignalsCompanion extends UpdateCompanion<TradingSignal> {
+  final Value<int> id;
+  final Value<String> symbol;
+  final Value<String> signalType;
+  final Value<double> price;
+  final Value<int> quantity;
+  final Value<DateTime> signalTime;
+  final Value<String?> strategyId;
+  final Value<double?> confidence;
+  final Value<bool> isExecuted;
+  final Value<DateTime> createdAt;
+  const TradingSignalsCompanion({
+    this.id = const Value.absent(),
+    this.symbol = const Value.absent(),
+    this.signalType = const Value.absent(),
+    this.price = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.signalTime = const Value.absent(),
+    this.strategyId = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.isExecuted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TradingSignalsCompanion.insert({
+    this.id = const Value.absent(),
+    required String symbol,
+    required String signalType,
+    required double price,
+    required int quantity,
+    required DateTime signalTime,
+    this.strategyId = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.isExecuted = const Value.absent(),
+    required DateTime createdAt,
+  })  : symbol = Value(symbol),
+        signalType = Value(signalType),
+        price = Value(price),
+        quantity = Value(quantity),
+        signalTime = Value(signalTime),
+        createdAt = Value(createdAt);
+  static Insertable<TradingSignal> custom({
+    Expression<int>? id,
+    Expression<String>? symbol,
+    Expression<String>? signalType,
+    Expression<double>? price,
+    Expression<int>? quantity,
+    Expression<DateTime>? signalTime,
+    Expression<String>? strategyId,
+    Expression<double>? confidence,
+    Expression<bool>? isExecuted,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (symbol != null) 'symbol': symbol,
+      if (signalType != null) 'signal_type': signalType,
+      if (price != null) 'price': price,
+      if (quantity != null) 'quantity': quantity,
+      if (signalTime != null) 'signal_time': signalTime,
+      if (strategyId != null) 'strategy_id': strategyId,
+      if (confidence != null) 'confidence': confidence,
+      if (isExecuted != null) 'is_executed': isExecuted,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TradingSignalsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? symbol,
+      Value<String>? signalType,
+      Value<double>? price,
+      Value<int>? quantity,
+      Value<DateTime>? signalTime,
+      Value<String?>? strategyId,
+      Value<double?>? confidence,
+      Value<bool>? isExecuted,
+      Value<DateTime>? createdAt}) {
+    return TradingSignalsCompanion(
+      id: id ?? this.id,
+      symbol: symbol ?? this.symbol,
+      signalType: signalType ?? this.signalType,
+      price: price ?? this.price,
+      quantity: quantity ?? this.quantity,
+      signalTime: signalTime ?? this.signalTime,
+      strategyId: strategyId ?? this.strategyId,
+      confidence: confidence ?? this.confidence,
+      isExecuted: isExecuted ?? this.isExecuted,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (symbol.present) {
+      map['symbol'] = Variable<String>(symbol.value);
+    }
+    if (signalType.present) {
+      map['signal_type'] = Variable<String>(signalType.value);
+    }
+    if (price.present) {
+      map['price'] = Variable<double>(price.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (signalTime.present) {
+      map['signal_time'] = Variable<DateTime>(signalTime.value);
+    }
+    if (strategyId.present) {
+      map['strategy_id'] = Variable<String>(strategyId.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<double>(confidence.value);
+    }
+    if (isExecuted.present) {
+      map['is_executed'] = Variable<bool>(isExecuted.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TradingSignalsCompanion(')
+          ..write('id: $id, ')
+          ..write('symbol: $symbol, ')
+          ..write('signalType: $signalType, ')
+          ..write('price: $price, ')
+          ..write('quantity: $quantity, ')
+          ..write('signalTime: $signalTime, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('confidence: $confidence, ')
+          ..write('isExecuted: $isExecuted, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StockCachesTable extends StockCaches
+    with TableInfo<$StockCachesTable, StockCache> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StockCachesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _symbolMeta = const VerificationMeta('symbol');
+  @override
+  late final GeneratedColumn<String> symbol = GeneratedColumn<String>(
+      'symbol', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 20),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 100),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _latestPriceMeta =
+      const VerificationMeta('latestPrice');
+  @override
+  late final GeneratedColumn<double> latestPrice = GeneratedColumn<double>(
+      'latest_price', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _changePercentMeta =
+      const VerificationMeta('changePercent');
+  @override
+  late final GeneratedColumn<double> changePercent = GeneratedColumn<double>(
+      'change_percent', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _volumeMeta = const VerificationMeta('volume');
+  @override
+  late final GeneratedColumn<double> volume = GeneratedColumn<double>(
+      'volume', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _dataJsonMeta =
+      const VerificationMeta('dataJson');
+  @override
+  late final GeneratedColumn<String> dataJson = GeneratedColumn<String>(
+      'data_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        symbol,
+        name,
+        latestPrice,
+        changePercent,
+        volume,
+        updatedAt,
+        dataJson
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'stock_caches';
+  @override
+  VerificationContext validateIntegrity(Insertable<StockCache> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('symbol')) {
+      context.handle(_symbolMeta,
+          symbol.isAcceptableOrUnknown(data['symbol']!, _symbolMeta));
+    } else if (isInserting) {
+      context.missing(_symbolMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('latest_price')) {
+      context.handle(
+          _latestPriceMeta,
+          latestPrice.isAcceptableOrUnknown(
+              data['latest_price']!, _latestPriceMeta));
+    }
+    if (data.containsKey('change_percent')) {
+      context.handle(
+          _changePercentMeta,
+          changePercent.isAcceptableOrUnknown(
+              data['change_percent']!, _changePercentMeta));
+    }
+    if (data.containsKey('volume')) {
+      context.handle(_volumeMeta,
+          volume.isAcceptableOrUnknown(data['volume']!, _volumeMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('data_json')) {
+      context.handle(_dataJsonMeta,
+          dataJson.isAcceptableOrUnknown(data['data_json']!, _dataJsonMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StockCache map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StockCache(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      symbol: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}symbol'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      latestPrice: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}latest_price']),
+      changePercent: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}change_percent']),
+      volume: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}volume']),
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      dataJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data_json']),
+    );
+  }
+
+  @override
+  $StockCachesTable createAlias(String alias) {
+    return $StockCachesTable(attachedDatabase, alias);
+  }
+}
+
+class StockCache extends DataClass implements Insertable<StockCache> {
+  final int id;
+  final String symbol;
+  final String name;
+  final double? latestPrice;
+  final double? changePercent;
+  final double? volume;
+  final DateTime updatedAt;
+  final String? dataJson;
+  const StockCache(
+      {required this.id,
+      required this.symbol,
+      required this.name,
+      this.latestPrice,
+      this.changePercent,
+      this.volume,
+      required this.updatedAt,
+      this.dataJson});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['symbol'] = Variable<String>(symbol);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || latestPrice != null) {
+      map['latest_price'] = Variable<double>(latestPrice);
+    }
+    if (!nullToAbsent || changePercent != null) {
+      map['change_percent'] = Variable<double>(changePercent);
+    }
+    if (!nullToAbsent || volume != null) {
+      map['volume'] = Variable<double>(volume);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || dataJson != null) {
+      map['data_json'] = Variable<String>(dataJson);
+    }
+    return map;
+  }
+
+  StockCachesCompanion toCompanion(bool nullToAbsent) {
+    return StockCachesCompanion(
+      id: Value(id),
+      symbol: Value(symbol),
+      name: Value(name),
+      latestPrice: latestPrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latestPrice),
+      changePercent: changePercent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(changePercent),
+      volume:
+          volume == null && nullToAbsent ? const Value.absent() : Value(volume),
+      updatedAt: Value(updatedAt),
+      dataJson: dataJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataJson),
+    );
+  }
+
+  factory StockCache.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StockCache(
+      id: serializer.fromJson<int>(json['id']),
+      symbol: serializer.fromJson<String>(json['symbol']),
+      name: serializer.fromJson<String>(json['name']),
+      latestPrice: serializer.fromJson<double?>(json['latestPrice']),
+      changePercent: serializer.fromJson<double?>(json['changePercent']),
+      volume: serializer.fromJson<double?>(json['volume']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      dataJson: serializer.fromJson<String?>(json['dataJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'symbol': serializer.toJson<String>(symbol),
+      'name': serializer.toJson<String>(name),
+      'latestPrice': serializer.toJson<double?>(latestPrice),
+      'changePercent': serializer.toJson<double?>(changePercent),
+      'volume': serializer.toJson<double?>(volume),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'dataJson': serializer.toJson<String?>(dataJson),
+    };
+  }
+
+  StockCache copyWith(
+          {int? id,
+          String? symbol,
+          String? name,
+          Value<double?> latestPrice = const Value.absent(),
+          Value<double?> changePercent = const Value.absent(),
+          Value<double?> volume = const Value.absent(),
+          DateTime? updatedAt,
+          Value<String?> dataJson = const Value.absent()}) =>
+      StockCache(
+        id: id ?? this.id,
+        symbol: symbol ?? this.symbol,
+        name: name ?? this.name,
+        latestPrice: latestPrice.present ? latestPrice.value : this.latestPrice,
+        changePercent:
+            changePercent.present ? changePercent.value : this.changePercent,
+        volume: volume.present ? volume.value : this.volume,
+        updatedAt: updatedAt ?? this.updatedAt,
+        dataJson: dataJson.present ? dataJson.value : this.dataJson,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('StockCache(')
+          ..write('id: $id, ')
+          ..write('symbol: $symbol, ')
+          ..write('name: $name, ')
+          ..write('latestPrice: $latestPrice, ')
+          ..write('changePercent: $changePercent, ')
+          ..write('volume: $volume, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('dataJson: $dataJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, symbol, name, latestPrice, changePercent,
+      volume, updatedAt, dataJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StockCache &&
+          other.id == this.id &&
+          other.symbol == this.symbol &&
+          other.name == this.name &&
+          other.latestPrice == this.latestPrice &&
+          other.changePercent == this.changePercent &&
+          other.volume == this.volume &&
+          other.updatedAt == this.updatedAt &&
+          other.dataJson == this.dataJson);
+}
+
+class StockCachesCompanion extends UpdateCompanion<StockCache> {
+  final Value<int> id;
+  final Value<String> symbol;
+  final Value<String> name;
+  final Value<double?> latestPrice;
+  final Value<double?> changePercent;
+  final Value<double?> volume;
+  final Value<DateTime> updatedAt;
+  final Value<String?> dataJson;
+  const StockCachesCompanion({
+    this.id = const Value.absent(),
+    this.symbol = const Value.absent(),
+    this.name = const Value.absent(),
+    this.latestPrice = const Value.absent(),
+    this.changePercent = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.dataJson = const Value.absent(),
+  });
+  StockCachesCompanion.insert({
+    this.id = const Value.absent(),
+    required String symbol,
+    required String name,
+    this.latestPrice = const Value.absent(),
+    this.changePercent = const Value.absent(),
+    this.volume = const Value.absent(),
+    required DateTime updatedAt,
+    this.dataJson = const Value.absent(),
+  })  : symbol = Value(symbol),
+        name = Value(name),
+        updatedAt = Value(updatedAt);
+  static Insertable<StockCache> custom({
+    Expression<int>? id,
+    Expression<String>? symbol,
+    Expression<String>? name,
+    Expression<double>? latestPrice,
+    Expression<double>? changePercent,
+    Expression<double>? volume,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? dataJson,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (symbol != null) 'symbol': symbol,
+      if (name != null) 'name': name,
+      if (latestPrice != null) 'latest_price': latestPrice,
+      if (changePercent != null) 'change_percent': changePercent,
+      if (volume != null) 'volume': volume,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (dataJson != null) 'data_json': dataJson,
+    });
+  }
+
+  StockCachesCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? symbol,
+      Value<String>? name,
+      Value<double?>? latestPrice,
+      Value<double?>? changePercent,
+      Value<double?>? volume,
+      Value<DateTime>? updatedAt,
+      Value<String?>? dataJson}) {
+    return StockCachesCompanion(
+      id: id ?? this.id,
+      symbol: symbol ?? this.symbol,
+      name: name ?? this.name,
+      latestPrice: latestPrice ?? this.latestPrice,
+      changePercent: changePercent ?? this.changePercent,
+      volume: volume ?? this.volume,
+      updatedAt: updatedAt ?? this.updatedAt,
+      dataJson: dataJson ?? this.dataJson,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (symbol.present) {
+      map['symbol'] = Variable<String>(symbol.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (latestPrice.present) {
+      map['latest_price'] = Variable<double>(latestPrice.value);
+    }
+    if (changePercent.present) {
+      map['change_percent'] = Variable<double>(changePercent.value);
+    }
+    if (volume.present) {
+      map['volume'] = Variable<double>(volume.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (dataJson.present) {
+      map['data_json'] = Variable<String>(dataJson.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StockCachesCompanion(')
+          ..write('id: $id, ')
+          ..write('symbol: $symbol, ')
+          ..write('name: $name, ')
+          ..write('latestPrice: $latestPrice, ')
+          ..write('changePercent: $changePercent, ')
+          ..write('volume: $volume, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('dataJson: $dataJson')
+          ..write(')'))
+        .toString();
+  }
+}
+
+abstract class _$AppDatabase extends GeneratedDatabase {
+  _$AppDatabase(QueryExecutor e) : super(e);
+  late final $ChatConversationsTable chatConversations =
+      $ChatConversationsTable(this);
+  late final $ChatMessagesTable chatMessages = $ChatMessagesTable(this);
+  late final $TradingSignalsTable tradingSignals = $TradingSignalsTable(this);
+  late final $StockCachesTable stockCaches = $StockCachesTable(this);
+  @override
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  @override
+  List<DatabaseSchemaEntity> get allSchemaEntities =>
+      [chatConversations, chatMessages, tradingSignals, stockCaches];
+}

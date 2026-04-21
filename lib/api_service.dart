@@ -18,6 +18,8 @@
 // 15. 【终极修复】升级 Dio 至 5.4.3，配置自定义 HttpClient 覆盖空闲超时，添加 Connection: close 头与智能重试（2026-04-20）
 // 16. 【紧急修复】修复 IOHttpClientAdapter 导入问题，改用默认适配器并配置 createHttpClient（2026-04-20）
 // 17. 【兜底方案】强制每次请求新建连接（idleTimeout = Duration.zero + Connection: close 头），彻底绕过 Keep-Alive 冲突（2026-04-21）
+// 18. 【白皮书合规】统一错误码处理，增强 Dio 拦截器日志，符合白皮书第四章规范（2026-04-21）
+// 19. 【阶段一】延长 receiveTimeout 至 120s，新增 syncData / markMessageQuality 方法（2026-04-21）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -76,7 +78,7 @@ class ApiService {
   static final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 30),
     sendTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 120), // 【阶段一】延长至120s，适应长文本生成
   ))
     ..httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
@@ -103,6 +105,13 @@ class ApiService {
       onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
         options.headers['Connection'] = 'close'; // 明确告知服务器立即关闭连接
         return handler.next(options);
+      },
+      // 【新增】统一处理后端返回的非 200 状态码，便于排查
+      onResponse: (Response response, ResponseInterceptorHandler handler) {
+        if (response.statusCode != 200) {
+          debugPrint('Dio 响应非 200: ${response.statusCode} - ${response.data}');
+        }
+        return handler.next(response);
       },
     ))
     ..interceptors.add(LogInterceptor(
@@ -1601,7 +1610,7 @@ class ApiService {
     return await getShadowRealtimeCompare();
   }
 
-  // ==================== 千寻大脑对话代理接口（2026-04-19 追加，2026-04-20 升级为 Dio） ====================
+  // ==================== 千寻大脑对话代理接口（2026-04-19 追加，2026-04-20 升级为 Dio，2026-04-21 白皮书合规） ====================
   /// 千寻大脑对话接口（代理转发到本地8081端口）
   /// 请求体格式与 OpenAI /v1/chat/completions 兼容
   /// [deepThinking] 是否开启深度思考模式（调用云端更强模型）
@@ -1647,8 +1656,10 @@ class ApiService {
         return QianxunChatResult.error('请求失败或响应格式错误');
       }
 
+      // 【白皮书合规】统一处理 success: false 及错误码
       if (result['success'] == false) {
-        return QianxunChatResult.error(result['message'] ?? '对话失败');
+        final msg = result['message'] ?? result['error'] ?? '对话失败';
+        return QianxunChatResult.error(msg);
       }
 
       final data = result['data'] ?? result;
@@ -1679,5 +1690,39 @@ class ApiService {
       debugPrint('千寻对话未知异常: $e');
       return QianxunChatResult.error('请求异常: $e');
     }
+  }
+
+  // ========== 【阶段一新增】增量同步接口 ==========
+  /// 客户端增量同步数据
+  /// [entityType] 数据类型 (chat_messages, trading_signals, stock_cache 等)
+  /// [lastSync] 上次同步时间戳 (ISO8601 格式)，首次同步传 null
+  /// 返回：new_entries, deleted_ids, next_sync_token, has_more
+  static Future<Map<String, dynamic>?> syncData({
+    required String entityType,
+    String? lastSync,
+  }) async {
+    final queryParams = <String, String>{
+      'entity_type': entityType,
+    };
+    if (lastSync != null) {
+      queryParams['last_sync'] = lastSync;
+    }
+    final endpoint = '/v1/sync?${Uri(queryParameters: queryParams).query}';
+    return await httpGet(endpoint);
+  }
+
+  // ========== 【阶段三新增】标记消息质量（供训练数据筛选） ==========
+  /// 标记某条对话消息为高质量，用于后续 Alpaca 训练数据导出
+  /// [messageId] 消息ID
+  /// [isQuality] 是否为高质量对话
+  static Future<bool> markMessageQuality({
+    required String messageId,
+    required bool isQuality,
+  }) async {
+    final result = await httpPost('/v1/chat/quality', body: {
+      'message_id': messageId,
+      'is_quality': isQuality,
+    });
+    return result?['success'] ?? false;
   }
 }

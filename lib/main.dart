@@ -7,6 +7,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:hive_flutter/hive_flutter.dart'; // 新增：Hive 本地存储
+// ===== 新增：Provider、Drift数据库、同步服务 =====
+import 'package:provider/provider.dart';
+import 'database/database.dart';
+import 'services/sync_service.dart';
+// ===== 新增：ChatProvider 导入 =====
+import 'providers/chat_provider.dart';
+// ================================================
 import 'pages/auth_page.dart';
 import 'pages/main_navigation_page.dart';
 import 'pages/ai_advice_center_page.dart';
@@ -88,6 +95,23 @@ void main() {
     await Hive.openBox<String>('qianxun_chat_box');
     // =====================================
 
+    // ===== 新增：初始化 Drift 数据库 =====
+    final db = AppDatabase();
+    try {
+      // 可选预加载逻辑可在此处添加
+      // await db.into(...);
+      debugPrint('Drift 数据库初始化成功');
+    } catch (e, stack) {
+      debugPrint('Drift 数据库初始化失败: $e\n$stack');
+      // 不阻断启动，允许降级使用 Hive
+    }
+    // ===================================
+
+    // ===== 新增：初始化同步服务 =====
+    final syncService = SyncService(db: db);
+    syncService.startBackgroundSync();
+    // =================================
+
     // 原有错误日志写入（保留）
     if (kReleaseMode) {
       final Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -132,7 +156,18 @@ void main() {
       }
     }
 
-    runApp(MyApp(isAuthenticated: isAuthenticated));
+    // ===== 修改：将 runApp 包裹为 MultiProvider =====
+    runApp(
+      MultiProvider(
+        providers: [
+          Provider<AppDatabase>.value(value: db),
+          Provider<SyncService>.value(value: syncService),
+          ChangeNotifierProvider(create: (_) => ChatProvider(db: db)),
+        ],
+        child: MyApp(isAuthenticated: isAuthenticated),
+      ),
+    );
+    // =============================================
   }, (error, stack) {
     // 捕获未处理的异步错误，显示错误屏幕
     print("未捕获的异常: $error\n$stack");

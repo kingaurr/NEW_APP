@@ -1,0 +1,1 @@
+{"valid_import":true,"imports":[{"uri":"package:http/http.dart","transitive":false},{"uri":"package:flutter/foundation.dart","transitive":false},{"uri":"package:shared_preferences/shared_preferences.dart","transitive":false},{"uri":"package:dio/dio.dart","transitive":false},{"uri":"package:dio/io.dart","transitive":false}],"elements":[]}

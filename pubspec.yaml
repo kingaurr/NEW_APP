@@ -18,7 +18,7 @@ dependencies:
   flutter_markdown: ^0.6.18
   file_picker: ^8.0.0
   intl: ^0.18.1
-  speech_to_text: ^7.3.0
+  # speech_to_text: ^7.3.0      # 【铁律修改1】临时禁用语音系统
   # record: ^5.0.0               # 录音功能禁用
   audioplayers: ^5.2.1
   provider: ^6.1.1
@@ -29,6 +29,9 @@ dependencies:
   dio: ^5.4.3                     # 替换原生 HttpClient，解决连接中止
   hive: ^2.2.3                    # 高性能本地存储
   hive_flutter: ^1.1.0            # Hive 的 Flutter 封装
+  # ===== 【铁律修改2】增加 Drift 本地数据库依赖（兼容 Flutter 3.16） =====
+  drift: 2.14.1
+  sqlite3_flutter_libs: ^0.5.0
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +40,8 @@ dev_dependencies:
   # ===== 千寻大脑一次性方案新增 dev 依赖 =====
   hive_generator: ^2.0.1          # Hive 适配器代码生成
   build_runner: ^2.4.0            # 代码生成运行器
+  # ===== 【铁律修改2】增加 Drift 代码生成器 =====
+  drift_dev: 2.14.1
 
 flutter:
   uses-material-design: true

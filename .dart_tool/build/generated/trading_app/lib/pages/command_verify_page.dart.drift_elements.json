@@ -1,0 +1,1 @@
+{"valid_import":true,"imports":[{"uri":"package:flutter/material.dart","transitive":false},{"uri":"package:local_auth/local_auth.dart","transitive":false},{"uri":"package:trading_app/api_service.dart","transitive":false},{"uri":"package:trading_app/widgets/voice_drawer.dart","transitive":false}],"elements":[]}

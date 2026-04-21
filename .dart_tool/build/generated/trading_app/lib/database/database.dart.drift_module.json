@@ -1,0 +1,928 @@
+{
+  "elements": {
+    "AppDatabase": {
+      "id": {
+        "library_uri": "package:trading_app/database/database.dart",
+        "name": "AppDatabase"
+      },
+      "declaration": {
+        "source_uri": "package:trading_app/database/database.dart",
+        "offset": 2961,
+        "name": "AppDatabase"
+      },
+      "references": [
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "chat_conversations"
+        },
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "chat_messages"
+        },
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "trading_signals"
+        },
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "stock_caches"
+        }
+      ],
+      "type": "database",
+      "tables": [
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "chat_conversations"
+        },
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "chat_messages"
+        },
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "trading_signals"
+        },
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "stock_caches"
+        }
+      ],
+      "views": [],
+      "includes": [],
+      "queries": [],
+      "schema_version": 1,
+      "daos": []
+    },
+    "chat_conversations": {
+      "id": {
+        "library_uri": "package:trading_app/database/database.dart",
+        "name": "chat_conversations"
+      },
+      "declaration": {
+        "source_uri": "package:trading_app/database/database.dart",
+        "offset": 593,
+        "name": "ChatConversations"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 644,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "primary",
+              "is_auto_increment": true
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "title",
+          "nameInDart": "title",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 697,
+            "name": "title"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "limit_text_length",
+              "min_length": 1,
+              "max_length": 200
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "created_at",
+          "nameInDart": "createdAt",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 767,
+            "name": "createdAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "updated_at",
+          "nameInDart": "updatedAt",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 816,
+            "name": "updatedAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "bool"
+          },
+          "nullable": false,
+          "nameInSql": "is_archived",
+          "nameInDart": "isArchived",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 861,
+            "name": "isArchived"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(false)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [],
+      "custom_parent_class": null,
+      "fixed_entity_info_name": null,
+      "base_dart_name": "ChatConversations",
+      "row_class_name": "ChatConversation",
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "chat_messages": {
+      "id": {
+        "library_uri": "package:trading_app/database/database.dart",
+        "name": "chat_messages"
+      },
+      "declaration": {
+        "source_uri": "package:trading_app/database/database.dart",
+        "offset": 1021,
+        "name": "ChatMessages"
+      },
+      "references": [
+        {
+          "library_uri": "package:trading_app/database/database.dart",
+          "name": "chat_conversations"
+        }
+      ],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1067,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "primary",
+              "is_auto_increment": true
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "conversation_id",
+          "nameInDart": "conversationId",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1119,
+            "name": "conversationId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "foreign_key",
+              "column": {
+                "table": {
+                  "library_uri": "package:trading_app/database/database.dart",
+                  "name": "chat_conversations"
+                },
+                "name": "id"
+              },
+              "onUpdate": null,
+              "onDelete": null
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "role",
+          "nameInDart": "role",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1203,
+            "name": "role"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "limit_text_length",
+              "min_length": 1,
+              "max_length": 20
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "content",
+          "nameInDart": "content",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1291,
+            "name": "content"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "created_at",
+          "nameInDart": "createdAt",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1334,
+            "name": "createdAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "bool"
+          },
+          "nullable": false,
+          "nameInSql": "is_quality",
+          "nameInDart": "isQuality",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1379,
+            "name": "isQuality"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(false)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "sync_status",
+          "nameInDart": "syncStatus",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1485,
+            "name": "syncStatus"
+          },
+          "typeConverter": {
+            "expression": {
+              "elements": [
+                "const ",
+                {
+                  "lexeme": "EnumIndexConverter",
+                  "import_uri": "package:drift/drift.dart"
+                },
+                "<",
+                {
+                  "lexeme": "SyncStatus",
+                  "import_uri": "package:trading_app/database/database.dart"
+                },
+                ">(",
+                {
+                  "lexeme": "SyncStatus",
+                  "import_uri": "package:trading_app/database/database.dart"
+                },
+                ".values)"
+              ]
+            },
+            "dart_type": 0,
+            "json_type": 1,
+            "sql_type": {
+              "builtin": "int"
+            },
+            "dart_type_is_nullable": false,
+            "sql_type_is_nullable": false,
+            "is_drift_enum_converter": true
+          },
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(0)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "server_id",
+          "nameInDart": "serverId",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1573,
+            "name": "serverId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [],
+      "custom_parent_class": null,
+      "fixed_entity_info_name": null,
+      "base_dart_name": "ChatMessages",
+      "row_class_name": "ChatMessageDrift",
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "trading_signals": {
+      "id": {
+        "library_uri": "package:trading_app/database/database.dart",
+        "name": "trading_signals"
+      },
+      "declaration": {
+        "source_uri": "package:trading_app/database/database.dart",
+        "offset": 1662,
+        "name": "TradingSignals"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1710,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "primary",
+              "is_auto_increment": true
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "symbol",
+          "nameInDart": "symbol",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1763,
+            "name": "symbol"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "limit_text_length",
+              "min_length": 1,
+              "max_length": 20
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "signal_type",
+          "nameInDart": "signalType",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1829,
+            "name": "signalType"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "limit_text_length",
+              "min_length": 1,
+              "max_length": 20
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "price",
+          "nameInDart": "price",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1917,
+            "name": "price"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "quantity",
+          "nameInDart": "quantity",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 1953,
+            "name": "quantity"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "signal_time",
+          "nameInDart": "signalTime",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2000,
+            "name": "signalTime"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "strategy_id",
+          "nameInDart": "strategyId",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2046,
+            "name": "strategyId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": true,
+          "nameInSql": "confidence",
+          "nameInDart": "confidence",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2099,
+            "name": "confidence"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "bool"
+          },
+          "nullable": false,
+          "nameInSql": "is_executed",
+          "nameInDart": "isExecuted",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2152,
+            "name": "isExecuted"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(false)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "created_at",
+          "nameInDart": "createdAt",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2236,
+            "name": "createdAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [],
+      "custom_parent_class": null,
+      "fixed_entity_info_name": null,
+      "base_dart_name": "TradingSignals",
+      "row_class_name": "TradingSignal",
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "stock_caches": {
+      "id": {
+        "library_uri": "package:trading_app/database/database.dart",
+        "name": "stock_caches"
+      },
+      "declaration": {
+        "source_uri": "package:trading_app/database/database.dart",
+        "offset": 2316,
+        "name": "StockCaches"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2361,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "primary",
+              "is_auto_increment": true
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "symbol",
+          "nameInDart": "symbol",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2414,
+            "name": "symbol"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "limit_text_length",
+              "min_length": 1,
+              "max_length": 20
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "name",
+          "nameInDart": "name",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2480,
+            "name": "name"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "limit_text_length",
+              "min_length": 1,
+              "max_length": 100
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": true,
+          "nameInSql": "latest_price",
+          "nameInDart": "latestPrice",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2545,
+            "name": "latestPrice"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": true,
+          "nameInSql": "change_percent",
+          "nameInDart": "changePercent",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2599,
+            "name": "changePercent"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": true,
+          "nameInSql": "volume",
+          "nameInDart": "volume",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2655,
+            "name": "volume"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "updated_at",
+          "nameInDart": "updatedAt",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2708,
+            "name": "updatedAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "data_json",
+          "nameInDart": "dataJson",
+          "declaration": {
+            "source_uri": "package:trading_app/database/database.dart",
+            "offset": 2753,
+            "name": "dataJson"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [],
+      "custom_parent_class": null,
+      "fixed_entity_info_name": null,
+      "base_dart_name": "StockCaches",
+      "row_class_name": "StockCache",
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart",
+    "package:drift/native.dart",
+    "package:path_provider/path_provider.dart",
+    "package:path/path.dart",
+    "package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart",
+    "package:sqlite3/sqlite3.dart"
+  ]
+}
