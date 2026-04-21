@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+// import 'package:speech_to_text/speech_to_text.dart' as stt; // 【铁律修改】临时禁用语音
 // import 'package:record/record.dart'; // 录音功能禁用
 import '../api_service.dart';
 
@@ -17,7 +17,7 @@ class VoiceSettingsPage extends StatefulWidget {
 }
 
 class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
-  final stt.SpeechToText _speech = stt.SpeechToText();
+  // final stt.SpeechToText _speech = stt.SpeechToText(); // 【铁律修改】临时禁用语音
   // final Record _recorder = Record(); // 录音功能禁用
 
   bool _isLoading = true;
@@ -37,7 +37,7 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
     super.initState();
     _loadSettings();
     _loadVoiceUsers();
-    _initSpeech();
+    // _initSpeech(); // 【铁律修改】临时禁用语音
   }
 
   @override
@@ -46,16 +46,17 @@ class _VoiceSettingsPageState extends State<VoiceSettingsPage> {
     super.dispose();
   }
 
-  Future<void> _initSpeech() async {
-    await _speech.initialize(
-      onStatus: (status) {
-        debugPrint('语音状态: $status');
-      },
-      onError: (error) {
-        debugPrint('语音错误: $error');
-      },
-    );
-  }
+  // 【铁律修改】临时禁用语音，整个方法注释
+  // Future<void> _initSpeech() async {
+  // await _speech.initialize(
+  // onStatus: (status) {
+  // debugPrint('语音状态: $status');
+  // },
+  // onError: (error) {
+  // debugPrint('语音错误: $error');
+  // },
+  // );
+  // }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();

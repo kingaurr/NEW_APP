@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+// import 'package:speech_to_text/speech_to_text.dart' as stt;  // 【铁律修改】临时禁用语音
 import '../api_service.dart';
 import '../utils/shared_preferences_helper.dart';  // [新增] 导入本地存储工具类
 
@@ -16,7 +16,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final List<Map<String, dynamic>> _messages = [];
   final TextEditingController _inputController = TextEditingController();
-  final stt.SpeechToText _speech = stt.SpeechToText();
+  // final stt.SpeechToText _speech = stt.SpeechToText();  // 【铁律修改】临时禁用语音
   bool _isListening = false;
   String _selectedMode = 'llm'; // 'llm' 或 'local'
   bool _isLoading = false;
@@ -25,16 +25,17 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    _initSpeech();
+    // _initSpeech();  // 【铁律修改】临时禁用语音
     _loadMessages();  // [修改] 调用加载方法
   }
 
-  Future<void> _initSpeech() async {
-    await _speech.initialize(
-      onStatus: (status) => debugPrint('语音状态: $status'),
-      onError: (error) => debugPrint('语音错误: $error'),
-    );
-  }
+  // 【铁律修改】临时禁用语音，整个方法注释
+  // Future<void> _initSpeech() async {
+  //   await _speech.initialize(
+  //     onStatus: (status) => debugPrint('语音状态: $status'),
+  //     onError: (error) => debugPrint('语音错误: $error'),
+  //   );
+  // }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -130,30 +131,32 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _startListening() async {
-    bool available = await _speech.initialize();
-    if (!available) {
-      _addSystemMessage('语音识别不可用');
-      return;
-    }
-    setState(() => _isListening = true);
-    _speech.listen(
-      onResult: (result) {
-        if (result.finalResult) {
-          _sendMessage(text: result.recognizedWords);
-          setState(() => _isListening = false);
-        }
-      },
-      listenFor: const Duration(seconds: 10),
-      pauseFor: const Duration(seconds: 2),
-      localeId: 'zh_CN',
-    );
-  }
+  // 【铁律修改】临时禁用语音，整个方法注释
+  // Future<void> _startListening() async {
+  //   bool available = await _speech.initialize();
+  //   if (!available) {
+  //     _addSystemMessage('语音识别不可用');
+  //     return;
+  //   }
+  //   setState(() => _isListening = true);
+  //   _speech.listen(
+  //     onResult: (result) {
+  //       if (result.finalResult) {
+  //         _sendMessage(text: result.recognizedWords);
+  //         setState(() => _isListening = false);
+  //       }
+  //     },
+  //     listenFor: const Duration(seconds: 10),
+  //     pauseFor: const Duration(seconds: 2),
+  //     localeId: 'zh_CN',
+  //   );
+  // }
 
-  void _stopListening() {
-    _speech.stop();
-    setState(() => _isListening = false);
-  }
+  // 【铁律修改】临时禁用语音，整个方法注释
+  // void _stopListening() {
+  //   _speech.stop();
+  //   setState(() => _isListening = false);
+  // }
 
   Future<void> _pickAndUploadFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -333,11 +336,11 @@ class _ChatPageState extends State<ChatPage> {
             icon: const Icon(Icons.attach_file, color: Color(0xFFD4AF37)),
             onPressed: _pickAndUploadFile,
           ),
-          // 语音按钮
-          IconButton(
-            icon: Icon(_isListening ? Icons.mic : Icons.mic_none, color: const Color(0xFFD4AF37)),
-            onPressed: _isListening ? _stopListening : _startListening,
-          ),
+          // 【铁律修改】语音按钮临时禁用
+          // IconButton(
+          //   icon: Icon(_isListening ? Icons.mic : Icons.mic_none, color: const Color(0xFFD4AF37)),
+          //   onPressed: _isListening ? _stopListening : _startListening,
+          // ),
           // 文本输入框
           Expanded(
             child: TextField(
