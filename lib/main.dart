@@ -81,6 +81,14 @@ import 'pages/lineage_detail_page.dart';
 import 'pages/brain_chat_page.dart';
 // ===== 新增消息模型（用于 Hive 适配器注册） =====
 import 'models/chat_message.dart';
+// ===== v2.0 自进化中心页面导入（2026-04-25追加） =====
+import 'pages/evolution_center_page.dart';
+import 'pages/evolution_review_page.dart';
+import 'pages/evolution_suggestions_page.dart';
+import 'pages/evolution_suggestion_detail.dart';
+import 'pages/evolution_strategy_compare.dart';
+import 'pages/evolution_trend_page.dart';
+import 'pages/evolution_history_page.dart';
 // ============================================
 
 void main() {
@@ -551,6 +559,39 @@ class _MyAppState extends State<MyApp> {
         else if (settings.name == '/brain_chat') {
           return MaterialPageRoute(
             builder: (context) => const BrainChatPage(),
+          );
+        }
+        // ===== v2.0 自进化中心路由（2026-04-25追加） =====
+        else if (settings.name == '/evolution_center') {
+          return MaterialPageRoute(
+            builder: (context) => const EvolutionCenterPage(),
+          );
+        } else if (settings.name == '/evolution_review') {
+          return MaterialPageRoute(
+            builder: (context) => const EvolutionReviewPage(),
+          );
+        } else if (settings.name == '/evolution_suggestions') {
+          return MaterialPageRoute(
+            builder: (context) => const EvolutionSuggestionsPage(),
+          );
+        } else if (settings.name == '/evolution_suggestion_detail') {
+          final suggestion = settings.arguments as Map<String, dynamic>? ?? {};
+          return MaterialPageRoute(
+            builder: (context) => EvolutionSuggestionDetail(suggestion: suggestion),
+          );
+        } else if (settings.name == '/evolution_strategy_compare') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          final strategyId = args['strategyId'] as String? ?? '';
+          return MaterialPageRoute(
+            builder: (context) => EvolutionStrategyCompare(strategyId: strategyId),
+          );
+        } else if (settings.name == '/evolution_trend') {
+          return MaterialPageRoute(
+            builder: (context) => const EvolutionTrendPage(),
+          );
+        } else if (settings.name == '/evolution_history') {
+          return MaterialPageRoute(
+            builder: (context) => const EvolutionHistoryPage(),
           );
         }
         // ==================================================

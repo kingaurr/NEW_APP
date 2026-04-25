@@ -23,6 +23,8 @@ import 'strategy_execution_page.dart';
 import 'virtual_trade_page.dart';
 // ========== 新增千寻大脑页面导入 ==========
 import 'brain_chat_page.dart';
+// ========== v2.0 自进化中心导入（2026-04-25追加） ==========
+import 'evolution_center_page.dart';
 // =====================================
 
 class MyPage extends StatefulWidget {
@@ -238,6 +240,14 @@ class _MyPageState extends State<MyPage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const BrainChatPage()),
+    );
+  }
+
+  // ========== v2.0 自进化中心跳转方法（2026-04-25追加） ==========
+  void _openEvolutionCenter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EvolutionCenterPage()),
     );
   }
   // =======================================
@@ -465,6 +475,12 @@ class _MyPageState extends State<MyPage> {
                                       icon: Icons.psychology_alt,
                                       label: '千寻大脑',
                                       onTap: _openBrainChat,
+                                    ),
+                                    // ========== v2.0 自进化中心入口（2026-04-25追加） ==========
+                                    _buildGridItem(
+                                      icon: Icons.auto_graph,
+                                      label: '自进化中心',
+                                      onTap: _openEvolutionCenter,
                                     ),
                                     // ===================================
                                   ],

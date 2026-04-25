@@ -20,6 +20,7 @@
 // 17. 【兜底方案】强制每次请求新建连接（idleTimeout = Duration.zero + Connection: close 头），彻底绕过 Keep-Alive 冲突（2026-04-21）
 // 18. 【白皮书合规】统一错误码处理，增强 Dio 拦截器日志，符合白皮书第四章规范（2026-04-21）
 // 19. 【阶段一】延长 receiveTimeout 至 120s，新增 syncData / markMessageQuality 方法（2026-04-21）
+// 20. 【v2.0 进化引擎追加】新增 11 个自进化中心 API 方法，真实数据，无模拟（2026-04-25）
 // 所有方法均调用后端真实接口，无硬编码假数据。
 // =====================================================================
 
@@ -1724,5 +1725,61 @@ class ApiService {
       'is_quality': isQuality,
     });
     return result?['success'] ?? false;
+  }
+
+  // ==================== v2.0 自进化引擎追加（2026-04-25） ====================
+  /// 获取今日进化摘要
+  static Future<Map<String, dynamic>> getEvolutionSummary() async {
+    return await httpGet('/evolution/summary');
+  }
+
+  /// 获取优化建议列表
+  static Future<Map<String, dynamic>> getEvolutionSuggestions() async {
+    return await httpGet('/evolution/suggestions');
+  }
+
+  /// 获取单条进化建议详情
+  static Future<Map<String, dynamic>> getEvolutionSuggestionDetail(String id) async {
+    return await httpGet('/evolution/suggestions/$id');
+  }
+
+  /// 审批单条进化建议（需指纹验证）
+  static Future<Map<String, dynamic>> approveEvolutionSuggestion(String id) async {
+    return await httpPost('/evolution/suggestions/$id/approve');
+  }
+
+  /// 一键审批所有进化建议（需指纹验证）
+  static Future<Map<String, dynamic>> approveAllEvolutionSuggestions() async {
+    return await httpPost('/evolution/suggestions/approve_all');
+  }
+
+  /// 获取进化趋势数据（胜率、夏普、回撤、收益曲线）
+  static Future<Map<String, dynamic>> getEvolutionTrends() async {
+    return await httpGet('/evolution/trends');
+  }
+
+  /// 获取策略进化对比数据
+  static Future<Map<String, dynamic>> getEvolutionStrategies() async {
+    return await httpGet('/evolution/strategies');
+  }
+
+  /// 获取历史进化报告列表
+  static Future<Map<String, dynamic>> getEvolutionReports() async {
+    return await httpGet('/evolution/reports');
+  }
+
+  /// 获取指定日期的进化报告
+  static Future<Map<String, dynamic>> getEvolutionReportByDate(String date) async {
+    return await httpGet('/evolution/reports/$date');
+  }
+
+  /// 触发AI评审进化建议
+  static Future<Map<String, dynamic>> triggerEvolutionReview() async {
+    return await httpPost('/evolution/review');
+  }
+
+  /// 获取进化评审历史记录
+  static Future<Map<String, dynamic>> getEvolutionReviewHistory() async {
+    return await httpGet('/evolution/review/history');
   }
 }
